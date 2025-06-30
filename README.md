@@ -1,83 +1,48 @@
-# Getting Started with Create React App
+# 🌍 Expedis – Travel Planner App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Expedis is a full-stack web application that allows users to plan and manage their travel routes.  
+The app supports user registration, authentication with JWT, and full CRUD operations for trip plans.
 
-## Available Scripts
+![Expedis Screenshot](./screenshots/expedis-preview.png) <!-- Optional image -->
 
-In the project directory, you can run:
+## 🚀 Live Demo
 
-### `npm start`
+_(Coming soon)_ or [Deployed on Vercel](https://your-deployment-link.vercel.app) ← *(replace with your real link)*
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🛠 Tech Stack
 
-### `npm test`
+**Frontend:**  
+- React  
+- React Router  
+- Tailwind CSS  
+- Axios  
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**Backend:**  
+- Node.js  
+- Express.js  
+- MongoDB + Mongoose  
+- JWT Authentication  
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## ✨ Key Features
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- 👤 User authentication (JWT)
+- 📌 Create / edit / delete personal travel plans
+- 🌐 Connected frontend & backend via RESTful API
+- 💾 Securely stores data in MongoDB
+- ✨ Clean UI with Tailwind CSS
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## 📦 Getting Started
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Clone this repo and install dependencies:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-
-
-### Users role
-user1: 
-login: liliagurko571@gmail.com
-password: 123456
-user2:
-login: ivanna.nevmerzytska@gmail.com
-password: Ivanka123
-admin: 
-login: admin@admin.com
-password: Admin123# expedis
-# expedis
+```bash
+git clone https://github.com/lilyhurko/expedis.git
+cd expedis
+npm install
+npm start
