@@ -1,0 +1,420 @@
+.feedback-page {
+    margin: 80px auto 0 auto;
+    max-width: 900px;
+    font-family: 'Poppins', sans-serif;
+    color: #0D1B2A;
+    padding: 0 15px;
+    background-color: #ffffff;
+}
+
+.feedback-page h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    color: #1B3A4B;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-left: 150px;
+}
+
+.feedback-page h2::before {
+    content: "";
+    position: absolute;
+    left: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 65px;
+    height: 2px;
+    background-color: #1B3A4B;
+}
+
+.feedback-page form {
+    margin-bottom: 2rem;
+}
+
+.feedback-page textarea.form-control {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    resize: vertical;
+    transition: border-color 0.3s ease;
+}
+
+.feedback-page textarea.form-control:focus {
+    border-color: #1B3A4B;
+    outline: none;
+    box-shadow: 0 0 5px rgba(27, 58, 75, 0.5);
+}
+
+.feedback-page button {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    border-radius: 9999px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.feedback-page .form-button:hover,
+.feedback-page .btn-primary:hover {
+    background: rgba(30, 58, 138, 0.4) !important;
+}
+
+.feedback-page .button-group,
+.feedback-page .btn-primary {
+    display: flex;
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+.feedback-page .form-button,
+.feedback-page .btn-primary,
+.feedback-page .btn-outline-primary,
+.feedback-page .btn-outline-danger {
+    display: inline-block;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    border: 2px solid #1B3A4B;
+    border-radius: 9999px;
+    background: rgba(30, 58, 138, 0.2);
+    color: #1B3A4B;
+    font-weight: bold;
+    text-decoration: none;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    align-self: flex-start;
+    margin-top: 8px;
+}
+
+
+
+
+.feedback-page .border {
+    background-color: #f3f4f6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 6px rgba(27, 58, 75, 0.1);
+    font-family: 'Poppins', sans-serif;
+    position: relative;
+}
+
+.feedback-page .border strong {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    color: #1B3A4B;
+    font-size: 1.1rem;
+}
+
+.feedback-page .border p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #0D1B2A;
+    margin-top: 0.5rem;
+    position: relative;
+    padding-left: 2.5rem;
+}
+
+.feedback-page .border p::before {
+    content: "“";
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem;
+    color: #1B3A4B;
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    line-height: 1;
+    user-select: none;
+}
+
+.feedback-page .border button {
+    margin-top: 1rem;
+}
+
+.feedback-page .border button+button {
+    margin-left: 0.5rem;
+}
+
+.feedback-page textarea.form-control.mt-2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    resize: vertical;
+    padding: 10px;
+    margin-top: 0.5rem;
+}
+
+.feedback-page textarea.form-control.mt-2:focus {
+    border-color: #1B3A4B;
+    outline: none;
+    box-shadow: 0 0 5px rgba(27, 58, 75, 0.5);
+}
+
+.comments-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+}
+.comments-container p {
+    font-size: 1rem;
+    line-height: 1.6;
+    position: relative;
+    padding-left: 1.5rem;
+    padding-top: 1rem;
+    color: #0D1B2A;
+}
+.comments-container p::before {
+    content: "“";
+    font-size: 3rem;
+    color: #1B3A4B;
+    position: absolute;
+    left: 0;
+    top: 0;
+    line-height: 1;
+    font-family: 'Playfair Display', serif;
+}
+
+
+
+.comment {
+    background-color: #f3f4f6;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 6px rgba(27, 58, 75, 0.1);
+    font-family: 'Poppins', sans-serif;
+    flex: 0 0 calc(33.333% - 20px);
+    /* 3 в рядок */
+    box-sizing: border-box;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.comment p {
+    flex-grow: 1;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    color: #333;
+}
+
+.feedback-page h4{
+    display: inline-flex;
+        align-items: center;
+        font-family: 'Playfair Display', serif;
+        font-weight: 600;
+        color: #1B3A4B;
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        padding-left: 100px;
+}
+
+.feedback-page h4::before {
+    content: "";
+    position: absolute;
+    left: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 2px;
+    background-color: #1B3A4B;
+}
+
+.comment {
+    position: relative;
+    padding-bottom: 2rem;
+}
+
+.comment-date {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 1rem;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+.admin-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1;
+}
+
+.edit-icon-button,
+.delete-icon-button {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.edit-icon-button {
+    order: 1;
+}
+
+.delete-icon-button {
+    order: 2;
+    position: absolute;
+    top: 38px;
+}
+
+.edit-icon-button:hover,
+.delete-icon-button:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+}
+
+.edit-icon,
+.delete-icon {
+    color: #454545;
+    font-size: 16px;
+}
+
+.comment {
+    position: relative;
+}
+
+.feedback-page {
+    padding: 2rem;
+}
+
+.feedback-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.comments-container {
+    margin-top: 1.5rem;
+}
+
+.comment-date {
+    font-size: 0.8rem;
+}
+
+@media (max-width: 992px) {
+    .comment {
+        flex: 0 0 calc(50% - 20px);
+    }
+}
+
+@media (max-width: 768px) {
+    .comment {
+        flex: 0 0 100%;
+    }
+
+    .feedback-page h2 {
+        padding-left: 60px;
+        font-size: 1.5rem;
+    }
+
+    .feedback-page h2::before {
+        left: 0;
+        width: 50px;
+    }
+
+    .feedback-page h4 {
+        padding-left: 60px;
+        font-size: 1.2rem;
+    }
+
+    .feedback-page h4::before {
+        left: 0;
+        width: 40px;
+    }
+}
+
+.comment p {
+    flex-grow: 1;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    color: #333;
+    position: relative;
+    padding-left: 1.5rem;
+    padding-top: 1rem;
+}
+
+.comment p::before {
+    content: "“";
+    font-size: 3rem;
+    color: #1B3A4B;
+    position: absolute;
+    left: 0;
+    top: 0;
+    line-height: 1;
+    font-family: 'Playfair Display', serif;
+}
+
+.comment-date {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 1rem;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.admin-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1;
+}
+
+.edit-icon-button,
+.delete-icon-button {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.edit-icon-button {
+    order: 1;
+}
+
+.delete-icon-button {
+    order: 2;
+    position: absolute;
+    top: 38px;
+}
+
+.edit-icon-button:hover,
+.delete-icon-button:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+}
+
+.edit-icon,
+.delete-icon {
+    color: #454545;
+    font-size: 16px;
+}

@@ -1,0 +1,167 @@
+.footer {
+    background-image: url('../img/footer.png');
+    background-size: cover;
+        background-position: center;
+        color: #1f2937;
+        padding: 80px 60px;
+        border-top: 1px solid #d1d5db;
+        font-size: 18px;
+    }
+    
+  .footer-heading {
+      display: flex;
+      align-items: center;
+      justify-content: left;
+      gap: 15px;
+      margin-bottom: 30px;
+      text-align: center;
+  }
+    
+         .footer-heading .line {
+             width: 50px;
+             height: 2px;
+             background-color: #1f2937;
+         }
+    
+    .footer-heading h2 {
+            font-family: 'Playfair Display', serif;
+                font-weight: 800;
+                font-size: 2.0rem;
+                line-height: 1.4;
+                margin-bottom: 1.2rem;
+    }
+    
+    .footer-image-container {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .footer-image {
+        width: auto;
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0);
+    }
+    
+    .footer-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 40px;
+    }
+    
+    @media (min-width: 768px) {
+        .footer-content {
+            flex-direction: row;
+            align-items: center;
+        }
+    }
+    
+    .footer-title {
+        font-size: 100px;
+        font-family: serif;
+        font-weight: bold;
+        margin-bottom: 12px;
+        color: #1f2937
+    }
+    
+    .footer-subtext {
+        font-size: 20px;
+        margin-bottom: 6px;
+        font-family: 'Playfair Display', serif;
+        color: #1f2937
+    }
+    
+    .footer-email {
+        font-size: 25px;
+        font-weight: 600;
+        font-family: 'Playfair Display', serif;
+        color: #1f2937
+    }
+    
+    .footer-right {
+        text-align: right;
+        font-size: 18px;
+        line-height: 1.6;
+        margin-top: 150px;
+    }
+    
+    .footer-bottom {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-top: 1px solid #cbd5e1;
+        padding-top: 5px;
+        margin-top: 180px;
+        font-size: 16px;
+        color: #6b7280;
+    }
+    
+    @media (min-width: 768px) {
+        .footer-bottom {
+            flex-direction: row;
+            align-items: center;
+        }
+    }
+    
+    .footer-links a {
+        margin-left: 20px;
+        text-decoration: none;
+        color: #6b7280;
+        font-size: 16px;
+    }
+    
+    .footer-links a:hover {
+        text-decoration: underline;
+    }
+
+    .footer-center {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.footer-heading-text {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 50px;
+    color: #264653;
+    line-height: 1.3;
+}
+  .footer-image-kolo {
+      width: 200px;
+      height: auto;
+      vertical-align: middle;
+  }
+  
+  .footer-cta {
+      text-align: center;
+      margin-top: 60px;
+  }
+
+  .footer-cta-text {
+      font-size: 20px;
+      color: #53524F;
+      margin-bottom: 20px;
+      font-weight: 500;
+    font-family: 'Poppins', regular;
+    text-align: center;
+  }
+
+  .footer-cta-button {
+      display: inline-block;
+      padding: 12px 30px;
+      border: 2px solid #1B3A4B;
+      border-radius: 9999px;
+      background: rgba(30, 58, 138, 0.2);
+      color: #1B3A4B;
+      font-weight: bold;
+      text-decoration: none;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+    font-family: 'Poppins', regular;
+  }
+
+  .footer-cta-button:hover {
+      background: rgba(30, 58, 138, 0.4);
+  }
