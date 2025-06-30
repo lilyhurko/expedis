@@ -3,7 +3,7 @@
 Expedis is a full-stack web application that allows users to plan and manage their travel routes.  
 The app supports user registration, authentication with JWT, and full CRUD operations for trip plans.
 
-![Expedis Screenshot](./screenshots/expedis-preview.png) <!-- Optional image -->
+![Expedis Screenshot](./screenshots/expedis-preview1.png) <!-- Optional image -->
 
 ## 🚀 Live Demo
 
