@@ -13,21 +13,20 @@ if (!fs.existsSync(uploadDir)) {
 // Konfiguracja multer do przechowywania plików
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'public/images'); // Folder do przechowywania obrazków
+    cb(null, 'public/images');
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname)); // Unikalna nazwa pliku
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 const upload = multer({ storage: storage });
 
-// Pobierz wszystkie oferty
+// Pobierz 5 najnowszych ofert
 router.get('/', async (req, res) => {
   try {
-    const offers = await Offer.find();
+    const offers = await Offer.find().sort({ createdAt: -1 }).limit(5);
     res.json(offers);
   } catch (err) {
-    // Błąd serwera podczas pobierania ofert
     res.status(500).json({ message: 'Server error while fetching offers' });
   }
 });
@@ -35,15 +34,17 @@ router.get('/', async (req, res) => {
 // Dodaj nową ofertę z obrazkiem
 router.post('/', upload.single('image'), async (req, res) => {
   try {
-    const { title, description, price, duration } = req.body;
+    const { title, description, price, duration, categories } = req.body;
 
-    // Walidacja danych wejściowych
     if (!title || !description || !price || !duration) {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
     const priceNum = Number(price);
     const durationNum = Number(duration);
+    const categoriesArray = categories
+      ? (Array.isArray(categories) ? categories : categories.split(',').map((cat) => cat.trim()))
+      : [];
 
     if (isNaN(priceNum) || isNaN(durationNum)) {
       return res.status(400).json({ message: 'Price and duration must be numbers' });
@@ -56,11 +57,11 @@ router.post('/', upload.single('image'), async (req, res) => {
       description,
       price: priceNum,
       duration: durationNum,
-      imageUrl
+      imageUrl,
+      categories: categoriesArray,
     });
 
     await newOffer.save();
-    // Oferta została utworzona pomyślnie
     res.status(201).json(newOffer);
   } catch (err) {
     console.error('Error adding offer:', err);
@@ -71,15 +72,17 @@ router.post('/', upload.single('image'), async (req, res) => {
 // Edytuj ofertę na podstawie ID
 router.put('/:id', async (req, res) => {
   try {
-    const { title, description, price, duration, imageUrl } = req.body;
+    const { title, description, price, duration, imageUrl, categories } = req.body;
 
-    // Sprawdź, czy dane są prawidłowe
     if (!title || !description || !price || !duration) {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
     const priceNum = Number(price);
     const durationNum = Number(duration);
+    const categoriesArray = categories
+      ? (Array.isArray(categories) ? categories : categories.split(',').map((cat) => cat.trim()))
+      : [];
 
     if (isNaN(priceNum) || isNaN(durationNum)) {
       return res.status(400).json({ message: 'Price and duration must be numbers' });
@@ -87,18 +90,17 @@ router.put('/:id', async (req, res) => {
 
     const updatedOffer = await Offer.findByIdAndUpdate(
       req.params.id,
-      { title, description, price: priceNum, duration: durationNum, imageUrl },
+      { title, description, price: priceNum, duration: durationNum, imageUrl, categories: categoriesArray },
       { new: true }
     );
 
     if (!updatedOffer) {
-      // Oferta nie została znaleziona
       return res.status(404).json({ message: 'Offer not found' });
     }
 
-    // Oferta została zaktualizowana pomyślnie
     res.json(updatedOffer);
   } catch (err) {
+    console.error('Error updating offer:', err);
     res.status(500).json({ message: 'Server error while updating offer' });
   }
 });
@@ -109,11 +111,9 @@ router.delete('/:id', async (req, res) => {
     const deletedOffer = await Offer.findByIdAndDelete(req.params.id);
 
     if (!deletedOffer) {
-      // Oferta do usunięcia nie istnieje
       return res.status(404).json({ message: 'Offer not found' });
     }
 
-    // Oferta została usunięta pomyślnie
     res.json({ message: 'Offer deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Server error while deleting offer' });

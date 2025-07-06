@@ -12,23 +12,21 @@ const Footer = () => {
       </div>
 
       {/* Section with 'Let’s Just Get Travel' text and image */}
-            <div className="footer-center">
-              <h2 className="footer-heading-text">
-                Let’s just get a travel<br />
-                Ar<img src={koloImg} alt="Kolo" className="footer-image-kolo" />und the world
-              </h2>
-             </div>
-            <div className="footer-cta">
-              <p className="footer-cta-text">
-              Ready to turn your travel dreams into reality?<br />
-              Get in touch with us today and let's start planning your next adventure.
-            </p>
-             <a href="/login" className="footer-cta-button">
-                Join the Trip
-              </a>
-            </div>
-
-    
+      <div className="footer-center">
+        <h2 className="footer-heading-text">
+          Let’s just get a travel<br />
+          Ar<img src={koloImg} alt="Kolo" className="footer-image-kolo" />und the world
+        </h2>
+      </div>
+      <div className="footer-cta">
+        <p className="footer-cta-text">
+          Ready to turn your travel dreams into reality?<br />
+          Get in touch with us today and let's start planning your next adventure.
+        </p>
+        <a href="/login" className="footer-cta-button">
+          Join the Trip
+        </a>
+      </div>
 
       {/* Footer content */}
       <div className="footer-content">
@@ -49,8 +47,8 @@ const Footer = () => {
       <div className="footer-bottom">
         <div>© 2025 Expedis. All rights reserved.</div>
         <div className="footer-links">
-          <a href="#">Terms of Service</a>
-          <a href="#">Privacy Policy</a>
+          <a href="/terms-of-service">Terms of Service</a>
+          <a href="/privacy-policy">Privacy Policy</a>
         </div>
       </div>
     </footer>

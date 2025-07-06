@@ -1,5 +1,5 @@
 import React from "react";
-import { Carousel, Button } from "react-bootstrap";
+import { Carousel } from "react-bootstrap";
 import "../assets/styles/HeroCarousel.css";
 import backgroundImage from "../assets/img/background-image.jpg"; // Підключення фонової картинки
 const HeroCarousel = () => {

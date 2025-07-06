@@ -1,14 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400&display=swap');
 @import "~slick-carousel/slick/slick.css";
 @import "~slick-carousel/slick/slick-theme.css";
-.destination-page {
+
+/* Основні стилі для сторінки */
+.top-destinations {
     padding: 3rem 2rem;
     background-color: #f9f9f9;
     font-family: 'Poppins', sans-serif;
     margin-top: 80px;
 }
 
-.destination-page h2 {
+.top-destinations h2 {
     font-family: 'Playfair Display', serif;
     font-weight: 600;
     font-size: 2rem;
@@ -18,116 +20,7 @@
     padding-left: 1.2rem;
 }
 
-
-.destination-page img {
-    width: 100%;
-    max-width: 550px;
-    height: auto;
-    border-radius: 10px;
-    display: block;
-    margin: 0 auto 2rem auto;
-}
-
-.destination-page p {
-    color: #0D1B2A;
-    font-size: 1.1rem;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-        font-family: 'Poppins', sans-serif;
-    text-align: center;
-
-}
-
-.trip-section {
-    margin-top: 2rem;
-    background: #ffffff;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* Стилі для заголовків секцій */
-.trip-section h3,
-.trip-section h4 {
-    font-family: 'Playfair Display', serif;
-    font-weight: 600;
-    color: #1B3A4B;
-    margin-top: 1.5rem;
-    margin-bottom: 1rem;
-}
-
-.trip-section h3 {
-    font-size: 1.5rem;
-    border-bottom: 1px solid #dde3e8;
-    padding-bottom: 0.5rem;
-}
-
-.trip-section h4 {
-    font-size: 1.2rem;
-}
-
-.trip-section ul {
-    padding-left: 1.5rem;
-    margin-bottom: 1rem;
-}
-
-.book-now-button {
-    margin-top: 1.5rem;
-    background-color: #1B3A4B;
-    color: #fff;
-    border: none;
-    padding: 0.7rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 500;
-    border-radius: 8px;
-    transition: background-color 0.3s;
-}
-
-.book-now-button:hover {
-    background-color: #0D1B2A;
-}
-
-.carousel-container .slick-slide img {
-    width: 100%;
-    height: 300px;
-    object-fit: contain;
-    margin: 0 auto;
-}
-
-.gallery {
-    margin-top: 20px;
-    text-align: center;
-}
-
-.gallery h3 {
-    font-family: 'Playfair Display', serif;
-    text-align: left;
-    font-weight: 600;
-    color: #1B3A4B;
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid #dde3e8;
-    padding-bottom: 0.5rem;
-    width: 100%;
-}
-
-.gallery-images {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    overflow-x: auto;
-}
-
-.gallery-images img {
-    width: 100%;
-    max-width: 120px;
-    height: auto;
-    object-fit: cover;
-    cursor: pointer;
-}
-.destination-page h2::before,
-.trip-section h3::before,
-.gallery h3::before {
+.top-destinations h2::before {
     content: "";
     display: inline-block;
     width: 65px;
@@ -137,12 +30,165 @@
     vertical-align: middle;
 }
 
-.destination-page h2,
-.trip-section h3,
-.gallery h3 {
+.top-destinations h2,
+.modal-title {
     display: inline-flex;
     align-items: center;
     font-family: 'Playfair Display', serif;
     font-weight: 600;
     color: #1B3A4B;
+}
+
+.top-destinations p.description {
+    color: #0D1B2A;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+/* Стилі для зображення */
+.destination-image img {
+    width: 100%;
+    max-width: 550px;
+    height: auto;
+    border-radius: 10px;
+    display: block;
+    margin: 0 auto 2rem auto;
+}
+
+/* Стилі для списку напрямків */
+.destination-list .city {
+    cursor: pointer;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    background-color: #fff;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.destination-list .city.active {
+    background-color: #e0e0e0;
+}
+
+.destination-list .city span {
+    margin-right: 10px;
+}
+
+.destination-list .tag {
+    background-color: #e0e0e0;
+    padding: 2px 8px;
+    border-radius: 5px;
+}
+
+.destination-list .count {
+    font-weight: bold;
+}
+
+/* Increase modal size */
+.modal-lg {
+    width: 600px;
+    max-width: 90%;
+    height: auto;
+    max-height: 80vh;
+    margin: 20px auto;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure content fits within the larger modal */
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* Align text to the left with consistent padding */
+.destination-modal-content {
+    text-align: left;
+    padding: 10px;
+}
+
+.modal-description {
+    color: #0D1B2A;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.tags-container {
+    margin-bottom: 15px;
+}
+
+.custom-tag {
+    margin-right: 10px;
+    background-color: #e0e0e0;
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: #1B3A4B;
+}
+
+.duration-label {
+    color: #0D1B2A;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+/* Style footer with price and button alignment */
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-top: 1px solid #dde3e8;
+}
+
+.price-label {
+    font-weight: bold;
+    color: #1B3A4B;
+    font-size: 1.2rem;
+}
+
+.btn {
+    margin-left: 10px;
+}
+
+.btn-primary {
+    background-color: #1B3A4B; /* Match destination-page button color */
+    color: #fff;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: #0D1B2A; /* Match hover color */
+}
+
+/* Overlay for modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #1B3A4B;
+    position: absolute;
+    top: 10px;
+    right: 10px;
 }

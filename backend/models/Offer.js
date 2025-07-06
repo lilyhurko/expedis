@@ -18,12 +18,16 @@ const offerSchema = new mongoose.Schema({
         required: true,
     },
     duration: {
-        type: String,
+        type: Number,
         required: true,
     },
     imageUrl: {
         type: String,
         required: true,
+    },
+     categories: {
+        type: [String],
+        default: [],
     },
     createdAt: {
         type: Date,
