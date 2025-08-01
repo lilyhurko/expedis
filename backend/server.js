@@ -1,3 +1,13 @@
+require('dotenv').config(); // Load environment variables from .env file
+
+// Validate critical environment variables
+if (!process.env.JWT_SECRET) {
+  console.error('Error: JWT_SECRET is not defined in environment variables');
+  process.exit(1);
+}
+
+console.log('JWT_SECRET loaded:', process.env.JWT_SECRET ? 'Success' : 'Failed');
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -16,13 +26,13 @@ const port = 5001;
 // Konfiguracja CORS - dozwolone połączenia tylko z frontendu
 app.use(cors({
   origin: 'http://localhost:3000',
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Udostępnianie statycznych plików (np. obrazków)
 app.use('/images', express.static('public/images'));
-app.use('/uploads', express.static('uploads'));  // dodatkowy folder na pliki, jeśli potrzeba
+app.use('/uploads', express.static('uploads')); // dodatkowy folder na pliki, jeśli potrzeba
 
 // Parsowanie danych JSON i formularzy URL-encoded
 app.use(bodyParser.json());
@@ -36,12 +46,9 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/auth', authRoutes);
 
 // Połączenie z bazą danych MongoDB
-mongoose.connect('mongodb://localhost:27017/expedisDB', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch((err) => console.log('Error connecting to MongoDB:', err));
+mongoose.connect('mongodb://localhost:27017/expedisDB')
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((err) => console.log('Error connecting to MongoDB:', err));
 
 // Uruchomienie serwera na porcie 5001
 app.listen(port, () => {

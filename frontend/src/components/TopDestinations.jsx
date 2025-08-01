@@ -14,9 +14,9 @@ const TopDestinations = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchDestinations = async () => {
-      try {
-        const response = await axios.get('http://localhost:5001/api/offers');
+const fetchDestinations = async () => {
+  try {
+    const response = await axios.get('http://localhost:5001/api/offers');
         const fetchedDestinations = response.data.map((offer) => ({
           name: offer.title,
           tags: offer.categories,
@@ -31,11 +31,11 @@ const TopDestinations = () => {
         }));
         setDestinations(fetchedDestinations);
         setSelected(fetchedDestinations[0] || null);
-      } catch (err) {
-        console.error('Error fetching destinations:', err);
-        setError('Failed to load destinations. Please try again later.');
-      }
-    };
+     } catch (err) {
+    console.error('Error fetching destinations:', err);
+    setError('Failed to load destinations. Please try again later.');
+  }
+};
 
     fetchDestinations();
   }, []);
@@ -52,7 +52,7 @@ const TopDestinations = () => {
     } else {
       setSelected(destinations.find(o => o._id === offerId)); // Changed 'offers' to 'destinations'
       // You can add booking modal logic here or navigate to /offerts with offerId
-      navigate(`/offerts?offer=${offerId}`); // Example redirect to Offerts page
+      navigate(`/Trips?offer=${offerId}`); // Example redirect to Offerts page
     }
     setShowModal(false);
   };

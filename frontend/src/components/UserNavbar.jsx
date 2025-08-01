@@ -36,8 +36,11 @@ function UserNavbar() {
 
       <ul className={`navbar-links ${menuOpen ? 'open' : ''}`}>
       <li>
-          <Link to="/offerts" className={getLinkClass('/offerts')} onClick={() => setMenuOpen(false)}>Offerts</Link>
+          <Link to="/trips" className={getLinkClass('/trips')} onClick={() => setMenuOpen(false)}>Trips</Link>
         </li>
+         <li>
+    <Link to="/rent-car" className={getLinkClass('/rent-car')} onClick={() => setMenuOpen(false)}>Rent Car</Link>
+  </li>
         <li>
           <Link to="/feedback" className={getLinkClass('/feedback')} onClick={() => setMenuOpen(false)}>Feedback</Link>
         </li>

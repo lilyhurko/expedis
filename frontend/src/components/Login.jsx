@@ -25,7 +25,7 @@ function Login() {
         const savedOfferId = localStorage.getItem('selectedOffer');
         if (savedOfferId) {
           localStorage.removeItem('selectedOffer');
-          navigate(`/offerts`); 
+          navigate(`/trips`); 
         } else {
           navigate('/profile');
         }

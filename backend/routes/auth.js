@@ -1,12 +1,10 @@
-// Trasy uwierzytelniania użytkownika: rejestracja i logowanie, z obsługą JWT
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt'); // Ensure bcrypt is included
 
-const JWT_SECRET = 'mySuperSecretKey';
-
-//rejestracja użytkownika
+// rejestracja użytkownika
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password, name, surname, role } = req.body;
@@ -19,7 +17,11 @@ router.post('/register', async (req, res) => {
     const user = new User({ username, email, password, name, surname, role: role || 'user' });
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(
+      { id: user._id, role: user.role }, // Include role for consistency
+      process.env.JWT_SECRET, // Use environment variable
+      { expiresIn: '24h' } // Match login expiry
+    );
 
     res.status(201).json({
       message: 'User registered',
@@ -30,10 +32,11 @@ router.post('/register', async (req, res) => {
         surname: user.surname,
         email: user.email,
         role: user.role,
-      }
+      },
     });
   } catch (err) {
-    res.status(500).json({ message: 'Something went wrong' });
+    console.error('Error registering user:', err.message);
+    res.status(500).json({ message: 'Something went wrong', error: err.message });
   }
 });
 
@@ -41,22 +44,15 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
-
+    if (!user || !await bcrypt.compare(password, user.password)) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
     const token = jwt.sign(
-      {
-        id: user._id,
-        role: user.role || 'user'
-      },
-      JWT_SECRET,
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-
     res.status(200).json({
       message: 'Login successful',
       token,
@@ -65,11 +61,12 @@ router.post('/login', async (req, res) => {
         name: user.name,
         surname: user.surname,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error logging in:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

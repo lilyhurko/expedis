@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import '../assets/styles/Profile.css';
-import  ForcedLogout from './ForcedLogout.js';
+import styles from '../assets/styles/Profile.module.css';
+import ForcedLogout from './ForcedLogout.js';
 
 function Profile() {
   const [user, setUser] = useState({
@@ -17,16 +17,16 @@ function Profile() {
     axios.get('/api/users/me', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
-    .then(res => {
-      setUser(res.data);
-      setTempUser(res.data);
-      setLoading(false);
-    })
-    .catch(err => {
-      console.error(err);
-      ForcedLogout();
-      setLoading(false);
-    });
+      .then(res => {
+        setUser(res.data);
+        setTempUser(res.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        ForcedLogout();
+        setLoading(false);
+      });
   }, []);
 
   const handleEditOpen = () => {
@@ -46,97 +46,96 @@ function Profile() {
     axios.put('/api/users/me', tempUser, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
-    .then(res => {
-      setUser(tempUser);
-      alert('Profile updated!');
-      setIsModalOpen(false);
-    })
-    .catch(err => {
-      alert('Error while updating!');
-      ForcedLogout();
-    });
+      .then(res => {
+        setUser(tempUser);
+        alert('Profile updated!');
+        setIsModalOpen(false);
+      })
+      .catch(err => {
+        alert('Error while updating!');
+        ForcedLogout();
+      });
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete your profile? ')) {
+    if (window.confirm('Are you sure you want to delete your profile?')) {
       axios.delete('/api/users/me', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
-      .then(() => {
-        alert('Profile deleted!');
-        ForcedLogout();
-      })
-      .catch(err => {
-        alert('Error while deleting!');
-        ForcedLogout();
-      });
+        .then(() => {
+          alert('Profile deleted!');
+          ForcedLogout();
+        })
+        .catch(err => {
+          alert('Error while deleting!');
+          ForcedLogout();
+        });
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className={styles.loading}>Loading...</div>;
 
   return (
-    <div className="form-container">
-      <h2 style={{ textAlign: 'center' }}>My Profile</h2>
-      <p><strong>First Name:</strong> {user.name}</p>
-      <p><strong>Last Name:</strong> {user.surname}</p>
-      <p><strong>Email:</strong> {user.email}</p>
+    <div className={styles.formContainer}>
+      <h2 style={{ textAlign: 'center', fontFamily: 'Playfair Display, serif', color: '#1B3A4B', fontSize: '2rem' }}>My Profile</h2>
+      <p><strong style={{ color: '#1B3A4B' }}>First Name:</strong> {user.name}</p>
+      <p><strong style={{ color: '#1B3A4B' }}>Last Name:</strong> {user.surname}</p>
+      <p><strong style={{ color: '#1B3A4B' }}>Email:</strong> {user.email}</p>
 
-      <div className="button-wrapper">
-        <button className="form-button" style={{ marginRight: '10px' }} onClick={handleEditOpen}>
+      <div className={styles.buttonWrapper}>
+        <button className={styles.formButton} style={{ marginRight: '10px' }} onClick={handleEditOpen}>
           Edit
         </button>
-        <button className="form-button" onClick={handleDelete}>
+        <button className={styles.formButton} onClick={handleDelete}>
           Delete Profile
         </button>
-        
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
-  <div className="modal-overlay">
-    <div className="modal-profile">
-      <div className="modal-header">
-        <h3 className="modal-title">Edit Profile</h3>
-        <button className="modal-close" onClick={handleEditClose} aria-label="Close modal">&times;</button>
-      </div>
-      
-      <div className="modal-content">
-        <input
-          className="form-input"
-          name="name"
-          value={tempUser.name}
-          onChange={handleChange}
-          placeholder="First Name"
-        />
-        <input
-          className="form-input"
-          name="surname"
-          value={tempUser.surname}
-          onChange={handleChange}
-          placeholder="Last Name"
-        />
-        <input
-          className="form-input"
-          name="email"
-          value={tempUser.email}
-          onChange={handleChange}
-          placeholder="Email"
-        />
-      </div>
-      
-      <div className="modal-footer">
-        <button className="form-button" onClick={handleEditClose}>
-          Cancel
-        </button>
-        <button className="form-button primary" onClick={handleUpdate}>
-          Save
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+        <div className={styles.profileModalWrapper}>
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalProfile}>
+              <div className={styles.modalHeader}>
+                <h3 className={styles.modalTitle}>Edit Profile</h3>
+                <button className={styles.modalClose} onClick={handleEditClose} aria-label="Close modal">×</button>
+              </div>
+              
+              <div className={styles.modalContent}>
+                <input
+                  className={styles.formInput}
+                  name="name"
+                  value={tempUser.name}
+                  onChange={handleChange}
+                  placeholder="First Name"
+                />
+                <input
+                  className={styles.formInput}
+                  name="surname"
+                  value={tempUser.surname}
+                  onChange={handleChange}
+                  placeholder="Last Name"
+                />
+                <input
+                  className={styles.formInput}
+                  name="email"
+                  value={tempUser.email}
+                  onChange={handleChange}
+                  placeholder="Email"
+                />
+              </div>
+              
+              <div className={styles.modalFooter}>
+                <button className={styles.formButton} onClick={handleEditClose}>
+                  Cancel
+                </button>
+                <button className={`${styles.formButton} ${styles.primary}`} onClick={handleUpdate}>
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

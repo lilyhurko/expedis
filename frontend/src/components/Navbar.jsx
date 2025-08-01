@@ -30,7 +30,8 @@ function Navbar() {
 
       <ul className={`navbar-links ${menuOpen ? 'active' : ''}`}>
         <li><Link to="/" className={getLinkClass('/')} onClick={() => setMenuOpen(false)}>Home</Link></li>
-        <li><Link to="/offerts" className={getLinkClass('/offerts')} onClick={() => setMenuOpen(false)}>Offerts</Link></li>
+        <li><Link to="/trips" className={getLinkClass('/trips')} onClick={() => setMenuOpen(false)}>Trips</Link></li>
+          <li><Link to="/rent-car" className={getLinkClass('/rent-car')} onClick={() => setMenuOpen(false)}>Rent Car</Link></li>
         <li><Link to="/about" className={getLinkClass('/about')} onClick={() => setMenuOpen(false)}>About Us</Link></li>
         <li className="navbar-auth-mobile">
           <Link to="/login" className="navbar-login-button" onClick={() => setMenuOpen(false)}>Login</Link>

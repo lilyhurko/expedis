@@ -1,40 +1,18 @@
-/**
- * Model oferty - definicja struktury danych ofert w systemie
- * Przechowuje informacje o tytule, opisie, cenie, czasie trwania, zdjęciu i dacie utworzenia oferty
- */
 const mongoose = require('mongoose');
 
 const offerSchema = new mongoose.Schema({
-    title: {
-        type: String,
-        required: true,
-    },
-    description: {
-        type: String,
-        required: true,
-    },
-    price: {
-        type: Number,
-        required: true,
-    },
-    duration: {
-        type: Number,
-        required: true,
-    },
-    imageUrl: {
-        type: String,
-        required: true,
-    },
-     categories: {
-        type: [String],
-        default: [],
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  price: { type: Number, required: true },
+  duration: { type: Number, required: true },
+  city: { type: String, required: true },
+  country: { type: String, required: true },
+  categories: { type: [String], default: [] },
+  availableDates: { type: [Date], default: [] },
+  imageUrls: { type: [String], default: [] },
+  imageUrl: { type: String }, // Backward compatibility
+  mainImageIndex: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
 });
 
-const Offer = mongoose.model('Offer', offerSchema);
-
-module.exports = Offer;
+module.exports = mongoose.model('Offer', offerSchema);
