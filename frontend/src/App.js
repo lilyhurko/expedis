@@ -6,7 +6,6 @@ import UserLayout from './layouts/UserLayout.jsx';
 import GuestLayout from './layouts/GuestLayout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
-
 import Home from './components/Home.jsx';
 import Trips from './components/Trips.jsx';
 import RentCar from './components/RentCar.jsx';
@@ -15,23 +14,24 @@ import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
 import Profile from './components/Profile.jsx';
 import FeedbackPage from './components/FeedbackPage.jsx';
-
+import TripDetails from './components/TripDetails.jsx';
 
 
 function AppWrapper() {
   return (
     <Routes>
-      {/* Публічні сторінки в GuestLayout */}
+      {/* Public pages in GuestLayout */}
       <Route element={<GuestLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/trips" element={<Trips />} />
+        <Route path="/offer/:offerId" element={<TripDetails />} />
         <Route path="/rent-car" element={<RentCar />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Route>
       
-      {/* Захищені сторінки в UserLayout */}
+      {/* Protected pages in UserLayout */}
       <Route
         element={
           <ProtectedRoute>
@@ -43,7 +43,6 @@ function AppWrapper() {
         <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/trips" element={<Trips />} />
       </Route>
-      
     </Routes>
   );
 }

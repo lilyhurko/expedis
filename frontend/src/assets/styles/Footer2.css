@@ -1,0 +1,48 @@
+/* Footer.css */
+.footer2 {
+  background-color: #252939;
+  color: #e2c9b1;
+  padding: 40px 20px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.footer-container {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.footer-left, .footer-center, .footer-right {
+  flex: 1;
+  min-width: 200px;
+}
+
+.footer-logo {
+  font-size: 2.5rem;
+  margin-top: 10px;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-links li {
+  margin: 8px 0;
+}
+
+.footer-links a {
+  color: #e2c9b1;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
+.footer-bottom {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.9rem;
+}

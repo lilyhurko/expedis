@@ -6,7 +6,6 @@ const LocationPicker = ({ setCityCountry, initialCity = '', initialCountry = '' 
   const [error, setError] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Fetch city suggestions based on input
   useEffect(() => {
     if (cityInput.length < 2) {
       setSuggestions([]);
@@ -43,7 +42,6 @@ const LocationPicker = ({ setCityCountry, initialCity = '', initialCountry = '' 
     return () => clearTimeout(debounce);
   }, [cityInput]);
 
-  // Handle city selection from suggestions
   const handleCitySelect = (suggestion) => {
     setCityInput(suggestion.name);
     setCityCountry({ city: suggestion.name, country: suggestion.country });
@@ -51,7 +49,6 @@ const LocationPicker = ({ setCityCountry, initialCity = '', initialCountry = '' 
     setError('');
   };
 
-  // Handle input change
   const handleCityChange = (e) => {
     setCityInput(e.target.value);
     if (!e.target.value) {

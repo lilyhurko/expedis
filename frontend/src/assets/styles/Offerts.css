@@ -21,13 +21,13 @@
 }
 
 .offer-card {
-    width: 100%;
-    border-radius: 12px;
-    background-color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    position: relative;
+  width: 100%;
+  border-radius: 12px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
 }
 
 .offer-card:hover {
@@ -85,12 +85,12 @@
 }
 
 .offer-footer {
-    flex-shrink: 0;
-    border-top: 1px solid #ddd;
-    background: white;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  flex-shrink: 0;
+  border-top: 1px solid #ddd;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .my-modal .modal-price {
   font-family: "Playfair Display", serif;
@@ -108,18 +108,19 @@
   color: #1b3a4b;
   margin-right: 1rem;
 }
-.book-now-button, .add-offer-button {
-    background-color: #1b3a4b;
-    color: white;
-    padding: 10px 20px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    font-family: "Poppins", sans-serif;
-    align-self: center;
-    margin-top: 4px;
+.book-now-button,
+.add-offer-button {
+  background-color: #1b3a4b;
+  color: white;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-family: "Poppins", sans-serif;
+  align-self: center;
+  margin-top: 4px;
 }
 
 .book-now-button:hover {
@@ -388,23 +389,26 @@
 }
 
 @media (max-width: 768px) {
-    .modal-footer {
-        flex-direction: column;
-    }
+  .modal-footer {
+    flex-direction: column;
+  }
 
-    .modal-footer .btn {
-        width: 100%;
-    }
+  .modal-footer .btn {
+    width: 100%;
+  }
 
-    .offers-grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 cards per row on medium screens */
-    }
+  .offers-grid {
+    grid-template-columns: repeat(
+      2,
+      1fr
+    ); /* 2 cards per row on medium screens */
+  }
 }
 
 @media (max-width: 480px) {
-    .offers-grid {
-        grid-template-columns: 1fr; /* 1 card per row on small screens */
-    }
+  .offers-grid {
+    grid-template-columns: 1fr; /* 1 card per row on small screens */
+  }
 }
 
 .admin-actions {
@@ -629,7 +633,7 @@
 }
 
 .preview-image.main-image {
-  border: 2px solid #007bff;
+  border: 2px solid #1b3a4b;
 }
 
 .remove-image-btn {
@@ -653,8 +657,293 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  background: #007bff;
+  background: #1b3a4b;
   color: white;
   padding: 2px 5px;
   font-size: 12px;
+}
+
+/* Trips */
+.trip-details-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px;
+}
+
+.trip-header {
+  margin-bottom: 20px;
+}
+
+.trip-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-right: 10px;
+  display: inline-block;
+  font-family: "Playfair Display", serif;
+  color: #1b3a4b;
+}
+
+.trip-rating {
+  display: inline-flex;
+  gap: 4px;
+  vertical-align: middle;
+}
+
+.trip-location {
+  font-size: 14px;
+  color: #555;
+}
+
+.trip-grid {
+  display: grid;
+  grid-template-columns: 8fr 4fr;
+  gap: 20px;
+}
+
+.trip-main {
+  background: #fff;
+}
+
+.trip-tabs ul {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #aaa;
+  margin-top: 15px;
+  padding-top: 5px;
+}
+
+.trip-tabs li {
+  font-size: 14px;
+  cursor: pointer;
+  color: #222;
+}
+.trip-grid {
+  display: flex;
+  gap: 20px; /* відстань між колонками */
+  align-items: flex-start; /* щоб вирівнялось по верху */
+}
+
+/* ліва частина займає більше місця */
+.trip-main {
+  flex: 3;
+}
+
+/* права колонка (booking-card) */
+.booking-card {
+  flex: 1;
+  max-width: 320px; /* щоб не розтягувалась занадто */
+}
+
+.booking-card {
+  background: #e2d4bb;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.booking-card input {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
+
+.booking-card .price {
+  font-weight: bold;
+  font-size: 18px;
+  margin: 10px 0;
+  text-align: right;
+}
+
+.booking-card .book-button {
+  width: 100%;
+  border: 1px solid #222;
+  background: transparent;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.photo-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.main-photo img {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.main-photo img:hover {
+  transform: scale(1.02);
+}
+
+.thumbnails {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+}
+
+.thumbnail {
+  flex: 0 0 80px;
+  height: 60px;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: border 0.2s ease;
+}
+.thumbnail.active {
+  border: 2px solid #1b3a4b;
+}
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  color: white;
+  cursor: pointer;
+}
+
+.star-selected {
+  color: #e2d4bb; /* золотий */
+  font-size: 1.2rem;
+}
+
+.star-unselected {
+  color: #ccc; /* сірий */
+  font-size: 1.2rem;
+}
+/* Existing styles in Offerts.css should remain unchanged, add these new styles */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h3 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.traveler-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.traveler-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.traveler-controls button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.traveler-controls button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+.child-birth-date {
+  margin-bottom: 15px;
+}
+
+.child-birth-date label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.child-birth-date input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modal-close-button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.traveler-button {
+  background: #f8f9fa;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.booking-card input,
+.booking-card select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.price {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.book-button {
+  background: #007bff;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
 }

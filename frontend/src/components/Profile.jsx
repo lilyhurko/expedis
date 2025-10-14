@@ -24,8 +24,9 @@ function Profile() {
       })
       .catch(err => {
         console.error(err);
-        ForcedLogout();
         setLoading(false);
+        ForcedLogout();
+
       });
   }, []);
 

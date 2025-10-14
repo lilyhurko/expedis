@@ -26,62 +26,31 @@ const EditOfferModal = ({
     city: editFormData.city || "",
     country: editFormData.country || "",
   });
+  const [placesToVisit, setPlacesToVisit] = useState(
+    editFormData.placesToVisit || [{ name: "", description: "", image: null }]
+  );
 
   const ALL_CATEGORIES = [
-    "Adventure",
-    "Culture",
-    "Relaxation",
-    "Nature",
-    "Hiking",
-    "Skiing",
-    "Beach",
-    "History",
-    "Nightlife",
-    "Food",
-    "Wildlife",
-    "Romantic",
-    "Luxury",
-    "Budget",
-    "Camping",
-    "Backpacking",
-    "Photography",
-    "Yoga",
-    "Surfing",
-    "Diving",
-    "Art",
-    "Architecture",
-    "Shopping",
-    "Festival",
-    "Wellness",
+    "Adventure", "Culture", "Relaxation", "Nature", "Hiking", "Skiing",
+    "Beach", "History", "Nightlife", "Food", "Wildlife", "Romantic",
+    "Luxury", "Budget", "Camping", "Backpacking", "Photography", "Yoga",
+    "Surfing", "Diving", "Art", "Architecture", "Shopping", "Festival", "Wellness"
   ];
 
   useEffect(() => {
-  console.log('offer.categories (raw):', offer?.categories);
-  if (offer && offer.categories) {
-    let cleanedCategories = [];
-    if (Array.isArray(offer.categories)) {
-      cleanedCategories = offer.categories
-        .map(cat => {
-          try {
-            let cleanedCat = cat.replace(/^"|"$/g, '').replace(/\\"/g, '"');
-            if (cleanedCat.startsWith('[') && cleanedCat.endsWith(']')) {
-              const parsed = JSON.parse(cleanedCat);
-              return Array.isArray(parsed) ? parsed.find(p => typeof p === 'string' && p.trim().length > 0) : cleanedCat;
-            }
-            return cleanedCat;
-          } catch (e) {
-            return cat.replace(/^"|"$/g, '').trim();
-          }
-        })
-        .filter(cat => typeof cat === 'string' && cat.length > 0 && ALL_CATEGORIES.includes(cat));
+    if (offer && offer.categories) {
+      const cleanedCategories = Array.isArray(offer.categories)
+        ? offer.categories
+            .map((cat) => cat.replace(/^"|"$/g, '').replace(/\\"/g, '').trim())
+            .filter((cat) => cat && ALL_CATEGORIES.includes(cat))
+        : [];
+      setEditFormData((prev) => ({
+        ...prev,
+        categories: cleanedCategories.length > 0 ? cleanedCategories : prev.categories || [],
+      }));
     }
-    console.log('cleanedCategories:', cleanedCategories);
-    setEditFormData((prev) => ({
-      ...prev,
-      categories: cleanedCategories.length > 0 ? cleanedCategories : prev.categories || [],
-    }));
-  }
-}, [offer, setEditFormData]);
+  }, [offer, setEditFormData]);
+
   const handleCategoryToggle = (category) => {
     setEditFormData((prev) => {
       const selected = Array.isArray(prev.categories) ? prev.categories : [];
@@ -102,9 +71,7 @@ const EditOfferModal = ({
       return;
     }
 
-    let startDate = periodStart.toDate
-      ? periodStart.toDate()
-      : new Date(periodStart);
+    let startDate = periodStart.toDate ? periodStart.toDate() : new Date(periodStart);
     let endDate = periodEnd.toDate ? periodEnd.toDate() : new Date(periodEnd);
 
     if (endDate < startDate) {
@@ -112,15 +79,10 @@ const EditOfferModal = ({
       return;
     }
 
-    const durationInDays =
-      Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const durationInDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
     let datesToAdd = [];
-    for (
-      let d = new Date(startDate);
-      d <= endDate;
-      d.setDate(d.getDate() + 1)
-    ) {
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       datesToAdd.push(new Date(d).toISOString().split("T")[0]);
     }
 
@@ -191,18 +153,43 @@ const EditOfferModal = ({
     }
   };
 
+  const handlePlaceChange = (index, field, value) => {
+    const newPlaces = [...placesToVisit];
+    newPlaces[index][field] = value;
+    setPlacesToVisit(newPlaces);
+    setEditFormData((prev) => ({ ...prev, placesToVisit: newPlaces }));
+  };
+
+  const addPlace = () => {
+    setPlacesToVisit([...placesToVisit, { name: "", description: "", image: null }]);
+  };
+
+  const removePlace = (index) => {
+    if (placesToVisit.length === 1) {
+      alert("At least one place to visit is required.");
+      return;
+    }
+    const newPlaces = placesToVisit.filter((_, i) => i !== index);
+    setPlacesToVisit(newPlaces);
+    setEditFormData((prev) => ({ ...prev, placesToVisit: newPlaces }));
+  };
+
+  const handlePlaceImageChange = (index, file) => {
+    const newPlaces = [...placesToVisit];
+    newPlaces[index].image = file;
+    setPlacesToVisit(newPlaces);
+    setEditFormData((prev) => ({ ...prev, placesToVisit: newPlaces }));
+  };
+
   const onSubmit = (e) => {
     e.preventDefault();
 
-    // Initialize formData at the start
     const formData = new FormData();
 
-    // Append _id if it exists
     if (editFormData._id) {
       formData.append("_id", editFormData._id);
     }
 
-    // Validation checks
     if (!editFormData.title.trim()) {
       alert("Title is required.");
       return;
@@ -219,26 +206,15 @@ const EditOfferModal = ({
       alert("Country is required.");
       return;
     }
-    if (
-      !editFormData.price ||
-      isNaN(editFormData.price) ||
-      editFormData.price <= 0
-    ) {
+    if (!editFormData.price || isNaN(editFormData.price) || editFormData.price <= 0) {
       alert("Price must be a valid positive number.");
       return;
     }
-    if (
-      !editFormData.duration ||
-      isNaN(editFormData.duration) ||
-      editFormData.duration <= 0
-    ) {
+    if (!editFormData.duration || isNaN(editFormData.duration) || editFormData.duration <= 0) {
       alert("Duration must be a valid positive number.");
       return;
     }
-    if (
-      !editFormData.availableDates ||
-      editFormData.availableDates.length === 0
-    ) {
+    if (!editFormData.availableDates || editFormData.availableDates.length === 0) {
       alert("At least one available date is required.");
       return;
     }
@@ -257,28 +233,34 @@ const EditOfferModal = ({
       alert("Please select a main image.");
       return;
     }
+    if (!placesToVisit.some((place) => place.name.trim())) {
+      alert("At least one place to visit with a valid name is required.");
+      return;
+    }
 
-    // Append form data
     formData.append("title", editFormData.title);
     formData.append("description", editFormData.description);
     formData.append("price", editFormData.price);
     formData.append("duration", editFormData.duration);
     formData.append("city", editFormData.city);
     formData.append("country", editFormData.country);
+    formData.append("categories", JSON.stringify(editFormData.categories || []));
+    formData.append("availableDates", JSON.stringify(editFormData.availableDates || []));
     formData.append(
-      "categories",
-      JSON.stringify(editFormData.categories || [])
-    );
-    formData.append(
-      "availableDates",
-      JSON.stringify(editFormData.availableDates || [])
+      "placesToVisit",
+      JSON.stringify(placesToVisit.map(({ name, description }) => ({ name, description })))
     );
     formData.append("mainImageIndex", mainImageIndex);
     if (editFormData.images) {
-      editFormData.images.forEach((image, index) => {
+      editFormData.images.forEach((image) => {
         formData.append("images", image);
       });
     }
+    placesToVisit.forEach((place, index) => {
+      if (place.image) {
+        formData.append("placeImages", place.image);
+      }
+    });
     if (editFormData.imageUrls) {
       formData.append("imageUrls", JSON.stringify(editFormData.imageUrls));
     }
@@ -303,9 +285,7 @@ const EditOfferModal = ({
           <h3 className="modal-title">
             Edit Offer: {offer?.title || "Selected Offer"}
           </h3>
-          <button className="modal-close" onClick={closeModal}>
-            ×
-          </button>
+          <button className="modal-close" onClick={closeModal}>×</button>
         </div>
         <div className="modal-body">
           <form id="offer-form" onSubmit={onSubmit}>
@@ -339,11 +319,7 @@ const EditOfferModal = ({
                   <button
                     key={category}
                     type="button"
-                    className={`category-chip ${
-                      editFormData.categories?.includes(category)
-                        ? "selected"
-                        : ""
-                    }`}
+                    className={`category-chip ${editFormData.categories?.includes(category) ? "selected" : ""}`}
                     onClick={() => handleCategoryToggle(category)}
                   >
                     {category}
@@ -360,6 +336,50 @@ const EditOfferModal = ({
               />
             </div>
             <div className="form-group">
+              <label className="form-label">Places to Visit:</label>
+              {placesToVisit.map((place, index) => (
+                <div key={index} className="form-group place-group">
+                  <input
+                    type="text"
+                    value={place.name}
+                    onChange={(e) => handlePlaceChange(index, "name", e.target.value)}
+                    placeholder="Place Name"
+                    required
+                    className="form-input"
+                  />
+                  <textarea
+                    value={place.description}
+                    onChange={(e) => handlePlaceChange(index, "description", e.target.value)}
+                    placeholder="Place Description"
+                    className="form-input form-textarea"
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handlePlaceImageChange(index, e.target.files[0])}
+                    className="form-input"
+                  />
+                  {placesToVisit.length > 1 && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => removePlace(index)}
+                    >
+                      Remove Place
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                className="btn btn-icon-only"
+                onClick={addPlace}
+                title="Add Place"
+              >
+                <img src={plusIcon} alt="Add" style={{ width: "35px", height: "35px" }} />
+              </button>
+            </div>
+            <div className="form-group">
               <label className="form-label">Duration (days):</label>
               <input
                 className="form-input"
@@ -371,9 +391,7 @@ const EditOfferModal = ({
               />
             </div>
             <div className="form-group">
-              <label className="form-label">
-                Available Dates (manual selection):
-              </label>
+              <label className="form-label">Available Dates (manual selection):</label>
               <div className="date-picker-container">
                 <DatePicker
                   multiple
@@ -392,9 +410,7 @@ const EditOfferModal = ({
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">
-                Add Date Period (includes duration):
-              </label>
+              <label className="form-label">Add Date Period (includes duration):</label>
               <div className="date-period-container">
                 <div className="date-picker-container">
                   <DatePicker
@@ -420,11 +436,7 @@ const EditOfferModal = ({
                   onClick={addPeriodDates}
                   title="Add Period"
                 >
-                  <img
-                    src={plusIcon}
-                    alt="Add"
-                    style={{ width: "35px", height: "35px" }}
-                  />
+                  <img src={plusIcon} alt="Add" style={{ width: "35px", height: "35px" }} />
                 </button>
               </div>
             </div>
@@ -460,9 +472,7 @@ const EditOfferModal = ({
                         <img
                           src={img.preview}
                           alt={`Preview ${index + 1}`}
-                          className={`preview-image ${
-                            mainImageIndex === index ? "main-image" : ""
-                          }`}
+                          className={`preview-image ${mainImageIndex === index ? "main-image" : ""}`}
                           onClick={() => setMainImage(index)}
                         />
                         <button
@@ -485,16 +495,14 @@ const EditOfferModal = ({
         </div>
         <div className="modal-footer sticky-footer my-modal">
           <span className="modal-price">{editFormData.price || 0} PLN</span>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={closeModal}
-          >
-            Cancel
-          </button>
-          <button type="submit" form="offer-form" className="btn btn-primary">
-            Save Changes
-          </button>
+          <div className="buttons-group">
+            <button type="button" className="btn btn-secondary" onClick={closeModal}>
+              Cancel
+            </button>
+            <button type="submit" form="offer-form" className="btn btn-primary">
+              Save Changes
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -516,6 +524,13 @@ EditOfferModal.propTypes = {
     ),
     imageUrls: PropTypes.arrayOf(PropTypes.string),
     mainImageIndex: PropTypes.number,
+    placesToVisit: PropTypes.arrayOf(
+      PropTypes.shape({
+        name: PropTypes.string,
+        description: PropTypes.string,
+        image: PropTypes.any,
+      })
+    ),
   }).isRequired,
   editFormData: PropTypes.shape({
     _id: PropTypes.string,
@@ -532,6 +547,13 @@ EditOfferModal.propTypes = {
     images: PropTypes.arrayOf(PropTypes.instanceOf(File)),
     imageUrls: PropTypes.arrayOf(PropTypes.string),
     mainImageIndex: PropTypes.number,
+    placesToVisit: PropTypes.arrayOf(
+      PropTypes.shape({
+        name: PropTypes.string,
+        description: PropTypes.string,
+        image: PropTypes.any,
+      })
+    ),
   }).isRequired,
   setEditFormData: PropTypes.func.isRequired,
   handleEditFormChange: PropTypes.func.isRequired,

@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import '../assets/styles/TopDestinations.css';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import "../assets/styles/TopDestinations.css";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-// Placeholder for authentication state (replace with your auth logic)
-const isAuthenticated = () => !!localStorage.getItem('token'); // Match Offerts logic
+const isAuthenticated = () => !!localStorage.getItem("token"); 
 
 const TopDestinations = () => {
   const [destinations, setDestinations] = useState([]);
@@ -14,28 +13,32 @@ const TopDestinations = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-const fetchDestinations = async () => {
-  try {
-    const response = await axios.get('http://localhost:5001/api/offers');
+    const fetchDestinations = async () => {
+      try {
+        const response = await axios.get("http://localhost:5001/api/offers");
         const fetchedDestinations = response.data.map((offer) => ({
           name: offer.title,
           tags: offer.categories,
           count: offer.categories.length.toString(),
           key: offer._id,
-          image: offer.imageUrl.startsWith('http')
-            ? offer.imageUrl
-            : `${window.location.origin}${offer.imageUrl}`,
+          image:
+            offer.imageUrl && offer.imageUrl.startsWith("http")
+              ? offer.imageUrl
+              : offer.imageUrl
+              ? `${window.location.origin}${offer.imageUrl}`
+              : "https://via.placeholder.com/300x200?text=No+Image",
+
           description: offer.description,
           price: `from ${offer.price} PLN`,
           duration: `${offer.duration} days`,
         }));
         setDestinations(fetchedDestinations);
         setSelected(fetchedDestinations[0] || null);
-     } catch (err) {
-    console.error('Error fetching destinations:', err);
-    setError('Failed to load destinations. Please try again later.');
-  }
-};
+      } catch (err) {
+        console.error("Error fetching destinations:", err);
+        setError("Failed to load destinations. Please try again later.");
+      }
+    };
 
     fetchDestinations();
   }, []);
@@ -47,12 +50,11 @@ const fetchDestinations = async () => {
 
   const handleBookNow = (offerId) => {
     if (!isAuthenticated()) {
-      localStorage.setItem('selectedOffer', offerId); // Match Offerts logic
-      navigate('/login');
+      localStorage.setItem("selectedOffer", offerId);
+      navigate("/login");
     } else {
-      setSelected(destinations.find(o => o._id === offerId)); // Changed 'offers' to 'destinations'
-      // You can add booking modal logic here or navigate to /offerts with offerId
-      navigate(`/Trips?offer=${offerId}`); // Example redirect to Offerts page
+      setSelected(destinations.find((o) => o._id === offerId));
+      navigate(`/Trips?offer=${offerId}`); 
     }
     setShowModal(false);
   };
@@ -77,11 +79,11 @@ const fetchDestinations = async () => {
           {destinations.map((dest) => (
             <div
               key={dest.key}
-              className={`city ${selected?.key === dest.key ? 'active' : ''}`}
+              className={`city ${selected?.key === dest.key ? "active" : ""}`}
               onClick={() => handleOpen(dest)}
             >
               <span>{dest.name}</span>
-              <span className="tag">{dest.tags[0] || 'N/A'}</span>
+              <span className="tag">{dest.tags[0] || "N/A"}</span>
               <span className="count">{dest.count}</span>
             </div>
           ))}
@@ -98,14 +100,18 @@ const fetchDestinations = async () => {
           <div className="modal modal-lg">
             <div className="modal-header">
               <h3 className="modal-title">{selected.name}</h3>
-              <button className="modal-close" onClick={closeModal}>×</button>
+              <button className="modal-close" onClick={closeModal}>
+                ×
+              </button>
             </div>
             <div className="modal-body">
               <div className="destination-modal-content">
                 <p className="modal-description">{selected.description}</p>
                 <div className="tags-container">
                   {selected.tags.map((tag, index) => (
-                    <span key={index} className="custom-tag">{tag}</span>
+                    <span key={index} className="custom-tag">
+                      {tag}
+                    </span>
                   ))}
                 </div>
                 <div className="duration-label">
@@ -114,10 +120,11 @@ const fetchDestinations = async () => {
               </div>
             </div>
             <div className="modal-footer">
-              <div className="price-label">
-                Price: {selected.price}
-              </div>
-              <button className="btn btn-primary" onClick={() => handleBookNow(selected.key)}>
+              <div className="price-label">Price: {selected.price}</div>
+              <button
+                className="btn btn-primary"
+                onClick={() => handleBookNow(selected.key)}
+              >
                 Book Now
               </button>
             </div>

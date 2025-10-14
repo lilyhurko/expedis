@@ -1,4 +1,3 @@
-// layouts/UserLayout.jsx
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import UserNavbar from '../components/UserNavbar.jsx';

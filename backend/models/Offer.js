@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'); 
 
 const offerSchema = new mongoose.Schema({
   title: { type: String, required: true },
@@ -7,12 +7,24 @@ const offerSchema = new mongoose.Schema({
   duration: { type: Number, required: true },
   city: { type: String, required: true },
   country: { type: String, required: true },
-  categories: { type: [String], default: [] },
-  availableDates: { type: [Date], default: [] },
-  imageUrls: { type: [String], default: [] },
-  imageUrl: { type: String }, // Backward compatibility
-  mainImageIndex: { type: Number, default: 0 },
-  createdAt: { type: Date, default: Date.now },
+  departureAirportIATA: { type: String, required: true },
+  categories: [{ type: String }],
+  availableDates: [{ type: Date }],
+  imageUrls: [{ type: String }],
+  imageUrl: { type: String },
+  mainImageIndex: { type: Number },
+  placesToVisit: [
+    {
+      name: { type: String, required: true },
+      description: { type: String },
+      imageUrl: { type: String },
+    },
+  ],
+  comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }], 
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, 
+  flightConnections: [{ type: mongoose.Schema.Types.ObjectId, ref: "FlightConnection" }],
+}, {
+  strictPopulate: false 
 });
 
-module.exports = mongoose.model('Offer', offerSchema);
+module.exports = mongoose.model("Offer", offerSchema);

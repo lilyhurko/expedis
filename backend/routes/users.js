@@ -3,21 +3,21 @@ const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-// Middleware do weryfikacji tokenu JWT
 const authenticate = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'No token provided' });
 
   try {
-    const decoded = jwt.verify(token, 'mySuperSecretKey');
+    const decoded = jwt.verify(token,process.env.JWT_SECRET);
     req.userId = decoded.id;
     next();
   } catch (err) {
+    console.log(token)
     return res.status(403).json({ message: 'Invalid token' });
   }
 };
 
-// Pobierz dane aktualnie zalogowanego użytkownika (bez hasła)
+
 router.get('/me', authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-password');
@@ -28,7 +28,6 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
-// Aktualizuj profil aktualnie zalogowanego użytkownika
 router.put('/me', authenticate, async (req, res) => {
   const { name, surname, email } = req.body;
 
@@ -46,7 +45,6 @@ router.put('/me', authenticate, async (req, res) => {
   }
 });
 
-// Usuń konto aktualnie zalogowanego użytkownika
 router.delete('/me', authenticate, async (req, res) => {
   try {
     await User.findByIdAndDelete(req.userId);

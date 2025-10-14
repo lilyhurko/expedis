@@ -8,6 +8,7 @@ import AddOfferModal from "./AddOfferModal.jsx";
 import EditOfferModal from "./EditOfferModal.jsx";
 import BookingModal from "./BookingModal.jsx";
 import ForcedLogout from "./ForcedLogout.js";
+import Footer2 from "./Footer2.jsx";
 
 const Trips = () => {
   const [offers, setOffers] = useState([]);
@@ -37,26 +38,30 @@ const Trips = () => {
   const [newOfferData, setNewOfferData] = useState({
     title: "",
     description: "",
-    duration: "",
     price: "",
+    duration: "",
     city: "",
     country: "",
+    departureAirportIATA: "",
     categories: [],
     availableDates: [],
     images: [],
-    mainImageIndex: 0,
+    mainImageIndex: null,
+    placesToVisit: [{ name: "", description: "", image: null }],
+    flightConnections: [{ departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" }],
   });
 
   const navigate = useNavigate();
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001'; 
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
+    const userDataStr = localStorage.getItem("user");
     setIsAuthenticated(!!token);
 
-    if (userData) {
+    if (userDataStr) {
       try {
-        const parsedUser = JSON.parse(userData);
+        const parsedUser = JSON.parse(userDataStr);
         setUserRole(parsedUser.role || "");
         setUserData(parsedUser);
       } catch (error) {
@@ -68,13 +73,14 @@ const Trips = () => {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5001/api/offers")
+    fetch(`${apiUrl}/api/offers`)
       .then((res) => {
         if (!res.ok)
           throw new Error(`Failed to load offers: ${res.statusText}`);
         return res.json();
       })
       .then((data) => {
+        console.log("Fetched offers:", data); 
         setOffers(data);
         setLoading(false);
       })
@@ -82,7 +88,7 @@ const Trips = () => {
         console.error("Error fetching offers:", error);
         setLoading(false);
       });
-  }, []);
+  }, [apiUrl]);
 
   const handleBookNow = (offerId) => {
     if (!isAuthenticated) {
@@ -111,11 +117,12 @@ const Trips = () => {
         images: [],
         imageUrls:
           offerToEdit.imageUrls ||
-          (offerToEdit.imageUrl ? [offerToEdit.imageUrl] : []), // Handle legacy imageUrl
+          (offerToEdit.imageUrl ? [offerToEdit.imageUrl] : []),
         mainImageIndex: offerToEdit.mainImageIndex || 0,
       });
     }
   };
+
   const handleAddNewOfferClick = () => {
     setShowAddModal(true);
   };
@@ -134,28 +141,31 @@ const Trips = () => {
 
   const handleAddOfferSubmit = async (formData) => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Authentication token is missing.");
-      ForcedLogout();
-      return;
-    }
+    console.log("Token before send:", token ? "Present" : "MISSING");
+    if (!token) return ForcedLogout();
 
     try {
-      const response = await fetch("http://localhost:5001/api/offers", {
+      const formDataEntries = {};
+      for (const [key, value] of formData.entries()) {
+        formDataEntries[key] = value;
+      }
+      console.log('FormData being sent to add:', formDataEntries);
+
+      const response = await fetch(`${apiUrl}/api/offers`, { 
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ message: "Server error" }));
-        throw new Error(
-          errorData.message || `Server error: ${response.status}`
-        );
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { message: `Raw error: ${response.statusText}` };
+        }
+        console.log("Server error details:", errorData);
+        throw new Error(errorData.message || `Server error: ${response.status}`);
       }
 
       const newOffer = await response.json();
@@ -164,14 +174,17 @@ const Trips = () => {
       setNewOfferData({
         title: "",
         description: "",
-        duration: "",
         price: "",
+        duration: "",
         city: "",
         country: "",
+        departureAirportIATA: "",
         categories: [],
         availableDates: [],
         images: [],
-        mainImageIndex: 0,
+        mainImageIndex: null,
+        placesToVisit: [{ name: "", description: "", image: null }],
+        flightConnections: [{ departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" }],
       });
       alert("Offer added successfully!");
     } catch (error) {
@@ -192,7 +205,7 @@ const Trips = () => {
       return;
     }
 
-    fetch(`http://localhost:5001/api/offers/${offerId}`, {
+    fetch(`${apiUrl}/api/offers/${offerId}`, { 
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -226,61 +239,59 @@ const Trips = () => {
     }));
   };
 
-const handleEditSubmit = async (formData) => {
-  const id = formData.get("_id") || editFormData._id;
-  if (!id) {
-    console.error("No offer ID found!");
-    alert("No offer ID found!");
-    return;
-  }
-  const token = localStorage.getItem("token");
-  console.log("Token:", token);
-  if (!token) {
-    alert("Authentication token is missing.");
-    ForcedLogout();
-    navigate("/login");
-    return;
-  }
-  try {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-    // Log FormData contents
-    const formDataEntries = {};
-    for (const [key, value] of formData.entries()) {
-      formDataEntries[key] = value;
+  const handleEditSubmit = async (formData) => {
+    const id = formData.get("_id") || editFormData._id;
+    if (!id) {
+      console.error("No offer ID found!");
+      alert("No offer ID found!");
+      return;
     }
-    console.log('FormData being sent:', formDataEntries);
+    const token = localStorage.getItem("token");
+    console.log("Token:", token);
+    if (!token) {
+      alert("Authentication token is missing.");
+      ForcedLogout();
+      navigate("/login");
+      return;
+    }
+    try {
+      const formDataEntries = {};
+      for (const [key, value] of formData.entries()) {
+        formDataEntries[key] = value;
+      }
+      console.log('FormData being sent:', formDataEntries);
 
-    const response = await fetch(`${apiUrl}/api/offers/${id}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: "Server error" }));
-      if (response.status === 401) {
-        alert("Session expired or invalid token. Please log in again.");
-        ForcedLogout();
-        navigate("/login");
-        return;
+      const response = await fetch(`${apiUrl}/api/offers/${id}`, { 
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Server error" }));
+        if (response.status === 401) {
+          alert("Session expired or invalid token. Please log in again.");
+          ForcedLogout();
+          navigate("/login");
+          return;
+        }
+        if (response.status === 404) {
+          throw new Error("Offer not found on the server.");
+        }
+        throw new Error(errorData.message || `Server error: ${response.status}`);
       }
-      if (response.status === 404) {
-        throw new Error("Offer not found on the server.");
-      }
-      throw new Error(errorData.message || `Server error: ${response.status}`);
+      const updatedOffer = await response.json();
+      setOffers((prev) =>
+        prev.map((offer) => (offer._id === updatedOffer._id ? updatedOffer : offer))
+      );
+      setSelectedOffer(null);
+      alert("Offer updated successfully!");
+    } catch (error) {
+      console.error("Error updating offer:", error.message);
+      alert(`Failed to update offer: ${error.message}`);
     }
-    const updatedOffer = await response.json();
-    setOffers((prev) =>
-      prev.map((offer) => (offer._id === updatedOffer._id ? updatedOffer : offer))
-    );
-    setSelectedOffer(null);
-    alert("Offer updated successfully!");
-  } catch (error) {
-    console.error("Error updating offer:", error.message);
-    alert(`Failed to update offer: ${error.message}`);
-  }
-};
+  };
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
@@ -324,9 +335,9 @@ const handleEditSubmit = async (formData) => {
           <p className="offers-empty">No offers found.</p>
         ) : (
           <div className="offers-grid">
-            {offers.map((offer) => (
+            {offers.map((offer, index) => (
               <OfferCard
-                key={offer._id}
+                key={offer._id || index} 
                 offer={offer}
                 userRole={userRole}
                 handleBookNow={handleBookNow}
@@ -378,6 +389,7 @@ const handleEditSubmit = async (formData) => {
           />
         )}
       </div>
+      <Footer2 />
     </>
   );
 };

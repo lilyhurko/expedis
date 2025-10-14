@@ -6,13 +6,11 @@ import axios from 'axios';
 const Testimonials = () => {
   const [comments, setComments] = useState([]);
   const [error, setError] = useState(null);
-
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001'; 
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        // Зміни URL під свій бекенд
-        const response = await axios.get('http://localhost:5001/api/comments');
-        // Візьмемо два найновіших коментарі
+        const response = await axios.get(`${apiUrl}/api/comments`);
         const latestComments = response.data.slice(0, 2);
         setComments(latestComments);
       } catch (err) {
@@ -22,14 +20,14 @@ const Testimonials = () => {
     };
 
     fetchComments();
-  }, []);
+  }, [apiUrl]); 
 
   if (error) {
     return <div className="error-message">{error}</div>;
   }
 
   if (comments.length === 0) {
-    return <p>Loading testimonials...</p>;
+    return <p>Loading testimonials...</p>; 
   }
 
   return (
@@ -46,7 +44,6 @@ const Testimonials = () => {
             Discover what our customers have to say about their experience with our service.
             Read real reviews from satisfied users and get inspired by their stories.
           </p>
-          {/* Можна додати посилання, якщо є сторінка з усіма відгуками */}
         </div>
 
         <div className="testimonials-right">
@@ -57,7 +54,6 @@ const Testimonials = () => {
                 <img src={userIcon} alt="User" className="user-icon" />
                 <div>
                   <strong>{username}</strong>
-                  {/* Тут можна додати інші дані, якщо вони є */}
                 </div>
               </div>
             </div>

@@ -9,34 +9,40 @@ function Login() {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post('http://localhost:5001/api/auth/login', {
-        email,
-        password,
-      });
+  e.preventDefault();
+  try {
+    const response = await axios.post('http://localhost:5001/api/auth/login', {
+      email,
+      password,
+    });
 
-      if (response.data && response.data.user) {
-        localStorage.setItem('token', response.data.token);
+    if (response.data && response.data.token) {
+      localStorage.setItem('token', response.data.token);
+
+      if (response.data.user) {
         localStorage.setItem('user', JSON.stringify(response.data.user));
-
-        alert('Login successful!');
-
-        const savedOfferId = localStorage.getItem('selectedOffer');
-        if (savedOfferId) {
-          localStorage.removeItem('selectedOffer');
-          navigate(`/trips`); 
-        } else {
-          navigate('/profile');
-        }
-      } else {
-        throw new Error('Invalid response structure');
       }
-    } catch (error) {
-      console.error(error);
-      alert('Login failed. Please check your credentials.');
+
+      alert('Login successful!');
+
+      const savedOfferId = localStorage.getItem('selectedOffer');
+      if (savedOfferId) {
+        localStorage.removeItem('selectedOffer');
+        navigate(`/trips`);
+      } else {
+        navigate('/profile');
+      }
+    } else {
+      throw new Error('Invalid response structure');
     }
-  };
+  } catch (error) {
+    console.error(error);
+    alert('Login failed. Please check your credentials.');
+  }
+};
+
+
+
 
   return (
     <div className="form-container">

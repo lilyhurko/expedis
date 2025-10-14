@@ -2,9 +2,8 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt'); // Ensure bcrypt is included
+const bcrypt = require('bcrypt'); 
 
-// rejestracja użytkownika
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password, name, surname, role } = req.body;
@@ -18,9 +17,9 @@ router.post('/register', async (req, res) => {
     await user.save();
 
     const token = jwt.sign(
-      { id: user._id, role: user.role }, // Include role for consistency
-      process.env.JWT_SECRET, // Use environment variable
-      { expiresIn: '24h' } // Match login expiry
+      { id: user._id, role: user.role }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '24h' } 
     );
 
     res.status(201).json({
@@ -40,7 +39,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// logowanie użytkownika
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;

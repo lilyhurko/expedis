@@ -1,12 +1,9 @@
-// Trasy administracyjne: dodawanie ofert i usuwanie komentarzy (dostęp tylko dla admina)
-
 const express = require('express');
 const router = express.Router();
 const Offer = require('../models/Offer');
 const Comment = require('../models/Comment');
 const authAdminMiddleware = require('../middleware/authAdminMiddleware');
 
-// Tworzenie nowej oferty (tylko dla administratora)
 router.post('/offers', authAdminMiddleware, async (req, res) => {
   try {
     const { title, description, price, duration, imageUrl } = req.body;
@@ -18,7 +15,6 @@ router.post('/offers', authAdminMiddleware, async (req, res) => {
   }
 });
 
-// Usuwanie wszystkich komentarzy (tylko dla administratora)
 router.delete('/comments', authAdminMiddleware, async (req, res) => {
   try {
     await Comment.deleteMany({});
