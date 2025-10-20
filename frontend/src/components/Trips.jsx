@@ -28,11 +28,29 @@ const Trips = () => {
     duration: "",
     city: "",
     country: "",
+    departureAirportIATA: "",
     categories: [],
     availableDates: [],
     images: [],
     imageUrls: [],
     mainImageIndex: 0,
+    placesToVisit: [{ name: "", description: "", image: null }],
+    flightConnections: [
+      {
+        departureAirportIATA: "",
+        arrivalAirportIATA: "",
+        departureTime: "",
+        arrivalTime: "",
+        flightType: "outbound",
+      },
+      {
+        departureAirportIATA: "",
+        arrivalAirportIATA: "",
+        departureTime: "",
+        arrivalTime: "",
+        flightType: "return",
+      },
+    ],
   });
   const [showAddModal, setShowAddModal] = useState(false);
   const [newOfferData, setNewOfferData] = useState({
@@ -112,6 +130,7 @@ const Trips = () => {
         price: offerToEdit.price || "",
         city: offerToEdit.city || "",
         country: offerToEdit.country || "",
+        departureAirportIATA: offerToEdit.departureAirportIATA || "",
         categories: offerToEdit.categories || [],
         availableDates: offerToEdit.availableDates || [],
         images: [],
@@ -119,6 +138,23 @@ const Trips = () => {
           offerToEdit.imageUrls ||
           (offerToEdit.imageUrl ? [offerToEdit.imageUrl] : []),
         mainImageIndex: offerToEdit.mainImageIndex || 0,
+        placesToVisit: offerToEdit.placesToVisit || [{ name: "", description: "", image: null }],
+        flightConnections: offerToEdit.flightConnections || [
+          {
+            departureAirportIATA: "",
+            arrivalAirportIATA: "",
+            departureTime: "",
+            arrivalTime: "",
+            flightType: "outbound",
+          },
+          {
+            departureAirportIATA: "",
+            arrivalAirportIATA: "",
+            departureTime: "",
+            arrivalTime: "",
+            flightType: "return",
+          },
+        ],
       });
     }
   };

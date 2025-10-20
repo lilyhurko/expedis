@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import DatePicker from "react-multi-date-picker";
 import plusIcon from "../assets/img/plus.png";
 import LocationPicker from "./LocationPicker.js";
+import AirportSelect from "./AirportSelect.js";
+import { flushSync } from "react-dom";
 
 const EditOfferModal = ({
   offer,
@@ -12,44 +14,251 @@ const EditOfferModal = ({
   handleEditSubmit,
   closeModal,
 }) => {
-  const [previewImages, setPreviewImages] = useState(
-    editFormData.imageUrls
-      ?.filter((url) => url && typeof url === "string")
-      .map((url) => ({ preview: url })) || []
-  );
-  const [mainImageIndex, setMainImageIndex] = useState(
-    editFormData.mainImageIndex || 0
-  );
+  const [previewImages, setPreviewImages] = useState([]);
+  const [mainImageIndex, setMainImageIndex] = useState(0);
   const [periodStart, setPeriodStart] = useState(null);
   const [periodEnd, setPeriodEnd] = useState(null);
   const [location, setLocation] = useState({
-    city: editFormData.city || "",
-    country: editFormData.country || "",
+    city: "",
+    country: "",
   });
-  const [placesToVisit, setPlacesToVisit] = useState(
-    editFormData.placesToVisit || [{ name: "", description: "", image: null }]
-  );
+  const [placesToVisit, setPlacesToVisit] = useState([
+    { name: "", description: "", image: null },
+  ]);
+  const [flightConnections, setFlightConnections] = useState([
+    {
+      departureAirportIATA: "",
+      arrivalAirportIATA: "",
+      departureTime: "",
+      arrivalTime: "",
+      flightType: "outbound",
+    },
+    {
+      departureAirportIATA: "",
+      arrivalAirportIATA: "",
+      departureTime: "",
+      arrivalTime: "",
+      flightType: "return",
+    },
+  ]);
+  const [error, setError] = useState(null);
+
+  const prevCityRef = useRef();
+  const prevCountryRef = useRef();
+  const isInitializedRef = useRef(false);
+  const lastFlightConnectionsRef = useRef([]);
 
   const ALL_CATEGORIES = [
-    "Adventure", "Culture", "Relaxation", "Nature", "Hiking", "Skiing",
-    "Beach", "History", "Nightlife", "Food", "Wildlife", "Romantic",
-    "Luxury", "Budget", "Camping", "Backpacking", "Photography", "Yoga",
-    "Surfing", "Diving", "Art", "Architecture", "Shopping", "Festival", "Wellness"
+    "Adventure",
+    "Culture",
+    "Relaxation",
+    "Nature",
+    "Hiking",
+    "Skiing",
+    "Beach",
+    "History",
+    "Nightlife",
+    "Food",
+    "Wildlife",
+    "Romantic",
+    "Luxury",
+    "Budget",
+    "Camping",
+    "Backpacking",
+    "Photography",
+    "Yoga",
+    "Surfing",
+    "Diving",
+    "Art",
+    "Architecture",
+    "Shopping",
+    "Festival",
+    "Wellness",
   ];
 
-  useEffect(() => {
-    if (offer && offer.categories) {
-      const cleanedCategories = Array.isArray(offer.categories)
+  // Full init on mount with guard to prevent loops
+  useLayoutEffect(() => {
+    if (!offer || isInitializedRef.current) {
+      return;
+    }
+    isInitializedRef.current = true;
+
+    console.log("Initializing edit modal with offer:", offer);
+
+    // Categories
+    let cleanedCategories = [];
+    if (offer.categories) {
+      cleanedCategories = Array.isArray(offer.categories)
         ? offer.categories
-            .map((cat) => cat.replace(/^"|"$/g, '').replace(/\\"/g, '').trim())
+            .map((cat) => cat.replace(/^"|"$/g, "").replace(/\\"/g, "").trim())
             .filter((cat) => cat && ALL_CATEGORIES.includes(cat))
         : [];
+    }
+
+    // Location
+    const initCity = offer.city || editFormData.city || "";
+    const initCountry = offer.country || editFormData.country || "";
+    setLocation({ city: initCity, country: initCountry });
+
+    // Set refs IMMEDIATELY to prevent location change reset
+    prevCityRef.current = initCity;
+    prevCountryRef.current = initCountry;
+
+    // Places to visit
+    const initPlaces = (offer.placesToVisit || []).map((place) => ({
+      ...place,
+      image: null,
+    }));
+    if (initPlaces.length === 0) {
+      initPlaces.push({ name: "", description: "", image: null });
+    }
+    setPlacesToVisit(initPlaces);
+
+    // Flight connections - properly structure from offer
+    const offerConnectionsRaw = offer.flightConnections;
+    console.log("Raw flightConnections from offer:", offerConnectionsRaw);
+    let parsedConnections = [];
+    if (typeof offerConnectionsRaw === "string") {
+      try {
+        parsedConnections = JSON.parse(offerConnectionsRaw);
+        console.log("Parsed flightConnections:", parsedConnections);
+      } catch (e) {
+        console.warn("Failed to parse flightConnections string:", e);
+        parsedConnections = [];
+      }
+    } else if (Array.isArray(offerConnectionsRaw)) {
+      parsedConnections = offerConnectionsRaw;
+    }
+    const initConnections = [
+      {
+        departureAirportIATA: parsedConnections[0]?.departureAirportIATA || "",
+        arrivalAirportIATA: parsedConnections[0]?.arrivalAirportIATA || "",
+        departureTime: parsedConnections[0]?.departureTime || "",
+        arrivalTime: parsedConnections[0]?.arrivalTime || "",
+        flightType: "outbound",
+      },
+      {
+        departureAirportIATA: parsedConnections[1]?.departureAirportIATA || "",
+        arrivalAirportIATA: parsedConnections[1]?.arrivalAirportIATA || "",
+        departureTime: parsedConnections[1]?.departureTime || "",
+        arrivalTime: parsedConnections[1]?.arrivalTime || "",
+        flightType: "return",
+      },
+    ];
+
+    console.log("Initialized flight connections:", initConnections); // DEBUG
+    setFlightConnections(initConnections);
+
+    // Images
+    const initPreviews = (offer.imageUrls || [])
+      .filter((url) => url && typeof url === "string")
+      .map((url) => ({ preview: url }));
+    setPreviewImages(initPreviews);
+
+    // Main image index
+    const initMainIndex = offer.mainImageIndex ?? 0;
+    const finalMainIndex =
+      initMainIndex >= 0 && initMainIndex < initPreviews.length
+        ? initMainIndex
+        : 0;
+    setMainImageIndex(finalMainIndex);
+
+    // Available dates
+    const initDates = (offer.availableDates || [])
+      .map((date) => {
+        if (typeof date === "string") {
+          const parsedDate = new Date(date + "T00:00:00Z");
+          return isNaN(parsedDate.getTime()) ? null : parsedDate;
+        }
+        if (date instanceof Date && !isNaN(date.getTime())) return date;
+        return null;
+      })
+      .filter(Boolean);
+
+    // Set all form data at once
+    flushSync(() => {
+      setEditFormData({
+        _id: offer._id,
+        title: offer.title || "",
+        description: offer.description || "",
+        price: offer.price || "",
+        duration: offer.duration || "",
+        city: initCity,
+        country: initCountry,
+        departureAirportIATA: initConnections[0]?.departureAirportIATA || "",
+        categories: cleanedCategories.length > 0 ? cleanedCategories : [],
+        availableDates: initDates,
+        images: [],
+        imageUrls: initPreviews.map((img) => img.preview),
+        mainImageIndex: finalMainIndex,
+        placesToVisit: initPlaces,
+        flightConnections: initConnections,
+      });
+    });
+  }, [offer]); // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (isInitializedRef.current && editFormData.flightConnections) {
+      const stringifiedNew = JSON.stringify(editFormData.flightConnections);
+      const stringifiedLast = JSON.stringify(lastFlightConnectionsRef.current);
+      if (stringifiedNew !== stringifiedLast) {
+        setFlightConnections(editFormData.flightConnections);
+        lastFlightConnectionsRef.current = editFormData.flightConnections;
+        console.log("Synced flightConnections from editFormData:", editFormData.flightConnections);
+      }
+    }
+  }, [editFormData.flightConnections]);
+
+  // Sync location back to form data
+  useEffect(() => {
+    if (isInitializedRef.current) {
       setEditFormData((prev) => ({
         ...prev,
-        categories: cleanedCategories.length > 0 ? cleanedCategories : prev.categories || [],
+        city: location.city,
+        country: location.country,
       }));
     }
-  }, [offer, setEditFormData]);
+  }, [location.city, location.country, setEditFormData]);
+
+  // Reset flights ONLY on actual location change (skip init)
+  useEffect(() => {
+    const currentCity = location.city;
+    const currentCountry = location.country;
+
+    // Only reset if refs are set AND location actually changed
+    if (
+      prevCityRef.current !== undefined &&
+      (currentCity !== prevCityRef.current ||
+        currentCountry !== prevCountryRef.current)
+    ) {
+      console.log("Location changed, resetting flights");
+      const defaultConnections = [
+        {
+          departureAirportIATA: "",
+          arrivalAirportIATA: "",
+          departureTime: "",
+          arrivalTime: "",
+          flightType: "outbound",
+        },
+        {
+          departureAirportIATA: "",
+          arrivalAirportIATA: "",
+          departureTime: "",
+          arrivalTime: "",
+          flightType: "return",
+        },
+      ];
+      setEditFormData((prev) => ({
+        ...prev,
+        departureAirportIATA: "",
+        flightConnections: defaultConnections,
+      }));
+      setFlightConnections(defaultConnections);
+    }
+
+    prevCityRef.current = currentCity;
+    prevCountryRef.current = currentCountry;
+  }, [location.city, location.country, setEditFormData]);
 
   const handleCategoryToggle = (category) => {
     setEditFormData((prev) => {
@@ -59,7 +268,7 @@ const EditOfferModal = ({
       } else if (selected.length < 5) {
         return { ...prev, categories: [...selected, category] };
       } else {
-        alert("You can select up to 5 categories.");
+        setError("You can select up to 5 categories.");
         return prev;
       }
     });
@@ -67,90 +276,85 @@ const EditOfferModal = ({
 
   const addPeriodDates = () => {
     if (!periodStart || !periodEnd) {
-      alert("Please select both start and end dates for the period");
+      setError("Please select both start and end dates for the period");
       return;
     }
 
-    let startDate = periodStart.toDate ? periodStart.toDate() : new Date(periodStart);
+    let startDate = periodStart.toDate
+      ? periodStart.toDate()
+      : new Date(periodStart);
     let endDate = periodEnd.toDate ? periodEnd.toDate() : new Date(periodEnd);
 
+    startDate = new Date(
+      Date.UTC(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+      )
+    );
+    endDate = new Date(
+      Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+    );
+
     if (endDate < startDate) {
-      alert("End date must be after start date");
+      setError("End date must be after start date");
       return;
     }
 
-    const durationInDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const tripDurationInDays =
+      Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
-    let datesToAdd = [];
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      datesToAdd.push(new Date(d).toISOString().split("T")[0]);
+    const periodDates = [];
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      periodDates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    const existingDates = (editFormData.availableDates || [])
-      .map((date) => {
-        if (typeof date === "string") return date;
-        if (date?.toDate) return date.toDate().toISOString().split("T")[0];
-        if (date instanceof Date) return date.toISOString().split("T")[0];
-        return null;
-      })
-      .filter((date) => date !== null);
+    const existingDates = (editFormData.availableDates || []).filter(
+      (date) => date instanceof Date && !isNaN(date.getTime())
+    );
 
-    const allDatesSet = new Set([...existingDates, ...datesToAdd]);
+    const allDates = [...existingDates, ...periodDates];
+    const uniqueDates = [
+      ...new Set(allDates.map((d) => d.toISOString().split("T")[0])),
+    ]
+      .map((iso) => new Date(iso + "T00:00:00"))
+      .sort((a, b) => a - b);
 
     setEditFormData((prev) => ({
       ...prev,
-      availableDates: Array.from(allDatesSet),
-      duration: durationInDays,
+      availableDates: uniqueDates,
+      duration: tripDurationInDays,
     }));
 
     setPeriodStart(null);
     setPeriodEnd(null);
+    setError(null);
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (previewImages.length + files.length > 15) {
-      alert("You can upload a maximum of 15 images.");
-      return;
-    }
+  const handleFlightChange = (index, field, value) => {
+    console.log(`Changing flight ${index} ${field} to:`, value); // **DEBUG**
+    setFlightConnections((prevConnections) => {
+      const updatedConnections = [...prevConnections];
+      updatedConnections[index] = {
+        ...updatedConnections[index],
+        [field]: value,
+      };
 
-    const newImages = files.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
+      setEditFormData((prev) => {
+        const newConnections = [...updatedConnections];
+        return {
+          ...prev,
+          flightConnections: newConnections,
+          ...(field === "departureAirportIATA" && index === 0
+            ? { departureAirportIATA: value }
+            : {}),
+        };
+      });
 
-    setPreviewImages((prev) => [...prev, ...newImages]);
-    setEditFormData((prev) => ({
-      ...prev,
-      images: [...(prev.images || []), ...files],
-    }));
-
-    if (mainImageIndex === null && newImages.length > 0) {
-      setMainImageIndex(previewImages.length);
-    }
-  };
-
-  const setMainImage = (index) => {
-    setMainImageIndex(index);
-    setEditFormData((prev) => ({
-      ...prev,
-      mainImageIndex: index,
-    }));
-  };
-
-  const removeImage = (index) => {
-    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
-    setEditFormData((prev) => ({
-      ...prev,
-      images: prev.images?.filter((_, i) => i !== index) || [],
-      imageUrls: prev.imageUrls?.filter((_, i) => i !== index) || [],
-    }));
-
-    if (mainImageIndex === index) {
-      setMainImageIndex(null);
-    } else if (mainImageIndex !== null && index < mainImageIndex) {
-      setMainImageIndex(mainImageIndex - 1);
-    }
+      return updatedConnections;
+    });
   };
 
   const handlePlaceChange = (index, field, value) => {
@@ -161,12 +365,15 @@ const EditOfferModal = ({
   };
 
   const addPlace = () => {
-    setPlacesToVisit([...placesToVisit, { name: "", description: "", image: null }]);
+    setPlacesToVisit([
+      ...placesToVisit,
+      { name: "", description: "", image: null },
+    ]);
   };
 
   const removePlace = (index) => {
     if (placesToVisit.length === 1) {
-      alert("At least one place to visit is required.");
+      setError("At least one place to visit is required.");
       return;
     }
     const newPlaces = placesToVisit.filter((_, i) => i !== index);
@@ -181,8 +388,78 @@ const EditOfferModal = ({
     setEditFormData((prev) => ({ ...prev, placesToVisit: newPlaces }));
   };
 
-  const onSubmit = (e) => {
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+
+    setPreviewImages((prevImages) => {
+      if (prevImages.length + files.length > 15) {
+        setError("You can upload a maximum of 15 images.");
+        return prevImages;
+      }
+
+      const newImages = files.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+
+      const updatedImages = [...prevImages, ...newImages];
+
+      setEditFormData((prev) => ({
+        ...prev,
+        images: [...(prev.images || []), ...files],
+      }));
+
+      setMainImageIndex((prevMainIndex) => {
+        if (prevMainIndex === null && newImages.length > 0) {
+          return prevImages.length;
+        }
+        return prevMainIndex;
+      });
+
+      return updatedImages;
+    });
+  };
+
+  const setMainImage = (index) => {
+    setMainImageIndex(index);
+    setEditFormData((prev) => ({
+      ...prev,
+      mainImageIndex: index,
+    }));
+  };
+
+  const removeImage = (index) => {
+    if (previewImages[index]?.file) {
+      URL.revokeObjectURL(previewImages[index].preview);
+    }
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+    setEditFormData((prev) => ({
+      ...prev,
+      images: prev.images?.filter((_, i) => i !== index) || [],
+      imageUrls: prev.imageUrls?.filter((_, i) => i !== index) || [],
+    }));
+
+    if (mainImageIndex === index) {
+      setMainImageIndex(null);
+    } else if (mainImageIndex !== null && index < mainImageIndex) {
+      setMainImageIndex(mainImageIndex - 1);
+    }
+  };
+
+  const validateForm = () => {
+    // All fields are now optional, so no validation errors
+    return null;
+  };
+
+  const onSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
     const formData = new FormData();
 
@@ -190,93 +467,92 @@ const EditOfferModal = ({
       formData.append("_id", editFormData._id);
     }
 
-    if (!editFormData.title.trim()) {
-      alert("Title is required.");
-      return;
-    }
-    if (!editFormData.description.trim()) {
-      alert("Description is required.");
-      return;
-    }
-    if (!editFormData.city.trim()) {
-      alert("City is required.");
-      return;
-    }
-    if (!editFormData.country.trim()) {
-      alert("Country is required.");
-      return;
-    }
-    if (!editFormData.price || isNaN(editFormData.price) || editFormData.price <= 0) {
-      alert("Price must be a valid positive number.");
-      return;
-    }
-    if (!editFormData.duration || isNaN(editFormData.duration) || editFormData.duration <= 0) {
-      alert("Duration must be a valid positive number.");
-      return;
-    }
-    if (!editFormData.availableDates || editFormData.availableDates.length === 0) {
-      alert("At least one available date is required.");
-      return;
-    }
-    if (!editFormData.categories || editFormData.categories.length < 1) {
-      alert("Select at least one category.");
-      return;
-    }
-    if (
-      (!editFormData.images || editFormData.images.length === 0) &&
-      (!editFormData.imageUrls || editFormData.imageUrls.length === 0)
-    ) {
-      alert("At least one image is required.");
-      return;
-    }
-    if (mainImageIndex === null) {
-      alert("Please select a main image.");
-      return;
-    }
-    if (!placesToVisit.some((place) => place.name.trim())) {
-      alert("At least one place to visit with a valid name is required.");
-      return;
-    }
-
-    formData.append("title", editFormData.title);
-    formData.append("description", editFormData.description);
-    formData.append("price", editFormData.price);
-    formData.append("duration", editFormData.duration);
-    formData.append("city", editFormData.city);
-    formData.append("country", editFormData.country);
-    formData.append("categories", JSON.stringify(editFormData.categories || []));
-    formData.append("availableDates", JSON.stringify(editFormData.availableDates || []));
+    formData.append("title", editFormData.title || "");
+    formData.append("description", editFormData.description || "");
+    formData.append("price", editFormData.price || "");
+    formData.append("duration", editFormData.duration || "");
+    formData.append("city", editFormData.city || "");
+    formData.append("country", editFormData.country || "");
+    formData.append("departureAirportIATA", editFormData.departureAirportIATA || "");
+    formData.append(
+      "categories",
+      JSON.stringify(editFormData.categories || [])
+    );
+    const validDates = (editFormData.availableDates || []).filter(
+      (date) => date instanceof Date && !isNaN(date.getTime())
+    );
+    formData.append(
+      "availableDates",
+      JSON.stringify(
+        validDates.map((date) => date.toISOString().split("T")[0])
+      )
+    );
     formData.append(
       "placesToVisit",
-      JSON.stringify(placesToVisit.map(({ name, description }) => ({ name, description })))
+      JSON.stringify(
+        placesToVisit.map(({ name, description }) => ({ name: name || "", description: description || "" }))
+      )
     );
-    formData.append("mainImageIndex", mainImageIndex);
-    if (editFormData.images) {
+    // Ensure flightConnections has defaults if empty
+    const safeFlightConnections = editFormData.flightConnections || [
+      {
+        departureAirportIATA: "",
+        arrivalAirportIATA: "",
+        departureTime: "",
+        arrivalTime: "",
+        flightType: "outbound",
+      },
+      {
+        departureAirportIATA: "",
+        arrivalAirportIATA: "",
+        departureTime: "",
+        arrivalTime: "",
+        flightType: "return",
+      },
+    ];
+    formData.append(
+      "flightConnections",
+      JSON.stringify(safeFlightConnections)
+    );
+    formData.append("mainImageIndex", mainImageIndex || 0);
+    if (editFormData.images && editFormData.images.length > 0) {
       editFormData.images.forEach((image) => {
         formData.append("images", image);
       });
     }
-    placesToVisit.forEach((place, index) => {
+    placesToVisit.forEach((place) => {
       if (place.image) {
         formData.append("placeImages", place.image);
       }
     });
-    if (editFormData.imageUrls) {
+    if (editFormData.imageUrls && editFormData.imageUrls.length > 0) {
       formData.append("imageUrls", JSON.stringify(editFormData.imageUrls));
     }
 
-    handleEditSubmit(formData);
+    try {
+      await handleEditSubmit(formData);
+      closeModal();
+    } catch (err) {
+      setError(err.message || "Failed to update offer. Please try again.");
+    }
   };
 
-  useEffect(() => {
-    if (location.city && location.country) {
-      setEditFormData((prev) => ({
-        ...prev,
-        city: location.city,
-        country: location.country,
-      }));
-    }
-  }, [location, setEditFormData]);
+  const displayAvailableDates = editFormData.availableDates || [];
+
+  const handleManualDatesChange = (dates) => {
+    const formattedDates = dates
+      ? dates
+          .map((d) => {
+            const dateObj = d.toDate ? d.toDate() : new Date(d);
+            return dateObj instanceof Date && !isNaN(dateObj.getTime()) ? dateObj : null;
+          })
+          .filter(Boolean)
+      : [];
+    setEditFormData((prev) => ({
+      ...prev,
+      availableDates: formattedDates,
+    }));
+  };
 
   return (
     <div className="modal-overlay">
@@ -285,9 +561,19 @@ const EditOfferModal = ({
           <h3 className="modal-title">
             Edit Offer: {offer?.title || "Selected Offer"}
           </h3>
-          <button className="modal-close" onClick={closeModal}>×</button>
+          <button className="modal-close" onClick={closeModal}>
+            ×
+          </button>
         </div>
         <div className="modal-body">
+          {error && (
+            <div
+              className="error-message"
+              style={{ color: "red", marginBottom: "10px" }}
+            >
+              {error}
+            </div>
+          )}
           <form id="offer-form" onSubmit={onSubmit}>
             <div className="form-group">
               <label className="form-label">Title:</label>
@@ -295,9 +581,8 @@ const EditOfferModal = ({
                 className="form-input"
                 type="text"
                 name="title"
-                value={editFormData.title}
+                value={editFormData.title || ""}
                 onChange={handleEditFormChange}
-                required
                 placeholder="Enter title"
               />
             </div>
@@ -306,9 +591,8 @@ const EditOfferModal = ({
               <textarea
                 className="form-input form-textarea"
                 name="description"
-                value={editFormData.description}
+                value={editFormData.description || ""}
                 onChange={handleEditFormChange}
-                required
                 placeholder="Enter description"
               />
             </div>
@@ -319,7 +603,11 @@ const EditOfferModal = ({
                   <button
                     key={category}
                     type="button"
-                    className={`category-chip ${editFormData.categories?.includes(category) ? "selected" : ""}`}
+                    className={`category-chip ${
+                      editFormData.categories?.includes(category)
+                        ? "selected"
+                        : ""
+                    }`}
                     onClick={() => handleCategoryToggle(category)}
                   >
                     {category}
@@ -331,9 +619,78 @@ const EditOfferModal = ({
               <label className="form-label">Pick Location:</label>
               <LocationPicker
                 setCityCountry={setLocation}
-                initialCity={editFormData.city}
-                initialCountry={editFormData.country}
+                initialCity={location.city}
+                initialCountry={location.country}
               />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Flight Connections:</label>
+              {flightConnections.map((fc, index) => (
+                <div
+                  key={`flight-${index}`}
+                  className="flight-connection form-group"
+                >
+                  <h4>{index === 0 ? "Outbound Flight" : "Return Flight"}</h4>
+                  <label>
+                    Departure Airport{" "}
+                    {index === 0 ? "(Poland)" : `(from ${editFormData.city})`}:
+                  </label>
+                  <AirportSelect
+                    key={`dep-${index}-${location.city || "none"}-${
+                      location.country || "none"
+                    }-${fc.departureAirportIATA || "empty"}`}
+                    {...(index === 0
+                      ? { country: "PL" }
+                      : {
+                          city: editFormData.city,
+                          country: editFormData.country,
+                        })}
+                    value={fc.departureAirportIATA || ""}
+                    onChange={(iata) =>
+                      handleFlightChange(index, "departureAirportIATA", iata)
+                    }
+                    isDeparture={true}
+                  />
+                  <label>
+                    Arrival Airport{" "}
+                    {index === 0 ? `(to ${editFormData.city})` : "(Poland)"}:
+                  </label>
+                  <AirportSelect
+                    key={`arr-${index}-${location.city || "none"}-${
+                      location.country || "none"
+                    }-${fc.arrivalAirportIATA || "empty"}`}
+                    {...(index === 0
+                      ? {
+                          city: editFormData.city,
+                          country: editFormData.country,
+                        }
+                      : { country: "PL" })}
+                    value={fc.arrivalAirportIATA || ""}
+                    onChange={(iata) =>
+                      handleFlightChange(index, "arrivalAirportIATA", iata)
+                    }
+                    {...(index === 1 ? { isDeparture: true } : {})}
+                  />
+                  <label>Departure Time:</label>
+                  <input
+                    type="time"
+                    value={fc.departureTime || ""}
+                    onChange={(e) =>
+                      handleFlightChange(index, "departureTime", e.target.value)
+                    }
+                    className="form-input"
+                  />
+                  <label>Arrival Time:</label>
+                  <input
+                    type="time"
+                    value={fc.arrivalTime || ""}
+                    onChange={(e) =>
+                      handleFlightChange(index, "arrivalTime", e.target.value)
+                    }
+                    className="form-input"
+                  />
+                </div>
+              ))}
             </div>
             <div className="form-group">
               <label className="form-label">Places to Visit:</label>
@@ -341,22 +698,27 @@ const EditOfferModal = ({
                 <div key={index} className="form-group place-group">
                   <input
                     type="text"
-                    value={place.name}
-                    onChange={(e) => handlePlaceChange(index, "name", e.target.value)}
+                    value={place.name || ""}
+                    onChange={(e) =>
+                      handlePlaceChange(index, "name", e.target.value)
+                    }
                     placeholder="Place Name"
-                    required
                     className="form-input"
                   />
                   <textarea
-                    value={place.description}
-                    onChange={(e) => handlePlaceChange(index, "description", e.target.value)}
+                    value={place.description || ""}
+                    onChange={(e) =>
+                      handlePlaceChange(index, "description", e.target.value)
+                    }
                     placeholder="Place Description"
                     className="form-input form-textarea"
                   />
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => handlePlaceImageChange(index, e.target.files[0])}
+                    onChange={(e) =>
+                      handlePlaceImageChange(index, e.target.files[0])
+                    }
                     className="form-input"
                   />
                   {placesToVisit.length > 1 && (
@@ -376,7 +738,11 @@ const EditOfferModal = ({
                 onClick={addPlace}
                 title="Add Place"
               >
-                <img src={plusIcon} alt="Add" style={{ width: "35px", height: "35px" }} />
+                <img
+                  src={plusIcon}
+                  alt="Add"
+                  style={{ width: "35px", height: "35px" }}
+                />
               </button>
             </div>
             <div className="form-group">
@@ -385,32 +751,27 @@ const EditOfferModal = ({
                 className="form-input"
                 type="number"
                 name="duration"
-                value={editFormData.duration}
-                readOnly
+                value={editFormData.duration || ""}
                 placeholder="Number of days"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Available Dates (manual selection):</label>
+              <label className="form-label">
+                Available Dates (manual selection):
+              </label>
               <div className="date-picker-container">
                 <DatePicker
                   multiple
                   format="YYYY-MM-DD"
-                  value={editFormData.availableDates}
-                  onChange={(dates) => {
-                    const formattedDates = dates.map((d) =>
-                      d?.toDate ? d.toDate().toISOString().split("T")[0] : d
-                    );
-                    setEditFormData((prev) => ({
-                      ...prev,
-                      availableDates: formattedDates,
-                    }));
-                  }}
+                  value={displayAvailableDates}
+                  onChange={handleManualDatesChange}
                 />
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Add Date Period (includes duration):</label>
+              <label className="form-label">
+                Add Date Period (includes duration):
+              </label>
               <div className="date-period-container">
                 <div className="date-picker-container">
                   <DatePicker
@@ -436,7 +797,11 @@ const EditOfferModal = ({
                   onClick={addPeriodDates}
                   title="Add Period"
                 >
-                  <img src={plusIcon} alt="Add" style={{ width: "35px", height: "35px" }} />
+                  <img
+                    src={plusIcon}
+                    alt="Add"
+                    style={{ width: "35px", height: "35px" }}
+                  />
                 </button>
               </div>
             </div>
@@ -446,9 +811,8 @@ const EditOfferModal = ({
                 className="form-input"
                 type="number"
                 name="price"
-                value={editFormData.price}
+                value={editFormData.price || ""}
                 onChange={handleEditFormChange}
-                required
                 min="0"
                 step="0.01"
                 placeholder="Enter price in PLN"
@@ -472,7 +836,9 @@ const EditOfferModal = ({
                         <img
                           src={img.preview}
                           alt={`Preview ${index + 1}`}
-                          className={`preview-image ${mainImageIndex === index ? "main-image" : ""}`}
+                          className={`preview-image ${
+                            mainImageIndex === index ? "main-image" : ""
+                          }`}
                           onClick={() => setMainImage(index)}
                         />
                         <button
@@ -496,7 +862,11 @@ const EditOfferModal = ({
         <div className="modal-footer sticky-footer my-modal">
           <span className="modal-price">{editFormData.price || 0} PLN</span>
           <div className="buttons-group">
-            <button type="button" className="btn btn-secondary" onClick={closeModal}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={closeModal}
+            >
               Cancel
             </button>
             <button type="submit" form="offer-form" className="btn btn-primary">
@@ -518,6 +888,7 @@ EditOfferModal.propTypes = {
     duration: PropTypes.number,
     city: PropTypes.string,
     country: PropTypes.string,
+    departureAirportIATA: PropTypes.string,
     categories: PropTypes.arrayOf(PropTypes.string),
     availableDates: PropTypes.arrayOf(
       PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)])
@@ -528,7 +899,15 @@ EditOfferModal.propTypes = {
       PropTypes.shape({
         name: PropTypes.string,
         description: PropTypes.string,
-        image: PropTypes.any,
+      })
+    ),
+    flightConnections: PropTypes.arrayOf(
+      PropTypes.shape({
+        departureAirportIATA: PropTypes.string,
+        arrivalAirportIATA: PropTypes.string,
+        departureTime: PropTypes.string,
+        arrivalTime: PropTypes.string,
+        flightType: PropTypes.string,
       })
     ),
   }).isRequired,
@@ -540,6 +919,7 @@ EditOfferModal.propTypes = {
     duration: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     city: PropTypes.string,
     country: PropTypes.string,
+    departureAirportIATA: PropTypes.string,
     categories: PropTypes.arrayOf(PropTypes.string),
     availableDates: PropTypes.arrayOf(
       PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)])
@@ -552,6 +932,15 @@ EditOfferModal.propTypes = {
         name: PropTypes.string,
         description: PropTypes.string,
         image: PropTypes.any,
+      })
+    ),
+    flightConnections: PropTypes.arrayOf(
+      PropTypes.shape({
+        departureAirportIATA: PropTypes.string,
+        arrivalAirportIATA: PropTypes.string,
+        departureTime: PropTypes.string,
+        arrivalTime: PropTypes.string,
+        flightType: PropTypes.string,
       })
     ),
   }).isRequired,

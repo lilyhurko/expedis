@@ -24,7 +24,8 @@ const offerSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, 
   flightConnections: [{ type: mongoose.Schema.Types.ObjectId, ref: "FlightConnection" }],
 }, {
-  strictPopulate: false 
+  strictPopulate: false,
+  imestamps: true
 });
 
 module.exports = mongoose.model("Offer", offerSchema);

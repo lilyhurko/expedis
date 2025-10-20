@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import DatePicker from "react-multi-date-picker";
-import plusIcon from "../assets/img/plus.png"; 
+import plusIcon from "../assets/img/plus.png";
 import LocationPicker from "./LocationPicker.js";
 import AirportSelect from "./AirportSelect.js";
-
 
 const AddOfferModal = ({
   newOfferData,
@@ -22,7 +21,8 @@ const AddOfferModal = ({
     { name: "", description: "", image: null },
   ]);
   const [flightConnections, setFlightConnections] = useState([
-    { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" },
+    { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "outbound" },
+    { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "return" },
   ]);
   const [error, setError] = useState(null);
 
@@ -32,21 +32,30 @@ const AddOfferModal = ({
       return;
     }
 
-    let startDate = periodStart.toDate ? periodStart.toDate() : new Date(periodStart);
+    // Отримуємо дати та нормалізуємо їх до UTC midnight
+    let startDate = periodStart.toDate
+      ? periodStart.toDate()
+      : new Date(periodStart);
     let endDate = periodEnd.toDate ? periodEnd.toDate() : new Date(periodEnd);
+
+    // Нормалізація до початку дня (UTC)
+    startDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+    endDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()));
 
     if (endDate < startDate) {
       setError("End date must be after start date");
       return;
     }
 
-    const durationInDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    // Розрахунок тривалості - це тривалість ПОЇЗДКИ
+    const tripDurationInDays =
+      Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
-    let datesToAdd = [];
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      datesToAdd.push(new Date(d).toISOString().split("T")[0]);
-    }
+    // Додаємо тільки ПЕРШУ дату (дату початку поїздки)
+    // А не всі дні в періоді!
+    const startDateString = startDate.toISOString().split("T")[0];
 
+    // Отримуємо існуючі дати
     const existingDates = (newOfferData.availableDates || [])
       .map((date) => {
         if (typeof date === "string") return date;
@@ -56,21 +65,27 @@ const AddOfferModal = ({
       })
       .filter((date) => date !== null);
 
-    const allDatesSet = new Set([...existingDates, ...datesToAdd]);
+    // Додаємо нову дату до існуючих
+    const allDatesSet = new Set([...existingDates, startDateString]);
+    const sortedDates = Array.from(allDatesSet).sort();
 
     setNewOfferData((prev) => ({
       ...prev,
-      availableDates: Array.from(allDatesSet),
-      duration: durationInDays,
+      availableDates: sortedDates,
+      duration: tripDurationInDays,
     }));
 
     setPeriodStart(null);
     setPeriodEnd(null);
+    setError(null);
   };
 
   const handleFlightChange = (index, field, value) => {
     const updatedConnections = [...flightConnections];
-    updatedConnections[index] = { ...updatedConnections[index], [field]: value };
+    updatedConnections[index] = {
+      ...updatedConnections[index],
+      [field]: value,
+    };
     setFlightConnections(updatedConnections);
 
     setNewOfferData((prev) => {
@@ -79,28 +94,11 @@ const AddOfferModal = ({
       return {
         ...prev,
         flightConnections: newConnections,
-        ...(field === "departureAirportIATA" && index === 0 ? { departureAirportIATA: value } : {}),
+        ...(field === "departureAirportIATA" && index === 0
+          ? { departureAirportIATA: value }
+          : {}),
       };
     });
-  };
-
-  const addFlightConnection = () => {
-    const newConnection = { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" };
-    setFlightConnections([...flightConnections, newConnection]);
-    setNewOfferData((prev) => ({
-      ...prev,
-      flightConnections: [...(prev.flightConnections || []), newConnection],
-    }));
-  };
-
-  const removeFlightConnection = (index) => {
-    if (flightConnections.length === 1) {
-      setError("At least one flight connection is required.");
-      return;
-    }
-    const newConnections = flightConnections.filter((_, i) => i !== index);
-    setFlightConnections(newConnections);
-    setNewOfferData((prev) => ({ ...prev, flightConnections: newConnections }));
   };
 
   const handlePlaceChange = (index, field, value) => {
@@ -111,7 +109,10 @@ const AddOfferModal = ({
   };
 
   const addPlace = () => {
-    setPlacesToVisit([...placesToVisit, { name: "", description: "", image: null }]);
+    setPlacesToVisit([
+      ...placesToVisit,
+      { name: "", description: "", image: null },
+    ]);
   };
 
   const removePlace = (index) => {
@@ -191,21 +192,29 @@ const AddOfferModal = ({
     });
   };
 
-  const handleAirportChange = (iata) => {
-    setNewOfferData((prev) => ({ ...prev, departureAirportIATA: iata || "" }));
-  };
-
   const validateForm = () => {
     if (!newOfferData.title.trim()) return "Title is required.";
     if (!newOfferData.description.trim()) return "Description is required.";
     if (!newOfferData.city.trim()) return "City is required.";
     if (!newOfferData.country.trim()) return "Country is required.";
-    if (!newOfferData.departureAirportIATA) return "Departure airport is required.";
-    if (!newOfferData.price || isNaN(newOfferData.price) || newOfferData.price <= 0)
+    if (!newOfferData.departureAirportIATA)
+      return "Departure airport is required.";
+    if (
+      !newOfferData.price ||
+      isNaN(newOfferData.price) ||
+      newOfferData.price <= 0
+    )
       return "Price must be a valid positive number.";
-    if (!newOfferData.duration || isNaN(newOfferData.duration) || newOfferData.duration <= 0)
+    if (
+      !newOfferData.duration ||
+      isNaN(newOfferData.duration) ||
+      newOfferData.duration <= 0
+    )
       return "Duration must be a valid positive number.";
-    if (!newOfferData.availableDates || newOfferData.availableDates.length === 0)
+    if (
+      !newOfferData.availableDates ||
+      newOfferData.availableDates.length === 0
+    )
       return "At least one available date is required.";
     if (!newOfferData.categories || newOfferData.categories.length < 1)
       return "Select at least one category.";
@@ -215,12 +224,18 @@ const AddOfferModal = ({
     if (!placesToVisit.some((place) => place.name.trim()))
       return "At least one place to visit with a valid name is required.";
     if (
-      !newOfferData.flightConnections?.some(
-        (fc) => fc.departureAirportIATA && fc.arrivalAirportIATA && fc.departureTime
+      !newOfferData.flightConnections ||
+      newOfferData.flightConnections.length !== 2 ||
+      !newOfferData.flightConnections.every((fc) =>
+        fc.departureAirportIATA &&
+        fc.arrivalAirportIATA &&
+        fc.departureTime &&
+        fc.arrivalTime &&
+        fc.flightType
       )
     )
-      return "At least one valid flight connection is required.";
-    return null; 
+      return "Both outbound and return flight connections with all fields are required.";
+    return null;
   };
 
   const onSubmit = async (e) => {
@@ -241,13 +256,24 @@ const AddOfferModal = ({
     formData.append("city", newOfferData.city);
     formData.append("country", newOfferData.country);
     formData.append("departureAirportIATA", newOfferData.departureAirportIATA);
-    formData.append("categories", JSON.stringify(newOfferData.categories || []));
-    formData.append("availableDates", JSON.stringify(newOfferData.availableDates || []));
+    formData.append(
+      "categories",
+      JSON.stringify(newOfferData.categories || [])
+    );
+    formData.append(
+      "availableDates",
+      JSON.stringify(newOfferData.availableDates || [])
+    );
     formData.append(
       "placesToVisit",
-      JSON.stringify(placesToVisit.map(({ name, description }) => ({ name, description })))
+      JSON.stringify(
+        placesToVisit.map(({ name, description }) => ({ name, description }))
+      )
     );
-    formData.append("flightConnections", JSON.stringify(newOfferData.flightConnections || []));
+    formData.append(
+      "flightConnections",
+      JSON.stringify(newOfferData.flightConnections || [])
+    );
     newOfferData.images.forEach((image) => formData.append("images", image));
     placesToVisit.forEach((place) => {
       if (place.image) formData.append("placeImages", place.image);
@@ -274,43 +300,142 @@ const AddOfferModal = ({
         city: location.city,
         country: location.country,
         departureAirportIATA: "",
-        flightConnections: [{ departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" }],
+        flightConnections: [
+          {
+            departureAirportIATA: "",
+            arrivalAirportIATA: "",
+            departureTime: "",
+            arrivalTime: "",
+            flightType: "outbound",
+          },
+          {
+            departureAirportIATA: "",
+            arrivalAirportIATA: "",
+            departureTime: "",
+            arrivalTime: "",
+            flightType: "return",
+          },
+        ],
       }));
-      setFlightConnections([{ departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" }]);
+      setFlightConnections([
+        { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "outbound" },
+        { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "return" },
+      ]);
     }
   }, [location]);
 
   const ALL_CATEGORIES = [
-    "Adventure", "Culture", "Relaxation", "Nature", "Hiking", "Skiing", "Beach", "History",
-    "Nightlife", "Food", "Wildlife", "Romantic", "Luxury", "Budget", "Camping", "Backpacking",
-    "Photography", "Yoga", "Surfing", "Diving", "Art", "Architecture", "Shopping", "Festival", "Wellness",
+    "Adventure",
+    "Culture",
+    "Relaxation",
+    "Nature",
+    "Hiking",
+    "Skiing",
+    "Beach",
+    "History",
+    "Nightlife",
+    "Food",
+    "Wildlife",
+    "Romantic",
+    "Luxury",
+    "Budget",
+    "Camping",
+    "Backpacking",
+    "Photography",
+    "Yoga",
+    "Surfing",
+    "Diving",
+    "Art",
+    "Architecture",
+    "Shopping",
+    "Festival",
+    "Wellness",
   ];
 
-
-
   return (
-    <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', zIndex: 1000 }}> {/* Тимчасовий стиль для видимості */}
-      <div className="modal" style={{ background: 'white', margin: '50px auto', padding: '20px', maxWidth: '800px', borderRadius: '8px' }}> {/* Тимчасовий стиль */}
+    <div
+      className="modal-overlay"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 1000,
+      }}
+    >
+      {" "}
+      {/* Тимчасовий стиль для видимості */}
+      <div
+        className="modal"
+        style={{
+          background: "white",
+          margin: "50px auto",
+          padding: "20px",
+          maxWidth: "800px",
+          borderRadius: "8px",
+        }}
+      >
+        {" "}
+        {/* Тимчасовий стиль */}
         <div className="modal-header">
           <h3 className="modal-title">Add New Offer</h3>
-          <button className="modal-close" onClick={closeModal} aria-label="Close modal">×</button>
+          <button
+            className="modal-close"
+            onClick={closeModal}
+            aria-label="Close modal"
+          >
+            ×
+          </button>
         </div>
         <div className="modal-body">
-          {error && <div className="error-message" style={{ color: "red", marginBottom: "10px" }}>{error}</div>}
+          {error && (
+            <div
+              className="error-message"
+              style={{ color: "red", marginBottom: "10px" }}
+            >
+              {error}
+            </div>
+          )}
           <form id="offer-form" onSubmit={onSubmit}>
             <div className="form-group">
               <label className="form-label">Title:</label>
-              <input className="form-input" type="text" name="title" value={newOfferData.title || ""} onChange={handleNewOfferChange} required placeholder="Enter title" />
+              <input
+                className="form-input"
+                type="text"
+                name="title"
+                value={newOfferData.title || ""}
+                onChange={handleNewOfferChange}
+                required
+                placeholder="Enter title"
+              />
             </div>
             <div className="form-group">
               <label className="form-label">Description:</label>
-              <textarea className="form-input" name="description" value={newOfferData.description || ""} onChange={handleNewOfferChange} required placeholder="Enter description" />
+              <textarea
+                className="form-input"
+                name="description"
+                value={newOfferData.description || ""}
+                onChange={handleNewOfferChange}
+                required
+                placeholder="Enter description"
+              />
             </div>
             <div className="form-group">
               <label className="form-label">Categories (select 1 to 5):</label>
               <div className="category-list">
                 {ALL_CATEGORIES.map((category) => (
-                  <button key={category} type="button" className={`category-chip ${newOfferData.categories?.includes(category) ? "selected" : ""}`} onClick={() => handleCategoryToggle(category)}>
+                  <button
+                    key={category}
+                    type="button"
+                    className={`category-chip ${
+                      newOfferData.categories?.includes(category)
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() => handleCategoryToggle(category)}
+                  >
                     {category}
                   </button>
                 ))}
@@ -323,113 +448,206 @@ const AddOfferModal = ({
             <div className="form-group">
               <label className="form-label">Flight Connections:</label>
               {flightConnections.map((fc, index) => (
-                <div key={`${fc.departureAirportIATA}-${fc.arrivalAirportIATA}-${index}`} className="flight-connection form-group">
-                  <label>Departure Airport (Poland):</label>
-            <AirportSelect
-  country="PL"
-  value={flightConnections[index].departureAirportIATA}
-  onChange={(iata) => {
-    console.log("Вибрано departure IATA:", iata); 
-    const updatedConnections = [...flightConnections];
-    updatedConnections[index].departureAirportIATA = iata;
-    setFlightConnections(updatedConnections);
-
-    setNewOfferData((prev) => ({
-      ...prev,
-      flightConnections: updatedConnections,
-      departureAirportIATA: index === 0 ? iata : prev.departureAirportIATA,
-    }));
-  }}
-/>
-                <AirportSelect
-  city={newOfferData.city}
-  value={newOfferData.flightConnections?.[index]?.arrivalAirportIATA || ""}
-  onChange={(iata) => {
-    console.log("Вибрано arrival IATA:", iata); 
-    handleFlightChange(index, "arrivalAirportIATA", iata);
-  }}
-/>
+                <div
+                  key={index}
+                  className="flight-connection form-group"
+                >
+                  <h4>{index === 0 ? "Outbound Flight" : "Return Flight"}</h4>
+                  <label>
+                    Departure Airport {index === 0 ? "(Poland)" : `(from ${newOfferData.city})`}:
+                  </label>
+                  <AirportSelect
+                    {...(index === 0 
+                      ? { country: "PL" } 
+                      : { city: newOfferData.city, country: newOfferData.country }
+                    )}
+                    value={flightConnections[index].departureAirportIATA}
+                    onChange={(iata) => handleFlightChange(index, "departureAirportIATA", iata)}
+                    isDeparture={true}
+                  />
+                  <label>
+                    Arrival Airport {index === 0 ? `(to ${newOfferData.city})` : "(Poland)"}:
+                  </label>
+                  <AirportSelect
+                    {...(index === 0 
+                      ? { city: newOfferData.city, country: newOfferData.country } 
+                      : { country: "PL" }
+                    )}
+                    value={flightConnections[index].arrivalAirportIATA}
+                    onChange={(iata) => handleFlightChange(index, "arrivalAirportIATA", iata)}
+                    {...(index === 1 ? { isDeparture: true } : {})}
+                  />
                   <label>Departure Time:</label>
                   <input
                     type="time"
                     value={flightConnections[index].departureTime || ""}
-                    onChange={(e) => {
-                      const updatedConnections = [...flightConnections];
-                      updatedConnections[index].departureTime = e.target.value;
-                      setFlightConnections(updatedConnections);
-                      setNewOfferData((prev) => ({ ...prev, flightConnections: updatedConnections }));
-                    }}
+                    onChange={(e) => handleFlightChange(index, "departureTime", e.target.value)}
                     className="form-input"
                     required
                   />
-                  {flightConnections.length > 1 && (
-                    <button type="button" className="btn btn-secondary" onClick={() => removeFlightConnection(index)} aria-label={`Remove flight connection ${index + 1}`}>
-                      Remove
-                    </button>
-                  )}
+                  <label>Arrival Time:</label>
+                  <input
+                    type="time"
+                    value={flightConnections[index].arrivalTime || ""}
+                    onChange={(e) => handleFlightChange(index, "arrivalTime", e.target.value)}
+                    className="form-input"
+                    required
+                  />
                 </div>
               ))}
-              <button type="button" className="btn btn-icon-only" onClick={addFlightConnection} aria-label="Add new flight connection">
-                <img src={plusIcon} alt="" aria-hidden="true" style={{ width: "35px", height: "35px" }} />
-              </button>
             </div>
             <div className="form-group">
               <label className="form-label">Places to Visit:</label>
               {placesToVisit.map((place, index) => (
-                <div key={`${place.name}-${index}`} className="form-group place-group">
-                  <input type="text" value={place.name || ""} onChange={(e) => handlePlaceChange(index, "name", e.target.value)} placeholder="Place Name" required className="form-input" />
-                  <textarea value={place.description || ""} onChange={(e) => handlePlaceChange(index, "description", e.target.value)} placeholder="Place Description" className="form-input" />
-                  <input type="file" accept="image/*" onChange={(e) => handlePlaceImageChange(index, e.target.files[0])} className="form-input" />
+                <div
+                  key={`${place.name}-${index}`}
+                  className="form-group place-group"
+                >
+                  <input
+                    type="text"
+                    value={place.name || ""}
+                    onChange={(e) =>
+                      handlePlaceChange(index, "name", e.target.value)
+                    }
+                    placeholder="Place Name"
+                    required
+                    className="form-input"
+                  />
+                  <textarea
+                    value={place.description || ""}
+                    onChange={(e) =>
+                      handlePlaceChange(index, "description", e.target.value)
+                    }
+                    placeholder="Place Description"
+                    className="form-input"
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      handlePlaceImageChange(index, e.target.files[0])
+                    }
+                    className="form-input"
+                  />
                   {placesToVisit.length > 1 && (
-                    <button type="button" className="btn btn-secondary" onClick={() => removePlace(index)} aria-label={`Remove place ${index + 1}`}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => removePlace(index)}
+                      aria-label={`Remove place ${index + 1}`}
+                    >
                       Remove Place
                     </button>
                   )}
                 </div>
               ))}
-              <button type="button" className="btn btn-icon-only" onClick={addPlace} aria-label="Add new place to visit">
-                <img src={plusIcon} alt="" aria-hidden="true" style={{ width: "35px", height: "35px" }} />
+              <button
+                type="button"
+                className="btn btn-icon-only"
+                onClick={addPlace}
+                aria-label="Add new place to visit"
+              >
+                <img
+                  src={plusIcon}
+                  alt=""
+                  aria-hidden="true"
+                  style={{ width: "35px", height: "35px" }}
+                />
               </button>
             </div>
             <div className="form-group">
               <label className="form-label">Duration (days):</label>
-              <input className="form-input" type="number" name="duration" value={newOfferData.duration || ""} readOnly placeholder="Number of days" />
+              <input
+                className="form-input"
+                type="number"
+                name="duration"
+                value={newOfferData.duration || ""}
+                readOnly
+                placeholder="Number of days"
+              />
             </div>
             <div className="form-group">
-              <label className="form-label">Available Dates (manual selection):</label>
+              <label className="form-label">
+                Available Dates (manual selection):
+              </label>
               <div className="date-picker-container">
                 <DatePicker
                   multiple
                   value={newOfferData.availableDates || []}
-                  onChange={(dates) => setNewOfferData((prev) => ({
-                    ...prev,
-                    availableDates: (dates || []).map((d) => (d?.toDate ? d.toDate().toISOString().split("T")[0] : d)),
-                  }))}
+                  onChange={(dates) =>
+                    setNewOfferData((prev) => ({
+                      ...prev,
+                      availableDates: (dates || []).map((d) =>
+                        d?.toDate ? d.toDate().toISOString().split("T")[0] : d
+                      ),
+                    }))
+                  }
                   format="YYYY-MM-DD"
                 />
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Add Date Period (includes duration):</label>
+              <label className="form-label">
+                Add Date Period (includes duration):
+              </label>
               <div className="date-period-container">
                 <div className="date-picker-container">
-                  <DatePicker value={periodStart} onChange={setPeriodStart} format="YYYY-MM-DD" placeholder="Start date" className="form-input" />
+                  <DatePicker
+                    value={periodStart}
+                    onChange={setPeriodStart}
+                    format="YYYY-MM-DD"
+                    placeholder="Start date"
+                    className="form-input"
+                  />
                 </div>
                 <div className="date-picker-container">
-                  <DatePicker value={periodEnd} onChange={setPeriodEnd} format="YYYY-MM-DD" placeholder="End date" className="form-input" />
+                  <DatePicker
+                    value={periodEnd}
+                    onChange={setPeriodEnd}
+                    format="YYYY-MM-DD"
+                    placeholder="End date"
+                    className="form-input"
+                  />
                 </div>
-                <button type="button" className="btn btn-icon-only" onClick={addPeriodDates} aria-label="Add date period">
-                  <img src={plusIcon} alt="" aria-hidden="true" style={{ width: "35px", height: "35px" }} />
+                <button
+                  type="button"
+                  className="btn btn-icon-only"
+                  onClick={addPeriodDates}
+                  aria-label="Add date period"
+                >
+                  <img
+                    src={plusIcon}
+                    alt=""
+                    aria-hidden="true"
+                    style={{ width: "35px", height: "35px" }}
+                  />
                 </button>
               </div>
             </div>
             <div className="form-group">
               <label className="form-label">Price (PLN):</label>
-              <input className="form-input" type="number" name="price" value={newOfferData.price || ""} onChange={handleNewOfferChange} required min="0" step="0.01" placeholder="Enter price in PLN" />
+              <input
+                className="form-input"
+                type="number"
+                name="price"
+                value={newOfferData.price || ""}
+                onChange={handleNewOfferChange}
+                required
+                min="0"
+                step="0.01"
+                placeholder="Enter price in PLN"
+              />
             </div>
             <div className="form-group image-upload-group">
               <label className="form-label">Upload Images (up to 15):</label>
-              <input className="form-input" type="file" name="images" accept="image/*" multiple onChange={handleImageChange} />
+              <input
+                className="form-input"
+                type="file"
+                name="images"
+                accept="image/*"
+                multiple
+                onChange={handleImageChange}
+              />
               {previewImages.length > 0 && (
                 <div className="image-preview-container">
                   {previewImages.map((img, index) => (
@@ -437,11 +655,22 @@ const AddOfferModal = ({
                       <img
                         src={img.preview}
                         alt={`Preview ${index + 1}`}
-                        className={`preview-image ${mainImageIndex === index ? "main-image" : ""}`}
+                        className={`preview-image ${
+                          mainImageIndex === index ? "main-image" : ""
+                        }`}
                         onClick={() => setMainImage(index)}
                       />
-                      <button type="button" className="remove-image-btn" onClick={() => removeImage(index)} aria-label={`Remove image ${index + 1}`}>×</button>
-                      {mainImageIndex === index && <span className="main-image-label">Main</span>}
+                      <button
+                        type="button"
+                        className="remove-image-btn"
+                        onClick={() => removeImage(index)}
+                        aria-label={`Remove image ${index + 1}`}
+                      >
+                        ×
+                      </button>
+                      {mainImageIndex === index && (
+                        <span className="main-image-label">Main</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -452,8 +681,16 @@ const AddOfferModal = ({
         <div className="modal-footer sticky-footer my-modal">
           <span className="modal-price">{newOfferData.price || 0} PLN</span>
           <div className="buttons-group">
-            <button type="button" className="btn btn-secondary" onClick={closeModal}>Cancel</button>
-            <button type="submit" form="offer-form" className="btn btn-primary">Add Trip</button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={closeModal}
+            >
+              Cancel
+            </button>
+            <button type="submit" form="offer-form" className="btn btn-primary">
+              Add Trip
+            </button>
           </div>
         </div>
       </div>
@@ -471,19 +708,27 @@ AddOfferModal.propTypes = {
     country: PropTypes.string,
     departureAirportIATA: PropTypes.string,
     categories: PropTypes.arrayOf(PropTypes.string),
-    availableDates: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)])),
+    availableDates: PropTypes.arrayOf(
+      PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)])
+    ),
     images: PropTypes.arrayOf(PropTypes.instanceOf(File)),
     mainImageIndex: PropTypes.number,
-    placesToVisit: PropTypes.arrayOf(PropTypes.shape({
-      name: PropTypes.string,
-      description: PropTypes.string,
-      image: PropTypes.instanceOf(File),
-    })),
-    flightConnections: PropTypes.arrayOf(PropTypes.shape({
-      departureAirportIATA: PropTypes.string,
-      arrivalAirportIATA: PropTypes.string,
-      departureTime: PropTypes.string,
-    })),
+    placesToVisit: PropTypes.arrayOf(
+      PropTypes.shape({
+        name: PropTypes.string,
+        description: PropTypes.string,
+        image: PropTypes.instanceOf(File),
+      })
+    ),
+    flightConnections: PropTypes.arrayOf(
+      PropTypes.shape({
+        departureAirportIATA: PropTypes.string,
+        arrivalAirportIATA: PropTypes.string,
+        departureTime: PropTypes.string,
+        arrivalTime: PropTypes.string,
+        flightType: PropTypes.string,
+      })
+    ),
   }).isRequired,
   setNewOfferData: PropTypes.func.isRequired,
   handleNewOfferChange: PropTypes.func.isRequired,

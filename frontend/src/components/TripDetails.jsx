@@ -26,6 +26,7 @@ const TripDetails = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedFlight, setSelectedFlight] = useState("");
   const [selectedDepartureAirport, setSelectedDepartureAirport] = useState("");
+  const [arrivalIATA, setArrivalIATA] = useState('');
   const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,6 +50,7 @@ const TripDetails = () => {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       const data = await response.json();
+      console.log("Fetched trip details:", data.offer || data); // NEW: Debug log
       setTripDetails(data.offer || data);
       setIsLoading(false);
     } catch (error) {
@@ -108,6 +110,30 @@ const TripDetails = () => {
       setMainImage(tripDetails.imageUrls[0]);
     }
   }, [tripDetails]);
+
+  useEffect(() => {
+    if (tripDetails?.flightConnections?.length > 0) {
+      // Initialize selectedDepartureAirport to the first available if not set
+      if (!selectedDepartureAirport) {
+        const firstDeparture = tripDetails.flightConnections[0].departureAirportIATA;
+        setSelectedDepartureAirport(firstDeparture);
+        setArrivalIATA(tripDetails.flightConnections[0].arrivalAirportIATA);
+      }
+    }
+  }, [tripDetails]);
+
+  useEffect(() => {
+    if (selectedDepartureAirport && tripDetails?.flightConnections?.length > 0) {
+      const connection = tripDetails.flightConnections.find(
+        f => f.departureAirportIATA === selectedDepartureAirport
+      );
+      if (connection) {
+        setArrivalIATA(connection.arrivalAirportIATA);
+      } else {
+        setArrivalIATA('N/A');
+      }
+    }
+  }, [selectedDepartureAirport, tripDetails]);
 
   useEffect(() => {
   if (!tripDetails) return;
@@ -224,7 +250,7 @@ const TripDetails = () => {
     if (e.key === "ArrowLeft") {
       setCurrentSlide((prev) => Math.max(0, prev - 1));
     } else if (e.key === "ArrowRight") {
-      setCurrentSlide((prev) => Math.min(tripDetails.imageUrls.length - 1, prev + 1));
+      setCurrentSlide((prev) => Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1));
     } else if (e.key === "Escape") {
       closeFullScreen();
     }
@@ -349,23 +375,26 @@ const TripDetails = () => {
     );
   if (!tripDetails) return <div className="error-message">Trip not found</div>;
 
-  const arrivalIATA = tripDetails.flightConnections && tripDetails.flightConnections.length > 0 
-    ? tripDetails.flightConnections[0].arrivalAirportIATA 
-    : 'N/A';
+  const availableDepartureAirports = tripDetails?.flightConnections?.length > 0
+    ? [...new Set(tripDetails.flightConnections.map(fc => fc.departureAirportIATA))].map(iata => ({
+        iata,
+        name: `${iata} Airport` 
+      }))
+    : [];
 
   const buildImageUrl = (filename) => {
-    if (!filename) return null;
+    if (!filename || filename === "") return null; 
     if (filename.startsWith('http')) {
       return filename; 
     }
-    return `${apiUrl}/${filename}`; 
+    return `${apiUrl}${filename}`; 
   };
 
   const FullScreenModal = () => (
     <div className="fullscreen-modal" style={{ display: isFullScreenOpen ? 'flex' : 'none' }} onClick={closeFullScreen}>
       <div className="fullscreen-content" onClick={(e) => e.stopPropagation()}>
         <button className="close-fullscreen" onClick={closeFullScreen}>×</button>
-        {tripDetails.imageUrls && tripDetails.imageUrls[currentSlide] && (
+        {tripDetails?.imageUrls && tripDetails.imageUrls[currentSlide] && (
           <img
             src={buildImageUrl(tripDetails.imageUrls[currentSlide])}
             alt="Fullscreen"
@@ -373,7 +402,7 @@ const TripDetails = () => {
           />
         )}
         <button className="nav-arrow left" onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}>‹</button>
-        <button className="nav-arrow right" onClick={() => setCurrentSlide((prev) => Math.min(tripDetails.imageUrls.length - 1, prev + 1))}>›</button>
+        <button className="nav-arrow right" onClick={() => setCurrentSlide((prev) => Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1))}>›</button>
       </div>
     </div>
   );
@@ -402,7 +431,7 @@ const TripDetails = () => {
             <div className="photo-gallery">
               {tripDetails.imageUrls && tripDetails.imageUrls.length > 0 ? (
                 <>
-                  {mainImage && (
+                  {mainImage && buildImageUrl(mainImage) && (  
                     <div
                       className="main-photo"
                       onClick={() =>
@@ -413,26 +442,28 @@ const TripDetails = () => {
                         src={buildImageUrl(mainImage)}
                         alt="Main trip"
                         onError={(e) => { 
-                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';  // UPDATED: Fallback SVG
                         }}
                       />
                     </div>
                   )}
                   <div className="thumbnails">
                     {tripDetails.imageUrls.map((filename, index) => (
-                      <div
-                        key={index}
-                        className={`thumbnail ${mainImage === filename ? "active" : ""}`}
-                        onClick={() => setMainImage(filename)}
-                      >
-                        <img
-                          src={buildImageUrl(filename)}
-                          alt={`Thumbnail ${index + 1}`}
-                          onError={(e) => { 
-                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzUiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
-                          }}
-                        />
-                      </div>
+                      buildImageUrl(filename) && ( 
+                        <div
+                          key={index}
+                          className={`thumbnail ${mainImage === filename ? "active" : ""}`}
+                          onClick={() => setMainImage(filename)}
+                        >
+                          <img
+                            src={buildImageUrl(filename)}
+                            alt={`Thumbnail ${index + 1}`}
+                            onError={(e) => { 
+                              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzUiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
+                            }}
+                          />
+                        </div>
+                      )
                     ))}
                   </div>
                 </>
@@ -486,20 +517,32 @@ const TripDetails = () => {
                 <option value="">No dates available</option>
               )}
             </select>
-            <AirportSelect
-              city={tripDetails.city}
-              country={tripDetails.country}
-              value={selectedDepartureAirport}
-              onChange={setSelectedDepartureAirport}
-            />
+     <div className="airport-selection">
+              <label className="airport-label">Departure Airport (Poland)</label>
+              <select
+                className="airport-dropdown"
+                value={selectedDepartureAirport}
+                onChange={(e) => setSelectedDepartureAirport(e.target.value)}
+              >
+                <option value="">Select departure airport</option>
+                {availableDepartureAirports.map((airport) => (
+                  <option key={airport.iata} value={airport.iata}>
+                    {airport.iata} - {airport.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <input
-              type="text"
-              value={arrivalIATA}
-              placeholder="Arrival Airport"
-              readOnly
-              className="arrival-airport"
-            />
+            <div className="airport-selection">
+              <label className="airport-label">Arrival Airport</label>
+              <input
+                type="text"
+                value={arrivalIATA || 'N/A'}
+                placeholder="Select departure first"
+                readOnly
+                className="arrival-airport"
+              />
+            </div>
 
             <p className="price">Total: {calculateTotalPrice()} PLN</p>
             <button className="book-button" onClick={handleBookNowClick}>
@@ -606,10 +649,10 @@ const TripDetails = () => {
 
       <div className="mb-8">
         <h2 className="section-heading">Flight Details</h2>
-        {tripDetails.flightConnections && tripDetails.flightConnections.length > 0 ? (
+        {tripDetails?.flightConnections?.length > 0 ? (  
           <div>
             {tripDetails.flightConnections.map((flight, index) => (
-              <p key={index} className="detail-text">
+              <p key={flight._id || index} className="detail-text">
                 <strong>Flight {index + 1}:</strong> {flight.departureAirportIATA} → {flight.arrivalAirportIATA} 
                 {flight.departureTime ? ` at ${flight.departureTime}` : ''}
               </p>

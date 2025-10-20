@@ -86,36 +86,129 @@
 
 
 .navbar-signup-button {
-    display: inline-block;
-    padding: 8px 22px;
-    border-radius: 9999px;
-    background-color: #e2d4bb;
-    color: #1B3A4B;
-    font-weight: regular;
-    text-decoration: none;
-    transition: background 0.3s ease;
-    font-family: 'Poppins', sans-serif;
+  display: inline-block;
+  padding: 10px 26px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #1B3A4B;
+  font-weight: 600;
+  text-decoration: none;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 0 8px rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
 }
+
+/* Ефект блиску при наведенні */
+.navbar-signup-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: all 0.6s ease;
+}
+
+.navbar-signup-button:hover::before {
+  left: 125%;
+}
+
+/* Hover — світиться, як у iOS */
+.navbar-signup-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 
+    0 8px 30px rgba(255, 255, 255, 0.25),
+    0 4px 60px rgba(255, 255, 255, 0.1);
+}
+
+/* Ефект натискання */
+.navbar-signup-button:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
+}
+
 
 
 .navbar-login-button {
-    display: inline-block;
-    padding: 8px 22px;
-    border: 2px solid #e2d4bb;
-    border-radius: 9999px;
-    background: hsla(38, 40%, 81%, 0.2);
-    color: #e2d4bb;
-    font-weight: 400;
-    text-decoration: none;
-    backdrop-filter: blur(8px);
-    transition: all 0.3s ease;
-    font-family: 'Poppins', sans-serif;
-    cursor: pointer;
+  display: inline-block;
+  padding: 10px 26px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 500;
+  text-decoration: none;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
 }
 
-.navbar-login-button:hover {
-    background: hsla(38, 40%, 81%, 0.5);
+/* Елегантний блиск зверху */
+.navbar-login-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.7),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: all 0.6s ease;
 }
+
+/* При наведенні — ковзаючий світловий ефект */
+.navbar-login-button:hover::before {
+  left: 125%;
+}
+
+/* Hover — більше “об’єму” та м’яке світіння */
+.navbar-login-button:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 10px 40px rgba(255, 255, 255, 0.15),
+    0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* При натисканні — плавне стиснення */
+.navbar-login-button:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.25),
+    inset 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+
+
 
 
 .navbar-toggle {

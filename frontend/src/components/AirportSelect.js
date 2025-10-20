@@ -1,100 +1,159 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
-const AirportSelect = ({ country, city, value, onChange }) => {
+const countryToISO = {
+  "Poland": "PL",
+  "France": "FR",
+  "United States": "US",
+  "Germany": "DE",
+  "Spain": "ES",
+  "Italy": "IT",
+  "United Kingdom": "GB",
+  "Greece": "GR",
+  "Portugal": "PT",
+  "Netherlands": "NL",
+  "Belgium": "BE",
+  "Switzerland": "CH",
+  "Austria": "AT",
+  "Czech Republic": "CZ",
+  "Hungary": "HU",
+  "Croatia": "HR",
+  "Turkey": "TR",
+  "Egypt": "EG",
+  "Morocco": "MA",
+  "Tunisia": "TN",
+  "Thailand": "TH",
+  "Japan": "JP",
+  "South Korea": "KR",
+  "China": "CN",
+  "India": "IN",
+  "United Arab Emirates": "AE",
+  "Australia": "AU",
+  "New Zealand": "NZ",
+  "Canada": "CA",
+  "Mexico": "MX",
+  "Brazil": "BR",
+  "Argentina": "AR",
+  "South Africa": "ZA",
+};
+
+const AirportSelect = ({ 
+  country, 
+  city, 
+  value, 
+  onChange, 
+  isDeparture = false 
+}) => {
   const [airports, setAirports] = useState([]);
-  const [error, setError] = useState(null);
-  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001";
+  const [isLoading, setIsLoading] = useState(false);
+  const [existingAirport, setExistingAirport] = useState(null);
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
+  // Fetch the existing airport details if value exists but not in current search
   useEffect(() => {
-    const fetchAirports = async () => {
-      if (!country && !city) {
-        console.warn(
-          "AirportSelect: No country or city provided, skipping fetch."
-        );
-        return;
-      }
+    setExistingAirport(null); // Reset
+    if (!value) return;
+    // Якщо потрібно, можеш фетчити по city/country + value як fallback, але зараз custom option вистачить
+    console.log("Existing value:", value); // DEBUG
+  }, [value]);
 
-      try {
-        const params = new URLSearchParams();
-        if (country) params.append("country", country);
-        if (city) params.append("city", city);
-        const queryString = params.toString();
-        console.log("Fetching airports with query:", queryString);
+  // Fetch airports based on location
+  const fetchAirports = async (countryQuery, cityQuery) => {
+    if (!cityQuery && !countryQuery) {
+      console.log("AirportSelect: No city or country provided, skipping fetch.");
+      setAirports([]);
+      return;
+    }
 
-        const response = await fetch(`${apiUrl}/api/airports?${queryString}`);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const data = await response.json();
-        console.log("Fetched airports:", data);
-        setAirports(data || []);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to fetch airports:", err);
-        setError(`Помилка завантаження: ${err.message}`);
-        setAirports([]);
-      }
-    };
-
-    fetchAirports();
-  }, [country, city, apiUrl]);
-
-  const handleChange = (e) => {
-    const selectedIata = e.target.value;
-    console.log("Selected IATA in AirportSelect:", selectedIata);
-    if (selectedIata) {
-      onChange(selectedIata);
+    setIsLoading(true);
+    const isoCountry = countryQuery ? (countryToISO[countryQuery] || countryQuery) : null;
+    
+    console.log(`Fetching airports: country=${isoCountry || 'none'}, city=${cityQuery || 'none'}, existing value=${value || 'none'}`);
+    
+    try {
+      const params = new URLSearchParams();
+      if (cityQuery) params.append('city', cityQuery);
+      if (isoCountry) params.append('country', isoCountry);
+      
+      const response = await fetch(`${apiUrl}/api/airports?${params}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const data = await response.json();
+      console.log("Fetched airports:", data);
+      setAirports(data || []);
+    } catch (error) {
+      console.error("Error fetching airports:", error);
+      setAirports([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const validAirports = airports.filter(
-    (airport) => airport.iata && airport.iata.trim() !== ""
-  );
+  useEffect(() => {
+    if (city) {
+      fetchAirports(country, city);
+    } else if (isDeparture && country) {
+      fetchAirports(country, null);
+    } else {
+      setAirports([]);
+    }
+  }, [country, city, isDeparture]);
+
+  const handleSelect = (iata) => {
+    console.log(`Selected IATA in AirportSelect: ${iata}`);
+    onChange(iata);
+  };
+
+  if (isLoading) {
+    return (
+      <select className="form-input" disabled>
+        <option>Loading airports...</option>
+      </select>
+    );
+  }
+
+  const airportOptions = [];
+  
+  airports.forEach((airport) => {
+    airportOptions.push(
+      <option key={airport.iata || airport.icao} value={airport.iata || airport.icao}>
+        {airport.name} ({airport.iata || airport.icao}) - {airport.city}
+      </option>
+    );
+  });
+
+  const valueInList = airports.some(a => a.iata === value || a.icao === value);
+  if (value && !valueInList) {
+    airportOptions.unshift(
+      <option key="existing-value" value={value}>
+        {value} [Previous Selection - from different location]
+      </option>
+    );
+  }
 
   return (
-    <div className="airport-select-wrapper">
-      {error && (
-        <div style={{ color: "red", fontSize: "12px", marginBottom: "5px" }}>
-          {error}
-        </div>
+    <select 
+      value={value || ""} 
+      onChange={(e) => handleSelect(e.target.value)} 
+      className="form-input"
+    >
+      <option value="">Select Airport</option>
+      {airportOptions}
+      {airports.length === 0 && !value && (
+        <option value="" disabled>
+          No airports found for {city || country}
+        </option>
       )}
-      {validAirports.length === 0 && (
-        <div style={{ color: "orange", fontSize: "12px" }}>
-          Airports with IATA not found (codes only)
-        </div>
-      )}
-      <select
-        value={value || ""}
-        onChange={handleChange}
-        className="form-input"
-        style={{ width: "100%", padding: "8px" }}
-      >
-        <option value="">{value ? "Змінюємо..." : "Select Airport"}</option>
-        {validAirports.map((airport) => {
-          const iata = airport.iata.trim();
-          const displayText = `${airport.name || "Unknown"} (${iata})`;
-          return (
-            <option key={iata} value={iata}>
-              {displayText}
-            </option>
-          );
-        })}
-      </select>
-      {value && !validAirports.some((a) => a.iata === value) && (
-        <div style={{ color: "orange", fontSize: "12px", marginTop: "5px" }}>
-          Previous value: {value} (not in the list){" "}
-        </div>
-      )}
-    </div>
+    </select>
   );
 };
 
 AirportSelect.propTypes = {
-  city: PropTypes.string,
   country: PropTypes.string,
+  city: PropTypes.string,
   value: PropTypes.string,
   onChange: PropTypes.func.isRequired,
+  isDeparture: PropTypes.bool,
 };
 
 export default AirportSelect;

@@ -6,7 +6,8 @@ router.post("/", async (req, res) => {
   try {
     const { offerId, departureAirportIATA, arrivalAirportIATA, departureTime } = req.body;
 
-    if (!offerId || !departureAirportIATA || !arrivalAirportIATA || !departureTime) {
+    // CHANGED: Made offerId optional
+    if (!departureAirportIATA || !arrivalAirportIATA || !departureTime) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -15,7 +16,7 @@ router.post("/", async (req, res) => {
     }
 
     const flight = new FlightConnection({
-      offerId,
+      offerId: offerId || null,  // UPDATED: Allow null
       departureAirportIATA,
       arrivalAirportIATA,
       departureTime,
@@ -32,6 +33,15 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const flights = await FlightConnection.find().populate("offerId");
+    res.json(flights);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.get("/offer/:offerId", async (req, res) => {
+  try {
+    const flights = await FlightConnection.find({ offerId: req.params.offerId }).populate('offerId');
     res.json(flights);
   } catch (err) {
     res.status(500).json({ error: "Server error" });

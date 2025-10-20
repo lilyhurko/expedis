@@ -9,11 +9,11 @@ const airportSchema = new mongoose.Schema({
   longitude_deg: Number,
   elevation_ft: Number,
   continent: String,
-  iso_country: String, // ВИПРАВЛЕНО: Змінено на iso_country для відповідності логам (country: 'PL')
+  iso_country: String, 
   iso_region: String,
-  municipality: String, // ВИПРАВЛЕНО: municipality для city
+  municipality: String, 
   gps_code: String,
-  iata: String, // ВИПРАВЛЕНО: Змінено з iata_code на iata (як у логах fetch)
+  iata: String, 
   local_code: String,
 });
 
