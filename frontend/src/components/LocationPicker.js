@@ -42,21 +42,26 @@ const LocationPicker = ({ setCityCountry, initialCity = '', initialCountry = '' 
     return () => clearTimeout(debounce);
   }, [cityInput]);
 
-  const handleCitySelect = (suggestion) => {
-    setCityInput(suggestion.name);
-    setCityCountry({ city: suggestion.name, country: suggestion.country });
+const handleCitySelect = (suggestion) => {
+  setCityInput(suggestion.name);
+  setCityCountry({ 
+    city: suggestion.name, 
+    country: suggestion.country,
+    lat: suggestion.lat, 
+    lng: suggestion.lon  
+  });
+  setShowSuggestions(false);
+  setError('');
+};
+
+const handleCityChange = (e) => {
+  setCityInput(e.target.value);
+  if (!e.target.value) {
+    setCityCountry({ city: '', country: '', lat: null, lng: null }); 
     setShowSuggestions(false);
     setError('');
-  };
-
-  const handleCityChange = (e) => {
-    setCityInput(e.target.value);
-    if (!e.target.value) {
-      setCityCountry({ city: '', country: '' });
-      setShowSuggestions(false);
-      setError('');
-    }
-  };
+  }
+};
 
   return (
     <div className="form-group location-picker">

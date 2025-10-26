@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 const PlacesToVisit = ({ places }) => {
   return (
     <div className="places-to-visit">
-      <h3>Places to Visit</h3>
       {places.length === 0 ? (
         <p>No places added yet.</p>
       ) : (

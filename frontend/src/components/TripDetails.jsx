@@ -8,6 +8,31 @@ import AirportSelect from "./AirportSelect.js";
 import "../assets/styles/Offerts.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import RecommendedHotels from './RecommendedHotels.jsx';
+
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const TripDetails = () => {
   const { offerId } = useParams();
@@ -16,7 +41,7 @@ const TripDetails = () => {
   const sliderRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [weatherForecast, setWeatherForecast] = useState(null);
+  const [monthlyWeather, setMonthlyWeather] = useState(null);
   const [tripReviews, setTripReviews] = useState([]);
   const [newReviewInput, setNewReviewInput] = useState({
     rating: 0,
@@ -26,7 +51,7 @@ const TripDetails = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedFlight, setSelectedFlight] = useState("");
   const [selectedDepartureAirport, setSelectedDepartureAirport] = useState("");
-  const [arrivalIATA, setArrivalIATA] = useState('');
+  const [arrivalIATA, setArrivalIATA] = useState("");
   const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,23 +60,66 @@ const TripDetails = () => {
     children: [],
   });
   const [errors, setErrors] = useState([]);
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001";
+
+const getFullFlightDate = (baseDate, timeString) => {
+    if (!baseDate || !timeString) return null;
+    const [hours, minutes] = timeString.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return null;
+    const newDate = new Date(baseDate);
+    newDate.setHours(hours, minutes, 0, 0); 
+    
+    return newDate;
+  };
+
+  const calculateDuration = (start, end) => {
+    if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return "N/A";
+    }
+
+    let diffMs = end.getTime() - start.getTime();
+    if (diffMs < 0) {
+      end.setDate(end.getDate() + 1); 
+      diffMs = end.getTime() - start.getTime(); 
+    }
+
+    if (diffMs < 0) {
+        console.warn("Negative duration detected even after date adjustment");
+        return "N/A";
+    }
+
+    const totalMinutes = Math.floor(diffMs / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    return `${hours}h ${minutes}min`;
+  };
 
   const fetchTripDetails = async (offerId) => {
     console.log("Fetching trip details for ID:", offerId);
     try {
-      const response = await fetch(`${apiUrl}/api/offers/${offerId}`); 
+      const response = await fetch(`${apiUrl}/api/offers/${offerId}`);
       if (!response.ok) {
         if (response.status === 404) {
-          setErrorMessage("Trip not found. It may have been deleted or does not exist.");
+          setErrorMessage(
+            "Trip not found. It may have been deleted or does not exist."
+          );
           setIsLoading(false);
           return;
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       const data = await response.json();
-      console.log("Fetched trip details:", data.offer || data); // NEW: Debug log
-      setTripDetails(data.offer || data);
+
+      console.log("Fetched data:", data);
+      if (data.offer && data.weather) {
+        setTripDetails(data.offer);
+        setMonthlyWeather(data.weather);
+      } else {
+        setTripDetails(data.offer || data);
+        setMonthlyWeather(null);
+      }
+
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching trip details:", error);
@@ -69,7 +137,9 @@ const TripDetails = () => {
           setTripReviews([]);
           return;
         }
-        throw new Error(`HTTP ${reviewResponse.status}: ${reviewResponse.statusText}`);
+        throw new Error(
+          `HTTP ${reviewResponse.status}: ${reviewResponse.statusText}`
+        );
       }
       const reviewData = await reviewResponse.json();
       setTripReviews(reviewData.comments || reviewData || []);
@@ -115,7 +185,8 @@ const TripDetails = () => {
     if (tripDetails?.flightConnections?.length > 0) {
       // Initialize selectedDepartureAirport to the first available if not set
       if (!selectedDepartureAirport) {
-        const firstDeparture = tripDetails.flightConnections[0].departureAirportIATA;
+        const firstDeparture =
+          tripDetails.flightConnections[0].departureAirportIATA;
         setSelectedDepartureAirport(firstDeparture);
         setArrivalIATA(tripDetails.flightConnections[0].arrivalAirportIATA);
       }
@@ -123,59 +194,20 @@ const TripDetails = () => {
   }, [tripDetails]);
 
   useEffect(() => {
-    if (selectedDepartureAirport && tripDetails?.flightConnections?.length > 0) {
+    if (
+      selectedDepartureAirport &&
+      tripDetails?.flightConnections?.length > 0
+    ) {
       const connection = tripDetails.flightConnections.find(
-        f => f.departureAirportIATA === selectedDepartureAirport
+        (f) => f.departureAirportIATA === selectedDepartureAirport
       );
       if (connection) {
         setArrivalIATA(connection.arrivalAirportIATA);
       } else {
-        setArrivalIATA('N/A');
+        setArrivalIATA("N/A");
       }
     }
   }, [selectedDepartureAirport, tripDetails]);
-
-  useEffect(() => {
-  if (!tripDetails) return;
-
-  const fetchWeatherForecast = async () => {
-    const apiKey = process.env.REACT_APP_OPENWEATHER_API_KEY;
-    if (!apiKey) {
-      console.warn("⚠️ Weather API key missing");
-      return;
-    }
-
-    try {
-      const city = tripDetails.city || "Warsaw";
-      const geoResponse = await fetch(
-        `https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`
-      );
-      if (!geoResponse.ok) throw new Error("Geocoding failed");
-      const geoData = await geoResponse.json();
-      if (geoData.length === 0) throw new Error("City not found");
-
-      const { lat, lon } = geoData[0];
-
-      const weatherResponse = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=en`
-      );
-      if (!weatherResponse.ok) throw new Error(`Weather request failed: ${weatherResponse.status}`);
-      const weatherData = await weatherResponse.json();
-
-      setWeatherForecast({
-        temperature: `${Math.round(weatherData.main.temp)}°C`,
-        condition: weatherData.weather[0].description,
-        humidity: `${weatherData.main.humidity}%`,
-        wind: `${weatherData.wind.speed} m/s`,
-        icon: weatherData.weather[0].icon,
-      });
-    } catch (error) {
-      console.error("Error fetching weather:", error);
-    }
-  };
-
-  fetchWeatherForecast();
-}, [tripDetails]);
 
   useEffect(() => {
     setSelectedFlight("");
@@ -184,7 +216,11 @@ const TripDetails = () => {
   const handleBookNowClick = () => {
     navigate("/top-up-balance");
   };
-
+  const getMonthName = (monthNumber) => {
+    const date = new Date();
+    date.setMonth(monthNumber - 1);
+    return date.toLocaleString("en-US", { month: "short" });
+  };
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!isUserAuthenticated) {
@@ -210,9 +246,9 @@ const TripDetails = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             message: newReviewInput.comment,
-            rating: newReviewInput.rating
+            rating: newReviewInput.rating,
           }),
         }
       );
@@ -250,7 +286,9 @@ const TripDetails = () => {
     if (e.key === "ArrowLeft") {
       setCurrentSlide((prev) => Math.max(0, prev - 1));
     } else if (e.key === "ArrowRight") {
-      setCurrentSlide((prev) => Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1));
+      setCurrentSlide((prev) =>
+        Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1)
+      );
     } else if (e.key === "Escape") {
       closeFullScreen();
     }
@@ -374,35 +412,176 @@ const TripDetails = () => {
       </div>
     );
   if (!tripDetails) return <div className="error-message">Trip not found</div>;
+let outboundFlight = tripDetails.flightConnections.find(
+    (f) => f.flightType === "outbound"
+  );
+  let returnFlight = tripDetails.flightConnections.find(
+    (f) => f.flightType === "return"
+  );
 
-  const availableDepartureAirports = tripDetails?.flightConnections?.length > 0
-    ? [...new Set(tripDetails.flightConnections.map(fc => fc.departureAirportIATA))].map(iata => ({
-        iata,
-        name: `${iata} Airport` 
-      }))
+  if (!outboundFlight && tripDetails.flightConnections.length > 0) {
+    outboundFlight = tripDetails.flightConnections[0];
+  }
+  if (!returnFlight && tripDetails.flightConnections.length > 1) {
+    returnFlight = tripDetails.flightConnections[1];
+  }
+
+  let outboundDepDate, outboundArrDate, returnDepDate, returnArrDate;
+  if (selectedDate) {
+    const departureBaseDate = new Date(selectedDate);
+    
+    const returnBaseDate = new Date(departureBaseDate);
+    returnBaseDate.setDate(departureBaseDate.getDate() + (tripDetails.duration - 1));
+
+    if (outboundFlight) {
+      outboundDepDate = getFullFlightDate(departureBaseDate, outboundFlight.departureTime);
+      outboundArrDate = getFullFlightDate(departureBaseDate, outboundFlight.arrivalTime);
+    }
+    if (returnFlight) {
+      returnDepDate = getFullFlightDate(returnBaseDate, returnFlight.departureTime);
+      returnArrDate = getFullFlightDate(returnBaseDate, returnFlight.arrivalTime);
+    }
+  }
+
+  const monthLabels = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const sortedWeather = monthlyWeather
+    ? [...monthlyWeather].sort((a, b) => a.month - b.month)
     : [];
 
+  const chartData = {
+    labels: monthLabels,
+    datasets: [
+      {
+        label: "Avg. Temp (°C)",
+        data: sortedWeather.map((m) => m.avg_temp),
+        borderColor: "rgb(255, 99, 132)",
+        backgroundColor: "rgba(255, 99, 132, 0.5)",
+        type: "line",
+        yAxisID: "y_temp",
+      },
+      {
+        label: "Night Temp (°C)",
+        data: sortedWeather.map((m) => m.avg_min_temp),
+        borderColor: "rgb(75, 192, 192)",
+        backgroundColor: "rgba(75, 192, 192, 0.5)",
+        type: "line",
+        yAxisID: "y_temp",
+        hidden: true,
+      },
+      {
+        label: "Precipitation (mm)", 
+        data: sortedWeather.map((m) => m.precipitation),
+        borderColor: "rgb(54, 162, 235)",
+        backgroundColor: "rgba(54, 162, 235, 0.5)",
+        type: "bar", 
+        yAxisID: "y_prcp", 
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+      title: {
+        display: true,
+        text: `Average Monthly Weather in ${tripDetails.city}`,
+      },
+    },
+    scales: {
+      y_temp: {
+        type: "linear",
+        display: true,
+        position: "left",
+        title: {
+          display: true,
+          text: "Temperature (°C)",
+        },
+      },
+      y_prcp: {
+        type: "linear",
+        display: true,
+        position: "right",
+        title: {
+          display: true,
+          text: "Precipitation (mm)",
+        },
+        grid: {
+          drawOnChartArea: false, 
+        },
+      },
+    },
+  };
+  
+
+  const availableDepartureAirports =
+    tripDetails?.flightConnections?.length > 0
+      ? [
+          ...new Set(
+            tripDetails.flightConnections.map((fc) => fc.departureAirportIATA)
+          ),
+        ].map((iata) => ({
+          iata,
+          name: `${iata} Airport`,
+        }))
+      : [];
+
   const buildImageUrl = (filename) => {
-    if (!filename || filename === "") return null; 
-    if (filename.startsWith('http')) {
-      return filename; 
+    if (!filename || filename === "") return null;
+    if (filename.startsWith("http")) {
+      return filename;
     }
-    return `${apiUrl}${filename}`; 
+    return `${apiUrl}${filename}`;
   };
 
   const FullScreenModal = () => (
-    <div className="fullscreen-modal" style={{ display: isFullScreenOpen ? 'flex' : 'none' }} onClick={closeFullScreen}>
+    <div
+      className="fullscreen-modal"
+      style={{ display: isFullScreenOpen ? "flex" : "none" }}
+      onClick={closeFullScreen}
+    >
       <div className="fullscreen-content" onClick={(e) => e.stopPropagation()}>
-        <button className="close-fullscreen" onClick={closeFullScreen}>×</button>
+        <button className="close-fullscreen" onClick={closeFullScreen}>
+          ×
+        </button>
         {tripDetails?.imageUrls && tripDetails.imageUrls[currentSlide] && (
           <img
             src={buildImageUrl(tripDetails.imageUrls[currentSlide])}
             alt="Fullscreen"
-            style={{ maxWidth: '100%', maxHeight: '100%' }}
+            style={{ maxWidth: "100%", maxHeight: "100%" }}
           />
         )}
-        <button className="nav-arrow left" onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}>‹</button>
-        <button className="nav-arrow right" onClick={() => setCurrentSlide((prev) => Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1))}>›</button>
+        <button
+          className="nav-arrow left"
+          onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}
+        >
+          ‹
+        </button>
+        <button
+          className="nav-arrow right"
+          onClick={() =>
+            setCurrentSlide((prev) =>
+              Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1)
+            )
+          }
+        >
+          ›
+        </button>
       </div>
     </div>
   );
@@ -431,7 +610,7 @@ const TripDetails = () => {
             <div className="photo-gallery">
               {tripDetails.imageUrls && tripDetails.imageUrls.length > 0 ? (
                 <>
-                  {mainImage && buildImageUrl(mainImage) && (  
+                  {mainImage && buildImageUrl(mainImage) && (
                     <div
                       className="main-photo"
                       onClick={() =>
@@ -441,30 +620,35 @@ const TripDetails = () => {
                       <img
                         src={buildImageUrl(mainImage)}
                         alt="Main trip"
-                        onError={(e) => { 
-                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';  // UPDATED: Fallback SVG
+                        onError={(e) => {
+                          e.target.src =
+                            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=="; // UPDATED: Fallback SVG
                         }}
                       />
                     </div>
                   )}
                   <div className="thumbnails">
-                    {tripDetails.imageUrls.map((filename, index) => (
-                      buildImageUrl(filename) && ( 
-                        <div
-                          key={index}
-                          className={`thumbnail ${mainImage === filename ? "active" : ""}`}
-                          onClick={() => setMainImage(filename)}
-                        >
-                          <img
-                            src={buildImageUrl(filename)}
-                            alt={`Thumbnail ${index + 1}`}
-                            onError={(e) => { 
-                              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzUiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
-                            }}
-                          />
-                        </div>
-                      )
-                    ))}
+                    {tripDetails.imageUrls.map(
+                      (filename, index) =>
+                        buildImageUrl(filename) && (
+                          <div
+                            key={index}
+                            className={`thumbnail ${
+                              mainImage === filename ? "active" : ""
+                            }`}
+                            onClick={() => setMainImage(filename)}
+                          >
+                            <img
+                              src={buildImageUrl(filename)}
+                              alt={`Thumbnail ${index + 1}`}
+                              onError={(e) => {
+                                e.target.src =
+                                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzUiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=";
+                              }}
+                            />
+                          </div>
+                        )
+                    )}
                   </div>
                 </>
               ) : (
@@ -517,8 +701,10 @@ const TripDetails = () => {
                 <option value="">No dates available</option>
               )}
             </select>
-     <div className="airport-selection">
-              <label className="airport-label">Departure Airport (Poland)</label>
+            <div className="airport-selection">
+              <label className="airport-label">
+                Departure Airport (Poland)
+              </label>
               <select
                 className="airport-dropdown"
                 value={selectedDepartureAirport}
@@ -537,7 +723,7 @@ const TripDetails = () => {
               <label className="airport-label">Arrival Airport</label>
               <input
                 type="text"
-                value={arrivalIATA || 'N/A'}
+                value={arrivalIATA || "N/A"}
                 placeholder="Select departure first"
                 readOnly
                 className="arrival-airport"
@@ -649,31 +835,54 @@ const TripDetails = () => {
 
       <div className="mb-8">
         <h2 className="section-heading">Flight Details</h2>
-        {tripDetails?.flightConnections?.length > 0 ? (  
-          <div>
-            {tripDetails.flightConnections.map((flight, index) => (
-              <p key={flight._id || index} className="detail-text">
-                <strong>Flight {index + 1}:</strong> {flight.departureAirportIATA} → {flight.arrivalAirportIATA} 
-                {flight.departureTime ? ` at ${flight.departureTime}` : ''}
-              </p>
-            ))}
+
+{outboundFlight && (
+          <div className="flight-segment">
+            <h4>Outbound Flight</h4>
+            <p>
+              {outboundFlight.departureAirportIATA} →{" "}
+              {outboundFlight.arrivalAirportIATA}
+            </p>
+            <p>Departure: {outboundFlight.departureTime}</p>
+            <p>Arrival: {outboundFlight.arrivalTime}</p>
+            <p>
+              Duration:{" "}
+              {selectedDate
+                ? calculateDuration(outboundDepDate, outboundArrDate)
+                : "Select date to see duration"}
+            </p>
           </div>
-        ) : (
-          <p className="detail-text"><strong>Arrival Airport:</strong> N/A (No flight data)</p>
+        )}
+
+        {returnFlight && (
+          <div className="flight-segment">
+            <h4>Return Flight</h4>
+            <p>
+              {returnFlight.departureAirportIATA} →{" "}
+              {returnFlight.arrivalAirportIATA}
+            </p>
+            <p>Departure: {returnFlight.departureTime}</p>
+            <p>Arrival: {returnFlight.arrivalTime}</p>
+            <p>
+              Duration:{" "}
+              {selectedDate
+                ? calculateDuration(returnDepDate, returnArrDate)
+                : "Select date to see duration"}
+            </p>
+          </div>
         )}
       </div>
 
       <div className="mb-8">
-        <h2 className="section-heading">Weather Summary</h2>
-        {weatherForecast ? (
-          <ul className="list-disc pl-5">
-            <li className="list-item">Temperature: {weatherForecast.temperature}</li>
-            <li className="list-item">Condition: {weatherForecast.condition}</li>
-            <li className="list-item">Humidity: {weatherForecast.humidity}</li>
-            <li className="list-item">Wind: {weatherForecast.wind}</li>
-          </ul>
+        <h2 className="section-heading">Average Monthly Weather</h2>
+        {monthlyWeather && monthlyWeather.length > 0 ? (
+          <div className="weather-chart-container">
+            <Line options={chartOptions} data={chartData} />
+          </div>
         ) : (
-          <p className="empty-section-text">Weather data unavailable.</p>
+          <p className="empty-section-text">
+            Average monthly weather data unavailable.
+          </p>
         )}
       </div>
 
@@ -685,7 +894,7 @@ const TripDetails = () => {
           <p className="empty-section-text">No places listed.</p>
         )}
       </div>
-
+        <RecommendedHotels city={tripDetails.city} />
       <button className="book-button" onClick={handleBookNowClick}>
         Book Now
       </button>
@@ -706,7 +915,9 @@ const TripDetails = () => {
                     />
                   ))}
                 </div>
-                <p className="detail-text">{review.message || review.comment}</p>
+                <p className="detail-text">
+                  {review.message || review.comment}
+                </p>
                 <p className="review-username">
                   By {review.username || review.user?.username || "Anonymous"}
                 </p>

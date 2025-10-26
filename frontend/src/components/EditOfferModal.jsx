@@ -76,7 +76,6 @@ const EditOfferModal = ({
     "Wellness",
   ];
 
-  // Full init on mount with guard to prevent loops
   useLayoutEffect(() => {
     if (!offer || isInitializedRef.current) {
       return;
@@ -85,7 +84,6 @@ const EditOfferModal = ({
 
     console.log("Initializing edit modal with offer:", offer);
 
-    // Categories
     let cleanedCategories = [];
     if (offer.categories) {
       cleanedCategories = Array.isArray(offer.categories)
@@ -95,16 +93,13 @@ const EditOfferModal = ({
         : [];
     }
 
-    // Location
     const initCity = offer.city || editFormData.city || "";
     const initCountry = offer.country || editFormData.country || "";
     setLocation({ city: initCity, country: initCountry });
 
-    // Set refs IMMEDIATELY to prevent location change reset
     prevCityRef.current = initCity;
     prevCountryRef.current = initCountry;
 
-    // Places to visit
     const initPlaces = (offer.placesToVisit || []).map((place) => ({
       ...place,
       image: null,
@@ -114,7 +109,6 @@ const EditOfferModal = ({
     }
     setPlacesToVisit(initPlaces);
 
-    // Flight connections - properly structure from offer
     const offerConnectionsRaw = offer.flightConnections;
     console.log("Raw flightConnections from offer:", offerConnectionsRaw);
     let parsedConnections = [];
@@ -146,16 +140,14 @@ const EditOfferModal = ({
       },
     ];
 
-    console.log("Initialized flight connections:", initConnections); // DEBUG
+    console.log("Initialized flight connections:", initConnections); 
     setFlightConnections(initConnections);
 
-    // Images
     const initPreviews = (offer.imageUrls || [])
       .filter((url) => url && typeof url === "string")
       .map((url) => ({ preview: url }));
     setPreviewImages(initPreviews);
 
-    // Main image index
     const initMainIndex = offer.mainImageIndex ?? 0;
     const finalMainIndex =
       initMainIndex >= 0 && initMainIndex < initPreviews.length
@@ -163,7 +155,6 @@ const EditOfferModal = ({
         : 0;
     setMainImageIndex(finalMainIndex);
 
-    // Available dates
     const initDates = (offer.availableDates || [])
       .map((date) => {
         if (typeof date === "string") {
@@ -175,7 +166,6 @@ const EditOfferModal = ({
       })
       .filter(Boolean);
 
-    // Set all form data at once
     flushSync(() => {
       setEditFormData({
         _id: offer._id,
@@ -195,7 +185,7 @@ const EditOfferModal = ({
         flightConnections: initConnections,
       });
     });
-  }, [offer]); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offer]); 
 
   useEffect(() => {
     if (isInitializedRef.current && editFormData.flightConnections) {
@@ -209,7 +199,6 @@ const EditOfferModal = ({
     }
   }, [editFormData.flightConnections]);
 
-  // Sync location back to form data
   useEffect(() => {
     if (isInitializedRef.current) {
       setEditFormData((prev) => ({
@@ -220,12 +209,10 @@ const EditOfferModal = ({
     }
   }, [location.city, location.country, setEditFormData]);
 
-  // Reset flights ONLY on actual location change (skip init)
   useEffect(() => {
     const currentCity = location.city;
     const currentCountry = location.country;
 
-    // Only reset if refs are set AND location actually changed
     if (
       prevCityRef.current !== undefined &&
       (currentCity !== prevCityRef.current ||
@@ -447,7 +434,6 @@ const EditOfferModal = ({
   };
 
   const validateForm = () => {
-    // All fields are now optional, so no validation errors
     return null;
   };
 

@@ -8,6 +8,8 @@ const offerSchema = new mongoose.Schema({
   city: { type: String, required: true },
   country: { type: String, required: true },
   departureAirportIATA: { type: String, required: true },
+  latitude: { type: Number, required: true },
+  longitude: { type: Number, required: true },
   categories: [{ type: String }],
   availableDates: [{ type: Date }],
   imageUrls: [{ type: String }],

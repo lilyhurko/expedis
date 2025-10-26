@@ -14,15 +14,32 @@ const AddOfferModal = ({
 }) => {
   const [periodStart, setPeriodStart] = useState(null);
   const [periodEnd, setPeriodEnd] = useState(null);
-  const [location, setLocation] = useState({ city: "", country: "" });
+  const [location, setLocation] = useState({
+    city: "",
+    country: "",
+    lat: null,
+    lng: null,
+  });
   const [previewImages, setPreviewImages] = useState([]);
   const [mainImageIndex, setMainImageIndex] = useState(null);
   const [placesToVisit, setPlacesToVisit] = useState([
     { name: "", description: "", image: null },
   ]);
   const [flightConnections, setFlightConnections] = useState([
-    { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "outbound" },
-    { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "return" },
+    {
+      departureAirportIATA: "",
+      arrivalAirportIATA: "",
+      departureTime: "",
+      arrivalTime: "",
+      flightType: "outbound",
+    },
+    {
+      departureAirportIATA: "",
+      arrivalAirportIATA: "",
+      departureTime: "",
+      arrivalTime: "",
+      flightType: "return",
+    },
   ]);
   const [error, setError] = useState(null);
 
@@ -39,8 +56,16 @@ const AddOfferModal = ({
     let endDate = periodEnd.toDate ? periodEnd.toDate() : new Date(periodEnd);
 
     // Нормалізація до початку дня (UTC)
-    startDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
-    endDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()));
+    startDate = new Date(
+      Date.UTC(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+      )
+    );
+    endDate = new Date(
+      Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+    );
 
     if (endDate < startDate) {
       setError("End date must be after start date");
@@ -197,6 +222,9 @@ const AddOfferModal = ({
     if (!newOfferData.description.trim()) return "Description is required.";
     if (!newOfferData.city.trim()) return "City is required.";
     if (!newOfferData.country.trim()) return "Country is required.";
+    if (!location.lat || !location.lng) {
+      return "Location coordinates are missing. Please re-select the location from the list.";
+    }
     if (!newOfferData.departureAirportIATA)
       return "Departure airport is required.";
     if (
@@ -226,12 +254,13 @@ const AddOfferModal = ({
     if (
       !newOfferData.flightConnections ||
       newOfferData.flightConnections.length !== 2 ||
-      !newOfferData.flightConnections.every((fc) =>
-        fc.departureAirportIATA &&
-        fc.arrivalAirportIATA &&
-        fc.departureTime &&
-        fc.arrivalTime &&
-        fc.flightType
+      !newOfferData.flightConnections.every(
+        (fc) =>
+          fc.departureAirportIATA &&
+          fc.arrivalAirportIATA &&
+          fc.departureTime &&
+          fc.arrivalTime &&
+          fc.flightType
       )
     )
       return "Both outbound and return flight connections with all fields are required.";
@@ -255,6 +284,8 @@ const AddOfferModal = ({
     formData.append("duration", newOfferData.duration);
     formData.append("city", newOfferData.city);
     formData.append("country", newOfferData.country);
+    formData.append("latitude", location.lat);
+formData.append("longitude", location.lng);
     formData.append("departureAirportIATA", newOfferData.departureAirportIATA);
     formData.append(
       "categories",
@@ -318,8 +349,20 @@ const AddOfferModal = ({
         ],
       }));
       setFlightConnections([
-        { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "outbound" },
-        { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "return" },
+        {
+          departureAirportIATA: "",
+          arrivalAirportIATA: "",
+          departureTime: "",
+          arrivalTime: "",
+          flightType: "outbound",
+        },
+        {
+          departureAirportIATA: "",
+          arrivalAirportIATA: "",
+          departureTime: "",
+          arrivalTime: "",
+          flightType: "return",
+        },
       ]);
     }
   }, [location]);
@@ -448,40 +491,49 @@ const AddOfferModal = ({
             <div className="form-group">
               <label className="form-label">Flight Connections:</label>
               {flightConnections.map((fc, index) => (
-                <div
-                  key={index}
-                  className="flight-connection form-group"
-                >
+                <div key={index} className="flight-connection form-group">
                   <h4>{index === 0 ? "Outbound Flight" : "Return Flight"}</h4>
                   <label>
-                    Departure Airport {index === 0 ? "(Poland)" : `(from ${newOfferData.city})`}:
+                    Departure Airport{" "}
+                    {index === 0 ? "(Poland)" : `(from ${newOfferData.city})`}:
                   </label>
                   <AirportSelect
-                    {...(index === 0 
-                      ? { country: "PL" } 
-                      : { city: newOfferData.city, country: newOfferData.country }
-                    )}
+                    {...(index === 0
+                      ? { country: "PL" }
+                      : {
+                          city: newOfferData.city,
+                          country: newOfferData.country,
+                        })}
                     value={flightConnections[index].departureAirportIATA}
-                    onChange={(iata) => handleFlightChange(index, "departureAirportIATA", iata)}
+                    onChange={(iata) =>
+                      handleFlightChange(index, "departureAirportIATA", iata)
+                    }
                     isDeparture={true}
                   />
                   <label>
-                    Arrival Airport {index === 0 ? `(to ${newOfferData.city})` : "(Poland)"}:
+                    Arrival Airport{" "}
+                    {index === 0 ? `(to ${newOfferData.city})` : "(Poland)"}:
                   </label>
                   <AirportSelect
-                    {...(index === 0 
-                      ? { city: newOfferData.city, country: newOfferData.country } 
-                      : { country: "PL" }
-                    )}
+                    {...(index === 0
+                      ? {
+                          city: newOfferData.city,
+                          country: newOfferData.country,
+                        }
+                      : { country: "PL" })}
                     value={flightConnections[index].arrivalAirportIATA}
-                    onChange={(iata) => handleFlightChange(index, "arrivalAirportIATA", iata)}
+                    onChange={(iata) =>
+                      handleFlightChange(index, "arrivalAirportIATA", iata)
+                    }
                     {...(index === 1 ? { isDeparture: true } : {})}
                   />
                   <label>Departure Time:</label>
                   <input
                     type="time"
                     value={flightConnections[index].departureTime || ""}
-                    onChange={(e) => handleFlightChange(index, "departureTime", e.target.value)}
+                    onChange={(e) =>
+                      handleFlightChange(index, "departureTime", e.target.value)
+                    }
                     className="form-input"
                     required
                   />
@@ -489,7 +541,9 @@ const AddOfferModal = ({
                   <input
                     type="time"
                     value={flightConnections[index].arrivalTime || ""}
-                    onChange={(e) => handleFlightChange(index, "arrivalTime", e.target.value)}
+                    onChange={(e) =>
+                      handleFlightChange(index, "arrivalTime", e.target.value)
+                    }
                     className="form-input"
                     required
                   />
