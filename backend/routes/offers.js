@@ -9,7 +9,7 @@ const router = express.Router();
 const axios = require("axios");
 const CityWeather = require("../models/CityWeather");
 
-const RAPIDAPI_KEY = "463251c1a9msh9e573ca6257b1afp1576adjsn6ed05f3609c2"; // <-- Replace with your real key if this is a placeholder
+const RAPIDAPI_KEY = "463251c1a9msh9e573ca6257b1afp1576adjsn6ed05f3609c2"; 
 const RAPIDAPI_HOST = "meteostat.p.rapidapi.com";
 
 const storage = multer.diskStorage({
@@ -85,9 +85,7 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
       }
     );
 
-    console.log(`===== METEOSTAT API RESPONSE for ${city} =====`);
-    console.log(JSON.stringify(normalsResponse.data, null, 2));
-    console.log("==========================================");
+
 
     if (
       !normalsResponse.data ||
@@ -100,9 +98,7 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
       );
     }
     
-    // ----- START OF CORRECTED SECTION -----
-
-    // Фільтруємо дані, щоб взяти ТІЛЬКИ найновіший період (1991-2020)
+ 
     const recentWeatherData = (normalsResponse.data.data || []).filter(
       (d) => d.start === 1991 && d.end === 2020
     );
@@ -112,22 +108,18 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
         console.log(`[Weather] Using recent period (1991-2020) for ${city}.`);
         dataToMap = recentWeatherData;
     } else {
-        // Запасний варіант: Беремо ОСТАННІ 12 записів (вони найновіші)
         console.warn(`[Weather] Could not find 12 months for 1991-2020. Using last 12 entries available.`);
         dataToMap = (normalsResponse.data.data || []).slice(-12); 
     }
 
-    // Створюємо масив з 12 місяців з УСІМА потрібними даними
     const weatherData = dataToMap.map((monthData) => ({
-      month: monthData.month,         // Номер місяця
-      avg_temp: monthData.tavg,       // Середня темп. (для графіка "вдень")
-      avg_min_temp: monthData.tmin,   // Мін. темп. (для "вночі")
-      precipitation: monthData.prcp,  // Опади
-      // API дає години сонця в секундах, конвертуємо в години
+      month: monthData.month,         
+      avg_temp: monthData.tavg,      
+      avg_min_temp: monthData.tmin,   
+      precipitation: monthData.prcp,  
       sunshine_hours: monthData.tsun ? Math.round(monthData.tsun / 3600) : null 
     }));
 
-    // Видалено дубльований блок логування
     if (weatherData.length > 0) {
       console.log(
         `[Weather] Successfully mapped ${weatherData.length} months of data for ${city}.`
@@ -138,7 +130,6 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
       );
     }
     
-    // ----- END OF CORRECTED SECTION -----
 
     const newCachedWeather = new CityWeather({
       searchKey: searchKey,
@@ -174,15 +165,56 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
 
 router.get("/", async (req, res) => {
   try {
-    const offers = await Offer.find()
+    const { destination, maxPrice, duration } = req.query;
+    let filter = {}; 
+
+    if (destination) {
+      filter['$or'] = [
+        { city: { $regex: destination, $options: 'i' } },
+        { country: { $regex: destination, $options: 'i' } }
+      ];
+    }
+
+    if (maxPrice) {
+      filter.price = { $lte: Number(maxPrice) };
+    }
+    
+    if (duration) {
+      filter.duration = Number(duration);
+    }
+
+    const offers = await Offer.find(filter) 
       .populate("user", "username")
       .populate("flightConnections");
+      
     res.json(offers);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
+router.get("/suggestions", async (req, res) => {
+  try {
+    const { q } = req.query; 
+
+    if (!q || q.length < 2) {
+      return res.json([]);
+    }
+
+    const regex = new RegExp(q, 'i'); 
+    const citySuggestions = await Offer.distinct("city", { city: regex });
+    const countrySuggestions = await Offer.distinct("country", { country: regex });
+    const suggestions = [
+      ...new Set([...citySuggestions, ...countrySuggestions])
+    ];
+    
+    res.json(suggestions.slice(0, 10));
+
+  } catch (error) {
+    console.error("Error fetching suggestions:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
 router.get("/:id", async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.id)
@@ -191,7 +223,6 @@ router.get("/:id", async (req, res) => {
 
     if (!offer) return res.status(404).json({ message: "Offer not found" });
 
-    // Construct searchKey using saved lat/lon for consistency
     const searchKey = `${offer.city
       .toLowerCase()
       .trim()}_${offer.country.toLowerCase().trim()}_${offer.latitude}_${
@@ -202,7 +233,6 @@ router.get("/:id", async (req, res) => {
     
     let weatherData = await CityWeather.findOne({ searchKey });
 
-    // If not cached, fetch and cache it
     if (!weatherData && offer.latitude && offer.longitude) {
       console.log(`[GET /:id] Weather not in cache for ${offer.city}. Fetching...`); // Added log
       weatherData = await fetchAndCacheWeather(

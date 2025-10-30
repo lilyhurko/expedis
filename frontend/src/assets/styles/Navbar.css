@@ -106,7 +106,6 @@
   transition: all 0.3s ease;
 }
 
-/* Ефект блиску при наведенні */
 .navbar-signup-button::before {
   content: "";
   position: absolute;

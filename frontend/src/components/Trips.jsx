@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import UserNavbar from "./UserNavbar.jsx";
 import Navbar from "./Navbar.jsx";
 import "../assets/styles/Offerts.css";
@@ -9,6 +9,7 @@ import EditOfferModal from "./EditOfferModal.jsx";
 import BookingModal from "./BookingModal.jsx";
 import ForcedLogout from "./ForcedLogout.js";
 import Footer2 from "./Footer2.jsx";
+import TripSearchFilter from "./TripSearchFilter.jsx";
 
 const Trips = () => {
   const [offers, setOffers] = useState([]);
@@ -66,11 +67,14 @@ const Trips = () => {
     images: [],
     mainImageIndex: null,
     placesToVisit: [{ name: "", description: "", image: null }],
-    flightConnections: [{ departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" }],
+    flightConnections: [
+      { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" },
+    ],
   });
 
   const navigate = useNavigate();
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001'; 
+  const [searchParams] = useSearchParams();
+  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -91,14 +95,15 @@ const Trips = () => {
   }, []);
 
   useEffect(() => {
-    fetch(`${apiUrl}/api/offers`)
+    const queryString = searchParams.toString();
+    fetch(`${apiUrl}/api/offers?${queryString}`)
       .then((res) => {
         if (!res.ok)
           throw new Error(`Failed to load offers: ${res.statusText}`);
         return res.json();
       })
       .then((data) => {
-        console.log("Fetched offers:", data); 
+        console.log("Fetched offers:", data);
         setOffers(data);
         setLoading(false);
       })
@@ -106,7 +111,7 @@ const Trips = () => {
         console.error("Error fetching offers:", error);
         setLoading(false);
       });
-  }, [apiUrl]);
+  }, [apiUrl, searchParams]);
 
   const handleBookNow = (offerId) => {
     if (!isAuthenticated) {
@@ -138,7 +143,9 @@ const Trips = () => {
           offerToEdit.imageUrls ||
           (offerToEdit.imageUrl ? [offerToEdit.imageUrl] : []),
         mainImageIndex: offerToEdit.mainImageIndex || 0,
-        placesToVisit: offerToEdit.placesToVisit || [{ name: "", description: "", image: null }],
+        placesToVisit: offerToEdit.placesToVisit || [
+          { name: "", description: "", image: null },
+        ],
         flightConnections: offerToEdit.flightConnections || [
           {
             departureAirportIATA: "",
@@ -185,9 +192,9 @@ const Trips = () => {
       for (const [key, value] of formData.entries()) {
         formDataEntries[key] = value;
       }
-      console.log('FormData being sent to add:', formDataEntries);
+      console.log("FormData being sent to add:", formDataEntries);
 
-      const response = await fetch(`${apiUrl}/api/offers`, { 
+      const response = await fetch(`${apiUrl}/api/offers`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -201,7 +208,9 @@ const Trips = () => {
           errorData = { message: `Raw error: ${response.statusText}` };
         }
         console.log("Server error details:", errorData);
-        throw new Error(errorData.message || `Server error: ${response.status}`);
+        throw new Error(
+          errorData.message || `Server error: ${response.status}`
+        );
       }
 
       const newOffer = await response.json();
@@ -220,7 +229,13 @@ const Trips = () => {
         images: [],
         mainImageIndex: null,
         placesToVisit: [{ name: "", description: "", image: null }],
-        flightConnections: [{ departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" }],
+        flightConnections: [
+          {
+            departureAirportIATA: "",
+            arrivalAirportIATA: "",
+            departureTime: "",
+          },
+        ],
       });
       alert("Offer added successfully!");
     } catch (error) {
@@ -241,7 +256,7 @@ const Trips = () => {
       return;
     }
 
-    fetch(`${apiUrl}/api/offers/${offerId}`, { 
+    fetch(`${apiUrl}/api/offers/${offerId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -295,9 +310,9 @@ const Trips = () => {
       for (const [key, value] of formData.entries()) {
         formDataEntries[key] = value;
       }
-      console.log('FormData being sent:', formDataEntries);
+      console.log("FormData being sent:", formDataEntries);
 
-      const response = await fetch(`${apiUrl}/api/offers/${id}`, { 
+      const response = await fetch(`${apiUrl}/api/offers/${id}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -305,7 +320,9 @@ const Trips = () => {
         body: formData,
       });
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Server error" }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Server error" }));
         if (response.status === 401) {
           alert("Session expired or invalid token. Please log in again.");
           ForcedLogout();
@@ -315,11 +332,15 @@ const Trips = () => {
         if (response.status === 404) {
           throw new Error("Offer not found on the server.");
         }
-        throw new Error(errorData.message || `Server error: ${response.status}`);
+        throw new Error(
+          errorData.message || `Server error: ${response.status}`
+        );
       }
       const updatedOffer = await response.json();
       setOffers((prev) =>
-        prev.map((offer) => (offer._id === updatedOffer._id ? updatedOffer : offer))
+        prev.map((offer) =>
+          offer._id === updatedOffer._id ? updatedOffer : offer
+        )
       );
       setSelectedOffer(null);
       alert("Offer updated successfully!");
@@ -352,9 +373,15 @@ const Trips = () => {
   return (
     <>
       {isAuthenticated ? <UserNavbar /> : <Navbar />}
-      <div className="offers-container">
+      <div className="container-for-filter"> 
+        <TripSearchFilter />
+      </div>
+<div className="offers-container">
         <div className="offers-header">
-          <h2 className="offers-title">Available Offers</h2>
+          
+          <h2 className="offers-title">
+{searchParams.toString() ? "Search Results" : "All Offers"}
+          </h2>
           {userRole === "admin" && (
             <button
               className="add-offer-button"
@@ -373,7 +400,7 @@ const Trips = () => {
           <div className="offers-grid">
             {offers.map((offer, index) => (
               <OfferCard
-                key={offer._id || index} 
+                key={offer._id || index}
                 offer={offer}
                 userRole={userRole}
                 handleBookNow={handleBookNow}
