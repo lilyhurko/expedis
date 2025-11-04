@@ -9,7 +9,7 @@ const router = express.Router();
 const axios = require("axios");
 const CityWeather = require("../models/CityWeather");
 
-const RAPIDAPI_KEY = "463251c1a9msh9e573ca6257b1afp1576adjsn6ed05f3609c2"; 
+const RAPIDAPI_KEY = "463251c1a9msh9e573ca6257b1afp1576adjsn6ed05f3609c2";
 const RAPIDAPI_HOST = "meteostat.p.rapidapi.com";
 
 const storage = multer.diskStorage({
@@ -55,9 +55,9 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
     return null;
   }
 
-  const searchKey = `${city
+  const searchKey = `${city.toLowerCase().trim()}_${country
     .toLowerCase()
-    .trim()}_${country.toLowerCase().trim()}_${latNum}_${lonNum}`;
+    .trim()}_${latNum}_${lonNum}`;
   try {
     let cachedWeather = await CityWeather.findOne({ searchKey });
 
@@ -85,8 +85,6 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
       }
     );
 
-
-
     if (
       !normalsResponse.data ||
       !normalsResponse.data.data ||
@@ -97,27 +95,28 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
         JSON.stringify(normalsResponse.data)
       );
     }
-    
- 
+
     const recentWeatherData = (normalsResponse.data.data || []).filter(
       (d) => d.start === 1991 && d.end === 2020
     );
 
     let dataToMap = [];
     if (recentWeatherData.length === 12) {
-        console.log(`[Weather] Using recent period (1991-2020) for ${city}.`);
-        dataToMap = recentWeatherData;
+      console.log(`[Weather] Using recent period (1991-2020) for ${city}.`);
+      dataToMap = recentWeatherData;
     } else {
-        console.warn(`[Weather] Could not find 12 months for 1991-2020. Using last 12 entries available.`);
-        dataToMap = (normalsResponse.data.data || []).slice(-12); 
+      console.warn(
+        `[Weather] Could not find 12 months for 1991-2020. Using last 12 entries available.`
+      );
+      dataToMap = (normalsResponse.data.data || []).slice(-12);
     }
 
     const weatherData = dataToMap.map((monthData) => ({
-      month: monthData.month,         
-      avg_temp: monthData.tavg,      
-      avg_min_temp: monthData.tmin,   
-      precipitation: monthData.prcp,  
-      sunshine_hours: monthData.tsun ? Math.round(monthData.tsun / 3600) : null 
+      month: monthData.month,
+      avg_temp: monthData.tavg,
+      avg_min_temp: monthData.tmin,
+      precipitation: monthData.prcp,
+      sunshine_hours: monthData.tsun ? Math.round(monthData.tsun / 3600) : null,
     }));
 
     if (weatherData.length > 0) {
@@ -129,7 +128,6 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
         `[Weather] Mapped 0 months of data for ${city}. Caching empty array.`
       );
     }
-    
 
     const newCachedWeather = new CityWeather({
       searchKey: searchKey,
@@ -165,56 +163,134 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
 
 router.get("/", async (req, res) => {
   try {
-    const { destination, maxPrice, duration } = req.query;
-    let filter = {}; 
+    const {
+      destination,
+      maxPrice,
+      duration,
+      category,
+      startDate,
+      endDate,
+    } = req.query;
+    let filter = {};
 
     if (destination) {
-      filter['$or'] = [
-        { city: { $regex: destination, $options: 'i' } },
-        { country: { $regex: destination, $options: 'i' } }
+      const destinations = Array.isArray(destination)
+        ? destination
+        : [destination];
+      const destinationRegex = destinations.map((d) => new RegExp(d, "i"));
+
+      filter["$or"] = [
+        { city: { $in: destinationRegex } },
+        { country: { $in: destinationRegex } },
       ];
     }
 
     if (maxPrice) {
       filter.price = { $lte: Number(maxPrice) };
     }
-    
+
     if (duration) {
       filter.duration = Number(duration);
     }
 
-    const offers = await Offer.find(filter) 
+    if (category) {
+      const categories = Array.isArray(category) ? category : [category];
+      filter.categories = { $in: categories };
+    }
+
+    if (startDate && endDate) {
+      filter.availableDates = {
+        $elemMatch: {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate),
+        },
+      };
+    }
+
+    const offers = await Offer.find(filter)
       .populate("user", "username")
       .populate("flightConnections");
-      
+
     res.json(offers);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
+router.get("/categories", async (req, res) => {
+  try {
+    const categories = await Offer.distinct("categories");
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.get("/suggestions", async (req, res) => {
   try {
-    const { q } = req.query; 
+    const { q } = req.query;
 
     if (!q || q.length < 2) {
       return res.json([]);
     }
 
-    const regex = new RegExp(q, 'i'); 
+    const regex = new RegExp(q, "i");
     const citySuggestions = await Offer.distinct("city", { city: regex });
-    const countrySuggestions = await Offer.distinct("country", { country: regex });
+    const countrySuggestions = await Offer.distinct("country", {
+      country: regex,
+    });
     const suggestions = [
-      ...new Set([...citySuggestions, ...countrySuggestions])
+      ...new Set([...citySuggestions, ...countrySuggestions]),
     ];
-    
-    res.json(suggestions.slice(0, 10));
 
+    res.json(suggestions.slice(0, 10));
   } catch (error) {
     console.error("Error fetching suggestions:", error);
     res.status(500).json({ message: error.message });
   }
 });
+
+router.get("/alldestinations", async (req, res) => {
+  try {
+    const destinations = await Offer.aggregate([
+      {
+        $group: {
+          _id: "$country",
+          cities: { $addToSet: "$city" },
+        },
+      },
+      {
+        $unwind: "$cities",
+      },
+      {
+        $sort: { cities: 1 },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          cities: { $push: "$cities" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          country: "$_id",
+          cities: "$cities",
+        },
+      },
+      {
+        $sort: { country: 1 },
+      },
+    ]);
+
+    res.json(destinations);
+  } catch (error) {
+    console.error("Error fetching all destinations:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.id)
@@ -223,18 +299,20 @@ router.get("/:id", async (req, res) => {
 
     if (!offer) return res.status(404).json({ message: "Offer not found" });
 
-    const searchKey = `${offer.city
+    const searchKey = `${offer.city.toLowerCase().trim()}_${offer.country
       .toLowerCase()
-      .trim()}_${offer.country.toLowerCase().trim()}_${offer.latitude}_${
-      offer.longitude
-    }`;
-    
-    console.log(`[GET /:id] Looking for weather in cache with key: ${searchKey}`); // Added log
-    
+      .trim()}_${offer.latitude}_${offer.longitude}`;
+
+    console.log(
+      `[GET /:id] Looking for weather in cache with key: ${searchKey}`
+    );
+
     let weatherData = await CityWeather.findOne({ searchKey });
 
     if (!weatherData && offer.latitude && offer.longitude) {
-      console.log(`[GET /:id] Weather not in cache for ${offer.city}. Fetching...`); // Added log
+      console.log(
+        `[GET /:id] Weather not in cache for ${offer.city}. Fetching...`
+      );
       weatherData = await fetchAndCacheWeather(
         offer.city,
         offer.country,
@@ -242,9 +320,11 @@ router.get("/:id", async (req, res) => {
         offer.longitude
       );
     } else if (weatherData) {
-        console.log(`[GET /:id] Found weather in cache for ${offer.city}.`); // Added log
+      console.log(`[GET /:id] Found weather in cache for ${offer.city}.`);
     } else {
-        console.warn(`[GET /:id] Could not fetch weather for ${offer.city} (no lat/lon or fetch failed).`); // Added log
+      console.warn(
+        `[GET /:id] Could not fetch weather for ${offer.city} (no lat/lon or fetch failed).`
+      );
     }
 
     res.json({
@@ -252,7 +332,7 @@ router.get("/:id", async (req, res) => {
       weather: weatherData ? weatherData.monthlyWeather : null,
     });
   } catch (error) {
-    console.error(`[GET /:id] Error fetching offer ${req.params.id}:`, error); // Added log
+    console.error(`[GET /:id] Error fetching offer ${req.params.id}:`, error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -300,15 +380,14 @@ router.post(
         isNaN(latNum) ||
         isNaN(lonNum)
       ) {
-        console.warn("[POST /] Validation failed. Missing required fields."); // Added log
+        console.warn("[POST /] Validation failed. Missing required fields.");
         return res.status(400).json({
           error:
             "Missing or invalid required fields (including latitude/longitude as valid numbers)",
         });
       }
 
-      // Fetch weather if valid coords
-      console.log(`[POST /] Triggering weather fetch for ${city}...`); // Added log
+      console.log(`[POST /] Triggering weather fetch for ${city}...`);
       await fetchAndCacheWeather(city, country, latNum, lonNum);
 
       const parsedCategories = JSON.parse(categories || "[]");
@@ -329,7 +408,9 @@ router.post(
           : null;
         return {
           ...place,
-          imageUrl: placeImageFile ? `/images/${placeImageFile.filename}` : null,
+          imageUrl: placeImageFile
+            ? `/images/${placeImageFile.filename}`
+            : null,
         };
       });
 
@@ -342,10 +423,7 @@ router.post(
           !fcData.arrivalTime?.trim() ||
           !fcData.flightType?.trim()
         ) {
-          console.log(
-            "[POST /] Skipping invalid flight connection:",
-            fcData
-          );
+          console.log("[POST /] Skipping invalid flight connection:", fcData);
           continue;
         }
 
@@ -371,7 +449,7 @@ router.post(
       }
       console.log(
         `[POST /] Saved ${flightConnectionIds.length} flight connections.`
-      ); // Added log
+      );
 
       const newOffer = new Offer({
         title,
@@ -380,8 +458,8 @@ router.post(
         duration: Number(duration),
         city,
         country,
-        latitude: latNum, // <-- FIXED: Save as number
-        longitude: lonNum, // <-- FIXED: Save as number
+        latitude: latNum,
+        longitude: lonNum,
         departureAirportIATA,
         categories: parsedCategories,
         availableDates: parsedDates,
@@ -392,8 +470,10 @@ router.post(
       });
 
       await newOffer.save();
-      console.log(`[POST /] Successfully saved new offer with ID: ${newOffer._id}`); // Added log
-      
+      console.log(
+        `[POST /] Successfully saved new offer with ID: ${newOffer._id}`
+      );
+
       for (const fcId of flightConnectionIds) {
         await FlightConnection.findByIdAndUpdate(fcId, {
           offerId: newOffer._id,
@@ -401,7 +481,7 @@ router.post(
       }
       console.log(
         `[POST /] Updated flight connections with offer ID ${newOffer._id}`
-      ); // Added log
+      );
 
       const populatedOffer = await Offer.findById(newOffer._id).populate(
         "flightConnections"
@@ -434,7 +514,7 @@ router.put(
       const offer = await Offer.findById(req.params.id);
       if (!offer) return res.status(404).json({ message: "Offer not found" });
 
-      console.log(`[PUT /:id] Updating offer ${req.params.id}`); // Added log
+      console.log(`[PUT /:id] Updating offer ${req.params.id}`);
 
       const {
         title,
@@ -460,7 +540,6 @@ router.put(
       const updatedLat = isNaN(newLat) ? offer.latitude : newLat;
       const updatedLon = isNaN(newLon) ? offer.longitude : newLon;
 
-      // Refetch weather if city/country/lat/lon changed
       const coordsChanged =
         !isNaN(newLat) ||
         !isNaN(newLon) ||
@@ -469,7 +548,7 @@ router.put(
       if (coordsChanged && !isNaN(updatedLat) && !isNaN(updatedLon)) {
         console.log(
           `[PUT /:id] Coords changed for ${updatedCity}. Refetching weather...`
-        ); // Added log
+        );
         await fetchAndCacheWeather(
           updatedCity,
           updatedCountry,
@@ -513,8 +592,8 @@ router.put(
       offer.duration = duration ? Number(duration) : offer.duration;
       offer.city = updatedCity;
       offer.country = updatedCountry;
-      offer.latitude = updatedLat; // <-- FIXED: Update if provided
-      offer.longitude = updatedLon; // <-- FIXED: Update if provided
+      offer.latitude = updatedLat;
+      offer.longitude = updatedLon;
       offer.departureAirportIATA =
         departureAirportIATA || offer.departureAirportIATA;
       offer.categories =
@@ -554,7 +633,7 @@ router.put(
         if (newFlightIds.length > 0) {
           console.log(
             `[PUT /:id] Adding ${newFlightIds.length} new flight connections.`
-          ); // Added log
+          );
           offer.flightConnections = [
             ...offer.flightConnections,
             ...newFlightIds,
@@ -563,7 +642,7 @@ router.put(
       }
 
       await offer.save();
-      console.log(`[PUT /:id] Successfully updated offer ${offer._id}`); // Added log
+      console.log(`[PUT /:id] Successfully updated offer ${offer._id}`);
 
       const populatedOffer = await Offer.findById(offer._id).populate(
         "flightConnections"
@@ -578,22 +657,22 @@ router.put(
 
 router.delete("/:id", async (req, res) => {
   try {
-    console.log(`[DELETE /:id] Deleting offer ${req.params.id}`); // Added log
+    console.log(`[DELETE /:id] Deleting offer ${req.params.id}`);
     const offer = await Offer.findByIdAndDelete(req.params.id);
     if (!offer) {
-      console.warn(`[DELETE /:id] Offer not found: ${req.params.id}`); // Added log
-      return res.status(44).json({ message: "Offer not found" });
+      console.warn(`[DELETE /:id] Offer not found: ${req.params.id}`);
+      return res.status(404).json({ message: "Offer not found" });
     }
     await FlightConnection.deleteMany({ offerId: req.params.id });
     console.log(
       `[DELETE /:id] Successfully deleted offer ${req.params.id} and associated flights.`
-    ); // Added log
+    );
     res.json({ message: "Offer deleted" });
   } catch (error) {
     console.error(
       `[DELETE /:id] Error deleting offer ${req.params.id}:`,
       error
-    ); // Added log
+    );
     res.status(500).json({ message: error.message });
   }
 });
