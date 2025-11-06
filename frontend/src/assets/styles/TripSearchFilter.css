@@ -1,6 +1,6 @@
 .trip-search-container {
   text-align: center;
-  margin: 60px auto 40px auto; 
+  margin: 60px auto 40px auto;
   padding: 0 20px;
   max-width: 800px;
   position: relative;
@@ -9,7 +9,7 @@
 
 .trip-search-container h3 {
   font-family: "Playfair Display", serif;
-  font-size: 2.5rem; 
+  font-size: 2.5rem;
   color: #1b3a4b;
   margin-bottom: 1rem;
   margin-top: 7rem;
@@ -17,27 +17,27 @@
 
 .trip-search-subtitle {
   font-family: "Poppins", sans-serif;
-  font-size: 1rem; 
+  font-size: 1rem;
   color: #555;
   max-width: 600px;
-  margin: 0 auto 2.5rem auto; 
+  margin: 0 auto 2.5rem auto;
   line-height: 1.6;
 }
 
 .trip-search-bar {
   display: flex;
   align-items: center;
-  gap: 10px; 
-  background: rgba(27, 58, 75, 0.4); 
+  gap: 10px;
+  background: rgba(27, 58, 75, 0.4);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2); 
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50px;
-  padding: 10px; 
+  padding: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  max-width: 750px; 
+  max-width: 750px;
   margin: 0 auto;
-  transition: all 0.3s ease; 
+  transition: all 0.3s ease;
 }
 
 .trip-search-bar:hover {
@@ -47,23 +47,23 @@
 
 .search-bar-pill {
   display: flex;
-  align-items: center; 
-  flex: 1; 
-  background: #FFFFFF; 
+  align-items: center;
+  flex: 1;
+  background: #f4f4f4;
   border-radius: 50px;
-  padding: 12px 20px; 
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 12px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .search-bar-pill input {
   border: none;
   background: transparent;
-  outline: none; 
+  outline: none;
   width: 100%;
   font-family: "Poppins", sans-serif;
   font-size: 1rem;
   color: #333;
-  padding: 0; 
+  padding: 0;
   margin: 0;
 }
 
@@ -72,46 +72,78 @@
 }
 
 .search-bar-icon {
-  color: #777; 
-  margin-left: 10px; 
+  color: #777;
+  margin-left: 10px;
   font-size: 1rem;
 }
 
 .search-bar-button-pill {
+display: inline-block;
   font-family: "Poppins", sans-serif;
-  background: #F0EADA; 
   color: #1B3A4B;
-  border: none;
   border-radius: 50px;
   padding: 12px 30px; 
   font-size: 1rem;
   font-weight: 600; 
   cursor: pointer;
+  text-decoration: none;
+  background: rgba(240, 234, 218, 0.7); 
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(15px) saturate(180%);
+  -webkit-backdrop-filter: blur(15px) saturate(180%);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 0 8px rgba(255, 255, 255, 0.15);
   transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .search-bar-button-pill:hover {
-  background: #E8E0D1;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  background: rgba(240, 234, 218, 0.8); 
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.15),
+    0 4px 60px rgba(0, 0, 0, 0.1);
 }
 
 .search-bar-button-pill:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
 }
+.search-bar-button-pill::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: all 0.6s ease;
+}
+
+.search-bar-button-pill:hover::before {
+  left: 125%;
+}
+
+
 
 .suggestions-list {
   position: absolute;
-  top: 100%; 
+  top: 100%;
   left: 0;
   right: 0;
-  background: #fff;
+  background: #f4f4f4;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   border: 1px solid #eee;
-  margin-top: 8px; 
+  margin-top: 8px;
   padding: 5px 0;
   list-style: none;
   z-index: 1000;
@@ -139,16 +171,17 @@
 .search-bar-pill-dropdown {
   position: relative;
   flex: 1;
+  min-width: 0;
 }
 
 .pill-dropdown-button {
   display: flex;
   align-items: center;
   width: 100%;
-  background: #FFFFFF;
+  background: #f4f4f4;
   border-radius: 50px;
   padding: 12px 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   border: none;
   cursor: pointer;
   font-family: "Poppins", sans-serif;
@@ -166,14 +199,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   color: #333;
+  min-width: 0;
 }
 
 .pill-dropdown-button span:empty::after {
-  content: 'Select...';
+  content: "Select...";
   color: #888;
 }
 .pill-dropdown-button span:not(:empty) + span {
-   color: #888;
+  color: #888;
 }
 
 .filter-dropdown-menu {
@@ -182,14 +216,12 @@
   left: 0;
   width: 100%;
   min-width: 200px;
-  
   background: rgba(27, 58, 75, 0.7);
   backdrop-filter: blur(15px) saturate(180%);
   -webkit-backdrop-filter: blur(15px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  
   z-index: 1000;
   max-height: 300px;
   overflow-y: auto;
@@ -201,7 +233,7 @@
   padding: 10px 12px;
   font-family: "Poppins", sans-serif;
   font-size: 0.95rem;
-  color: #FFFFFF;
+  color: #f4f4f4;
   cursor: pointer;
   border-radius: 6px;
   transition: background-color 0.2s ease;
@@ -240,14 +272,164 @@
   color: #eee;
 }
 .toggle-cities-btn:hover {
-  color: #fff;
+  color: #f4f4f4;
 }
 
 .city-list {
-  padding-left: 25px; 
+  padding-left: 25px;
 }
 
 .city-item {
-  font-size: 0.9rem; 
+  font-size: 0.9rem;
   color: #ddd;
+}
+
+.filter-dropdown-menu.calendar {
+  width: auto;
+  min-width: 600px;
+  padding: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(100% + 10px);
+}
+
+.filter-dropdown-menu.calendar .rdrCalendarWrapper {
+  background: transparent;
+  color: #f4f4f4;
+  font-family: "Poppins", sans-serif;
+  box-shadow: none;
+}
+
+.filter-dropdown-menu.calendar .rdrMonthName {
+  color: #f4f4f4 !important;
+  font-weight: 600;
+}
+
+.filter-dropdown-menu.calendar .rdrNextPrevButton {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  color: #f4f4f4 !important;
+}
+.filter-dropdown-menu.calendar .rdrNextPrevButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.filter-dropdown-menu.calendar .rdrWeekDay {
+  color: #dddddd;
+  font-weight: 500;
+}
+
+.filter-dropdown-menu.calendar .rdrDayNumber span {
+  color: #f4f4f4;
+}
+
+.filter-dropdown-menu.calendar .rdrDayPassive .rdrDayNumber span {
+  color: #a0a0a0;
+}
+
+.filter-dropdown-menu.calendar
+  .rdrDay:not(.rdrDayPassive)
+  .rdrDayNumber:hover
+  span {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.filter-dropdown-menu.calendar .rdrDayToday .rdrDayNumber span:after {
+  background: #f0eada;
+}
+
+.filter-dropdown-menu.calendar .rdrInRange {
+  background-color: rgba(240, 234, 218, 0.6) !important;
+  color: #1b3a4b !important;
+}
+
+.filter-dropdown-menu.calendar .rdrStartEdge,
+.filter-dropdown-menu.calendar .rdrEndEdge {
+  background-color: #f0eada !important;
+  color: #1b3a4b !important;
+}
+
+.filter-dropdown-menu.calendar
+  .rdrDay:not(.rdrDayPassive)
+  .rdrStartEdge
+  .rdrDayNumber
+  span,
+.filter-dropdown-menu.calendar
+  .rdrDay:not(.rdrDayPassive)
+  .rdrEndEdge
+  .rdrDayNumber
+  span {
+  color: #1b3a4b !important;
+}
+
+.filter-dropdown-menu.calendar .rdrDateDisplayWrapper,
+.filter-dropdown-menu.calendar .rdrInputRanges,
+.filter-dropdown-menu.calendar .rdrDefinedRangesWrapper {
+  display: none !important;
+}
+.filter-dropdown-menu.calendar .rdrMonthName,
+.filter-dropdown-menu.calendar .rdrPointers .rdrButton {
+  color: #f4f4f4;
+  font-weight: 600;
+}
+
+
+@media (max-width: 768px) {
+  .trip-search-bar {
+    flex-direction: column; 
+    align-items: stretch;
+    border-radius: 20px; 
+    padding: 10px;
+    max-width: 95%; 
+  }
+
+  .search-bar-pill {
+    width: 100%;
+    margin-bottom: 10px; 
+    border-radius: 15px; 
+  }
+
+  .search-bar-button-pill {
+    width: 100%;
+    padding: 12px 20px;
+  }
+
+  .search-bar-pill-dropdown {
+    width: 100%;
+  }
+
+  .filter-dropdown-menu,
+  .filter-dropdown-menu.calendar {
+    left: 0; 
+    transform: none; 
+    width: 100%;
+    min-width: unset; 
+  }
+
+  .filter-dropdown-menu.calendar .rdrCalendarWrapper {
+    width: 100%;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .trip-search-container h3 {
+    font-size: 2rem;
+  }
+
+  .trip-search-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .search-bar-pill input,
+  .pill-dropdown-button,
+  .search-bar-button-pill {
+    font-size: 0.9rem;
+    padding: 10px 15px;
+  }
+
+  .filter-dropdown-menu.calendar .rdrDayNumber span {
+    font-size: 0.8rem;
+  }
 }

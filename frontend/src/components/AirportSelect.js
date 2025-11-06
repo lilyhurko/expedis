@@ -46,50 +46,47 @@ const AirportSelect = ({
 }) => {
   const [airports, setAirports] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [existingAirport, setExistingAirport] = useState(null);
   const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
-  // Fetch the existing airport details if value exists but not in current search
   useEffect(() => {
-    setExistingAirport(null); // Reset
     if (!value) return;
-    // Якщо потрібно, можеш фетчити по city/country + value як fallback, але зараз custom option вистачить
-    console.log("Existing value:", value); // DEBUG
+    console.log("Existing value:", value);
   }, [value]);
 
-  // Fetch airports based on location
-  const fetchAirports = async (countryQuery, cityQuery) => {
-    if (!cityQuery && !countryQuery) {
-      console.log("AirportSelect: No city or country provided, skipping fetch.");
-      setAirports([]);
-      return;
-    }
-
-    setIsLoading(true);
-    const isoCountry = countryQuery ? (countryToISO[countryQuery] || countryQuery) : null;
-    
-    console.log(`Fetching airports: country=${isoCountry || 'none'}, city=${cityQuery || 'none'}, existing value=${value || 'none'}`);
-    
-    try {
-      const params = new URLSearchParams();
-      if (cityQuery) params.append('city', cityQuery);
-      if (isoCountry) params.append('country', isoCountry);
-      
-      const response = await fetch(`${apiUrl}/api/airports?${params}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
-      const data = await response.json();
-      console.log("Fetched airports:", data);
-      setAirports(data || []);
-    } catch (error) {
-      console.error("Error fetching airports:", error);
-      setAirports([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
+    // Функцію fetchAirports переміщено всередину useEffect
+    const fetchAirports = async (countryQuery, cityQuery) => {
+      if (!cityQuery && !countryQuery) {
+        console.log("AirportSelect: No city or country provided, skipping fetch.");
+        setAirports([]);
+        return;
+      }
+
+      setIsLoading(true);
+      const isoCountry = countryQuery ? (countryToISO[countryQuery] || countryQuery) : null;
+      
+      console.log(`Fetching airports: country=${isoCountry || 'none'}, city=${cityQuery || 'none'}, existing value=${value || 'none'}`);
+      
+      try {
+        const params = new URLSearchParams();
+        if (cityQuery) params.append('city', cityQuery);
+        if (isoCountry) params.append('country', isoCountry);
+        
+        const response = await fetch(`${apiUrl}/api/airports?${params}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        console.log("Fetched airports:", data);
+        setAirports(data || []);
+      } catch (error) {
+        console.error("Error fetching airports:", error);
+        setAirports([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Логіка виклику
     if (city) {
       fetchAirports(country, city);
     } else if (isDeparture && country) {
@@ -97,7 +94,7 @@ const AirportSelect = ({
     } else {
       setAirports([]);
     }
-  }, [country, city, isDeparture]);
+  }, [country, city, isDeparture, apiUrl, value]); // Додано apiUrl та value до залежностей
 
   const handleSelect = (iata) => {
     console.log(`Selected IATA in AirportSelect: ${iata}`);
