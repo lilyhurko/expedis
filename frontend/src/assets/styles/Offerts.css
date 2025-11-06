@@ -5,25 +5,15 @@
 }
 .offers-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+grid-template-columns: repeat(4, 1fr);
   gap: 2rem;
   margin-top: 2rem;
 }
 
-.offer-card:first-child {
-  margin-right: auto;
-  margin-left: auto;
-}
-
-.offer-card:not(:first-child) {
-  flex: 0 0 calc(33.333% - 1.33rem);
-}
-
 .offer-card {
   width: 100%;
-  border-radius: 12px;
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 16px; 
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* М'якша, виразніша тінь */
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   position: relative;
@@ -31,65 +21,67 @@
 
 .offer-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
 .offer-image {
   width: 100%;
-  height: 200px;
+  height: 300px; 
   object-fit: cover;
 }
 
-.offer-title {
-  font-family: "Playfair Display", serif;
-  font-size: 1.4rem;
-  color: #1b3a4b;
-  margin: 1rem 1rem 0.5rem 1rem;
-}
-
-.offer-description {
-  padding: 0 25px;
-  font-size: 1rem;
-  color: #0d1b2a;
-  margin: 0rem 0rem 0.5rem 0rem; /* Змінено з 0 1rem 0.5rem 1rem для узгодженого верхнього відступу */
-  line-height: 1.5;
-}
-
-.offer-city {
-  font-size: 1rem;
-  color: #0d1b2a;
-  padding: 0 25px;
-  margin: 0rem 0rem 0.5rem 0rem; /* Змінено для узгодженості */
-  line-height: 1.5;
-}
-
-.offer-duration {
-  padding: 0 25px;
-
-  font-size: 0.95rem;
-  color: #333;
-  margin: 0rem 0rem 0.5rem 0rem; /* Змінено для узгодженості */
-  line-height: 1.5;
-}
 .offer-content {
-  padding: 20px 25px;
+  padding: 1rem 1.25rem; 
 }
-.offer-title,
-.offer-description,
-.offer-city,
-.offer-duration {
-  margin: 0 0 0.75rem 0;
+
+.offer-title {
+  font-family: "Poppins", sans-serif; 
+  font-size: 1.25rem;
+  font-weight: 600; 
+  color: #1b3a4b;
+  margin: 0 0 0.5rem 0; 
   padding: 0;
   text-align: left;
 }
 
+.offer-description {
+  display: none;
+}
+
+.offer-city {
+  font-family: "Poppins", sans-serif; 
+  font-size: 0.9rem;
+  color: #555;
+  padding: 0;
+  margin: 0 0 1rem 0; 
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+}
+
+.offer-city::before {
+  content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23555555" width="16" height="16"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 1 1 9.9 9.9L10 18.9l-4.95-4.95a7 7 0 0 1 0-9.9zM10 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" clip-rule="evenodd" /></svg>');
+  margin-right: 0.5rem;
+  display: inline-block;
+  line-height: 1;
+}
+
+.offer-city strong {
+  display: none;
+}
+
+.offer-duration {
+  display: none;
+}
+
 .offer-footer {
   flex-shrink: 0;
-  border-top: 1px solid #ddd;
-  background: white;
+  border-top: none; 
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0; 
 }
 .my-modal .modal-price {
   font-family: "Playfair Display", serif;
@@ -109,21 +101,64 @@
 }
 .book-now-button,
 .add-offer-button {
-  background-color: #1b3a4b;
-  color: white;
-  padding: 10px 20px;
+  padding: 10px 26px;
   font-size: 1rem;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
   font-family: "Poppins", sans-serif;
+border-radius: 50px;
+  font-weight: 500; 
+  cursor: pointer;
   align-self: center;
   margin-top: 4px;
+
+  background: rgba(27, 58, 75, 0.5);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2); 
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
 }
 
-.book-now-button:hover {
-  background-color: #0056b3;
+.book-now-button::before,
+.add-offer-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.4), 
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: all 0.6s ease;
+}
+
+.book-now-button:hover::before,
+.add-offer-button:hover::before {
+  left: 125%;
+}
+
+.book-now-button:hover,
+.add-offer-button:hover {
+  background: rgba(27, 58, 75, 0.7); 
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.book-now-button:active,
+.add-offer-button:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
 }
 
 .offers-title {
@@ -225,7 +260,7 @@
   padding: 25px;
   box-sizing: border-box;
   position: relative;
-  max-height: calc(90vh - 100px); /* щоб футер влізав */
+  max-height: calc(90vh - 100px); 
   padding-bottom: 20px;
 }
 
@@ -236,13 +271,13 @@
   justify-content: flex-end;
   gap: 15px;
   background-color: #fff;
-  position: static; /* Changed from absolute to sticky */
+  position: static; 
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 10;
   box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
-  margin-top: 30px; /* Added margin to separate from content */
+  margin-top: 30px; 
   justify-content: space-between;
 }
 
@@ -277,13 +312,13 @@
   border-radius: 9999px;
   background-color: #e2d4bb;
   color: #1b3a4b;
-  font-weight: normal; /* замість 'regular' */
+  font-weight: normal; 
   text-decoration: none;
   transition: background 0.3s ease;
   font-family: "Poppins", sans-serif;
   outline: none;
   box-shadow: none;
-  border: none; /* якщо кнопка — це <button>, забирає рамку */
+  border: none; 
 }
 
 .btn-primary:hover {
@@ -387,6 +422,12 @@
   display: block;
 }
 
+@media (max-width: 900px) {
+  .offers-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .modal-footer {
     flex-direction: column;
@@ -400,13 +441,13 @@
     grid-template-columns: repeat(
       2,
       1fr
-    ); /* 2 cards per row on medium screens */
+    ); 
   }
 }
 
 @media (max-width: 480px) {
   .offers-grid {
-    grid-template-columns: 1fr; /* 1 card per row on small screens */
+    grid-template-columns: 1fr; 
   }
 }
 
