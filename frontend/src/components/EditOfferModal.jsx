@@ -49,33 +49,13 @@ const EditOfferModal = ({
   const lastFlightConnectionsRef = useRef([]);
 
   const ALL_CATEGORIES = [
-    "Adventure",
-    "Culture",
-    "Relaxation",
-    "Nature",
-    "Hiking",
-    "Skiing",
-    "Beach",
-    "History",
-    "Nightlife",
-    "Food",
-    "Wildlife",
-    "Romantic",
-    "Luxury",
-    "Budget",
-    "Camping",
-    "Backpacking",
-    "Photography",
-    "Yoga",
-    "Surfing",
-    "Diving",
-    "Art",
-    "Architecture",
-    "Shopping",
-    "Festival",
-    "Wellness",
+    "Adventure", "Culture", "Relaxation", "Nature", "Hiking", "Skiing", "Beach",
+    "History", "Nightlife", "Food", "Wildlife", "Romantic", "Luxury", "Budget",
+    "Camping", "Backpacking", "Photography", "Yoga", "Surfing", "Diving", "Art",
+    "Architecture", "Shopping", "Festival", "Wellness",
   ];
 
+  // СТАЛО:
   useLayoutEffect(() => {
     if (!offer || isInitializedRef.current) {
       return;
@@ -93,8 +73,8 @@ const EditOfferModal = ({
         : [];
     }
 
-    const initCity = offer.city || editFormData.city || "";
-    const initCountry = offer.country || editFormData.country || "";
+    const initCity = offer.city || "";
+    const initCountry = offer.country || "";
     setLocation({ city: initCity, country: initCountry });
 
     prevCityRef.current = initCity;
@@ -110,14 +90,11 @@ const EditOfferModal = ({
     setPlacesToVisit(initPlaces);
 
     const offerConnectionsRaw = offer.flightConnections;
-    console.log("Raw flightConnections from offer:", offerConnectionsRaw);
     let parsedConnections = [];
     if (typeof offerConnectionsRaw === "string") {
       try {
         parsedConnections = JSON.parse(offerConnectionsRaw);
-        console.log("Parsed flightConnections:", parsedConnections);
       } catch (e) {
-        console.warn("Failed to parse flightConnections string:", e);
         parsedConnections = [];
       }
     } else if (Array.isArray(offerConnectionsRaw)) {
@@ -139,8 +116,6 @@ const EditOfferModal = ({
         flightType: "return",
       },
     ];
-
-    console.log("Initialized flight connections:", initConnections); 
     setFlightConnections(initConnections);
 
     const initPreviews = (offer.imageUrls || [])
@@ -158,13 +133,15 @@ const EditOfferModal = ({
     const initDates = (offer.availableDates || [])
       .map((date) => {
         if (typeof date === "string") {
-          const parsedDate = new Date(date + "T00:00:00Z");
-          return isNaN(parsedDate.getTime()) ? null : parsedDate;
+          return date.split('T')[0];
         }
-        if (date instanceof Date && !isNaN(date.getTime())) return date;
+        if (date instanceof Date && !isNaN(date.getTime())) {
+          return date.toISOString().split('T')[0];
+        }
         return null;
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .sort();
 
     flushSync(() => {
       setEditFormData({
@@ -185,7 +162,7 @@ const EditOfferModal = ({
         flightConnections: initConnections,
       });
     });
-  }, [offer]); 
+  }, [offer, setEditFormData, ALL_CATEGORIES]); 
 
   useEffect(() => {
     if (isInitializedRef.current && editFormData.flightConnections) {
@@ -194,7 +171,6 @@ const EditOfferModal = ({
       if (stringifiedNew !== stringifiedLast) {
         setFlightConnections(editFormData.flightConnections);
         lastFlightConnectionsRef.current = editFormData.flightConnections;
-        console.log("Synced flightConnections from editFormData:", editFormData.flightConnections);
       }
     }
   }, [editFormData.flightConnections]);
@@ -218,7 +194,6 @@ const EditOfferModal = ({
       (currentCity !== prevCityRef.current ||
         currentCountry !== prevCountryRef.current)
     ) {
-      console.log("Location changed, resetting flights");
       const defaultConnections = [
         {
           departureAirportIATA: "",
@@ -263,7 +238,7 @@ const EditOfferModal = ({
 
   const addPeriodDates = () => {
     if (!periodStart || !periodEnd) {
-      setError("Please select both start and end dates for the period");
+      setError("Please select both start and end dates.");
       return;
     }
 
@@ -284,44 +259,53 @@ const EditOfferModal = ({
     );
 
     if (endDate < startDate) {
-      setError("End date must be after start date");
+      setError("End date must be after start date.");
       return;
     }
 
     const tripDurationInDays =
       Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const startDateString = startDate.toISOString().split("T")[0];
 
-    const periodDates = [];
-    let currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
-      periodDates.push(new Date(currentDate));
-      currentDate.setDate(currentDate.getDate() + 1);
+    const existingDates = (editFormData.availableDates || []).map((date) => {
+      if (typeof date === "string") return date.split("T")[0];
+      if (date instanceof Date) return date.toISOString().split("T")[0];
+      if (date?.toDate) return date.toDate().toISOString().split("T")[0];
+      return null;
+    }).filter((date) => date !== null);
+
+    const currentDuration = editFormData.duration || 0;
+
+    if (currentDuration === 0) {
+      setEditFormData((prev) => ({
+        ...prev,
+        duration: tripDurationInDays,
+        availableDates: [...existingDates, startDateString].sort(),
+      }));
+      setError(null);
+    } else {
+      if (tripDurationInDays !== currentDuration) {
+        setError(
+          `Duration mismatch: All periods must be ${currentDuration} days. This period is ${tripDurationInDays} days.`
+        );
+        return;
+      }
+
+      const allDatesSet = new Set([...existingDates, startDateString]);
+      const sortedDates = Array.from(allDatesSet).sort();
+
+      setEditFormData((prev) => ({
+        ...prev,
+        availableDates: sortedDates,
+      }));
+      setError(null);
     }
-
-    const existingDates = (editFormData.availableDates || []).filter(
-      (date) => date instanceof Date && !isNaN(date.getTime())
-    );
-
-    const allDates = [...existingDates, ...periodDates];
-    const uniqueDates = [
-      ...new Set(allDates.map((d) => d.toISOString().split("T")[0])),
-    ]
-      .map((iso) => new Date(iso + "T00:00:00"))
-      .sort((a, b) => a - b);
-
-    setEditFormData((prev) => ({
-      ...prev,
-      availableDates: uniqueDates,
-      duration: tripDurationInDays,
-    }));
 
     setPeriodStart(null);
     setPeriodEnd(null);
-    setError(null);
   };
 
   const handleFlightChange = (index, field, value) => {
-    console.log(`Changing flight ${index} ${field} to:`, value); // **DEBUG**
     setFlightConnections((prevConnections) => {
       const updatedConnections = [...prevConnections];
       updatedConnections[index] = {
@@ -372,7 +356,6 @@ const EditOfferModal = ({
     const newPlaces = [...placesToVisit];
     newPlaces[index].image = file;
     setPlacesToVisit(newPlaces);
-    setEditFormData((prev) => ({ ...prev, placesToVisit: newPlaces }));
   };
 
   const handleImageChange = (e) => {
@@ -419,11 +402,13 @@ const EditOfferModal = ({
     if (previewImages[index]?.file) {
       URL.revokeObjectURL(previewImages[index].preview);
     }
+    const removedPreview = previewImages[index]?.preview;
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+    
     setEditFormData((prev) => ({
       ...prev,
-      images: prev.images?.filter((_, i) => i !== index) || [],
-      imageUrls: prev.imageUrls?.filter((_, i) => i !== index) || [],
+      images: (prev.images || []).filter((file) => file.preview !== removedPreview),
+      imageUrls: (prev.imageUrls || []).filter((url) => url !== removedPreview),
     }));
 
     if (mainImageIndex === index) {
@@ -459,61 +444,56 @@ const EditOfferModal = ({
     formData.append("duration", editFormData.duration || "");
     formData.append("city", editFormData.city || "");
     formData.append("country", editFormData.country || "");
-    formData.append("departureAirportIATA", editFormData.departureAirportIATA || "");
+    formData.append(
+      "departureAirportIATA",
+      editFormData.departureAirportIATA || ""
+    );
     formData.append(
       "categories",
       JSON.stringify(editFormData.categories || [])
     );
-    const validDates = (editFormData.availableDates || []).filter(
-      (date) => date instanceof Date && !isNaN(date.getTime())
-    );
-    formData.append(
-      "availableDates",
-      JSON.stringify(
-        validDates.map((date) => date.toISOString().split("T")[0])
-      )
-    );
+    
+    const validDates = (editFormData.availableDates || []).map((date) => {
+        if (date instanceof Date) return date.toISOString().split("T")[0];
+        return date.split('T')[0];
+    }).filter(Boolean);
+
+    formData.append("availableDates", JSON.stringify(validDates));
+    
     formData.append(
       "placesToVisit",
       JSON.stringify(
-        placesToVisit.map(({ name, description }) => ({ name: name || "", description: description || "" }))
+        placesToVisit.map(({ name, description }) => ({
+          name: name || "",
+          description: description || "",
+        }))
       )
     );
-    // Ensure flightConnections has defaults if empty
+    
     const safeFlightConnections = editFormData.flightConnections || [
-      {
-        departureAirportIATA: "",
-        arrivalAirportIATA: "",
-        departureTime: "",
-        arrivalTime: "",
-        flightType: "outbound",
-      },
-      {
-        departureAirportIATA: "",
-        arrivalAirportIATA: "",
-        departureTime: "",
-        arrivalTime: "",
-        flightType: "return",
-      },
+      { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "outbound" },
+      { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "return" },
     ];
     formData.append(
       "flightConnections",
       JSON.stringify(safeFlightConnections)
     );
     formData.append("mainImageIndex", mainImageIndex || 0);
-    if (editFormData.images && editFormData.images.length > 0) {
-      editFormData.images.forEach((image) => {
-        formData.append("images", image);
-      });
-    }
+
+    (editFormData.images || []).forEach((image) => {
+      formData.append("images", image);
+    });
+
+    const existingImageUrls = previewImages
+      .filter(img => !img.file && img.preview)
+      .map(img => img.preview);
+    formData.append("imageUrls", JSON.stringify(existingImageUrls));
+
     placesToVisit.forEach((place) => {
       if (place.image) {
         formData.append("placeImages", place.image);
       }
     });
-    if (editFormData.imageUrls && editFormData.imageUrls.length > 0) {
-      formData.append("imageUrls", JSON.stringify(editFormData.imageUrls));
-    }
 
     try {
       await handleEditSubmit(formData);
@@ -521,23 +501,6 @@ const EditOfferModal = ({
     } catch (err) {
       setError(err.message || "Failed to update offer. Please try again.");
     }
-  };
-
-  const displayAvailableDates = editFormData.availableDates || [];
-
-  const handleManualDatesChange = (dates) => {
-    const formattedDates = dates
-      ? dates
-          .map((d) => {
-            const dateObj = d.toDate ? d.toDate() : new Date(d);
-            return dateObj instanceof Date && !isNaN(dateObj.getTime()) ? dateObj : null;
-          })
-          .filter(Boolean)
-      : [];
-    setEditFormData((prev) => ({
-      ...prev,
-      availableDates: formattedDates,
-    }));
   };
 
   return (
@@ -731,6 +694,7 @@ const EditOfferModal = ({
                 />
               </button>
             </div>
+
             <div className="form-group">
               <label className="form-label">Duration (days):</label>
               <input
@@ -738,26 +702,13 @@ const EditOfferModal = ({
                 type="number"
                 name="duration"
                 value={editFormData.duration || ""}
-                placeholder="Number of days"
+                readOnly
+                placeholder="Set by adding the first date period"
               />
             </div>
+
             <div className="form-group">
-              <label className="form-label">
-                Available Dates (manual selection):
-              </label>
-              <div className="date-picker-container">
-                <DatePicker
-                  multiple
-                  format="YYYY-MM-DD"
-                  value={displayAvailableDates}
-                  onChange={handleManualDatesChange}
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">
-                Add Date Period (includes duration):
-              </label>
+              <label className="form-label">Add Available Periods:</label>
               <div className="date-period-container">
                 <div className="date-picker-container">
                   <DatePicker
@@ -791,6 +742,41 @@ const EditOfferModal = ({
                 </button>
               </div>
             </div>
+
+            {editFormData.availableDates &&
+              editFormData.availableDates.length > 0 && (
+                <div
+                  className="form-group"
+                  style={{
+                    padding: "10px",
+                    background: "#f9f9f9",
+                    borderRadius: "6px",
+                  }}
+                >
+                  <label style={{ fontWeight: "bold" }}>
+                    Trip Duration:{" "}
+                    <strong>{editFormData.duration || "Not set"} days</strong>
+                  </label>
+                  <p style={{ margin: "5px 0 0 0" }}>Added start dates:</p>
+                  <ul style={{ paddingLeft: "20px", margin: "5px 0 0 0" }}>
+                    {editFormData.availableDates.map((dateStr) => {
+                      const [year, month, day] = dateStr.split("-").map(Number);
+                      const startDate = new Date(Date.UTC(year, month - 1, day));
+                      const endDate = new Date(startDate);
+                      endDate.setUTCDate(
+                        startDate.getUTCDate() + (editFormData.duration || 1) - 1
+                      );
+                      return (
+                        <li key={dateStr}>
+                          {startDate.toLocaleDateString("uk-UA")} -{" "}
+                          {endDate.toLocaleDateString("uk-UA")}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
             <div className="form-group">
               <label className="form-label">Price (PLN):</label>
               <input

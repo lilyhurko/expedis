@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-// 1. Повертаємо 'react-multi-date-picker'
 import DatePicker from "react-multi-date-picker";
 import plusIcon from "../assets/img/plus.png";
 import LocationPicker from "./LocationPicker.js";
 import AirportSelect from "./AirportSelect.js";
 
-// 2. Імпорти 'react-date-range' видалено, вони тут не потрібні
+
 
 const AddOfferModal = ({
   newOfferData,
@@ -15,25 +14,41 @@ const AddOfferModal = ({
   handleAddOfferSubmit,
   closeModal,
 }) => {
-  // 3. Повертаємо старий стан для periodStart та periodEnd
   const [periodStart, setPeriodStart] = useState(null);
   const [periodEnd, setPeriodEnd] = useState(null);
-  
-  // (решта вашого коду стану ... )
-  const [location, setLocation] = useState({ city: "", country: "", lat: null, lng: null });
+
+  const [location, setLocation] = useState({
+    city: "",
+    country: "",
+    lat: null,
+    lng: null,
+  });
   const [previewImages, setPreviewImages] = useState([]);
   const [mainImageIndex, setMainImageIndex] = useState(null);
-  const [placesToVisit, setPlacesToVisit] = useState([{ name: "", description: "", image: null }]);
+  const [placesToVisit, setPlacesToVisit] = useState([
+    { name: "", description: "", image: null },
+  ]);
   const [flightConnections, setFlightConnections] = useState([
-    { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "outbound" },
-    { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "return" },
+    {
+      departureAirportIATA: "",
+      arrivalAirportIATA: "",
+      departureTime: "",
+      arrivalTime: "",
+      flightType: "outbound",
+    },
+    {
+      departureAirportIATA: "",
+      arrivalAirportIATA: "",
+      departureTime: "",
+      arrivalTime: "",
+      flightType: "return",
+    },
   ]);
   const [error, setError] = useState(null);
 
-  // 4. Повертаємо вашу оригінальну функцію 'addPeriodDates'
   const addPeriodDates = () => {
     if (!periodStart || !periodEnd) {
-      setError("Please select both start and end dates for the period");
+      setError("Please select both start and end dates.");
       return;
     }
 
@@ -54,51 +69,57 @@ const AddOfferModal = ({
     );
 
     if (endDate < startDate) {
-      setError("End date must be after start date");
+      setError("End date must be after start date.");
       return;
     }
 
     const tripDurationInDays =
       Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-
     const startDateString = startDate.toISOString().split("T")[0];
 
-    const existingDates = (newOfferData.availableDates || [])
-      .map((date) => {
-        if (typeof date === "string") return date;
-        if (date?.toDate) return date.toDate().toISOString().split("T")[0];
-        if (date instanceof Date) return date.toISOString().split("T")[0];
-        return null;
-      })
-      .filter((date) => date !== null);
+    const existingDates = (newOfferData.availableDates || []).map((date) => {
+      if (typeof date === "string") return date;
+      if (date?.toDate) return date.toDate().toISOString().split("T")[0];
+      if (date instanceof Date) return date.toISOString().split("T")[0];
+      return null;
+    }).filter((date) => date !== null);
 
-    const allDatesSet = new Set([...existingDates, startDateString]);
-    const sortedDates = Array.from(allDatesSet).sort();
+    const currentDuration = newOfferData.duration || 0;
 
-    setNewOfferData((prev) => ({
-      ...prev,
-      availableDates: sortedDates,
-      duration: tripDurationInDays,
-    }));
+    if (currentDuration === 0) {
+      setNewOfferData((prev) => ({
+        ...prev,
+        duration: tripDurationInDays,
+        availableDates: [...existingDates, startDateString].sort(),
+      }));
+      setError(null);
+    } else {
+      if (tripDurationInDays !== currentDuration) {
+        setError(
+          `Duration mismatch: All periods must be ${currentDuration} days. This period is ${tripDurationInDays} days.`
+        );
+        return; 
+      }
+      
+      const allDatesSet = new Set([...existingDates, startDateString]);
+      const sortedDates = Array.from(allDatesSet).sort();
+      
+      setNewOfferData((prev) => ({
+        ...prev,
+        availableDates: sortedDates,
+      }));
+      setError(null);
+    }
 
     setPeriodStart(null);
     setPeriodEnd(null);
-    setError(null);
   };
-  
-  // (решта ваших обробників ...)
+
+ 
   const {
-      handleFlightChange,
-      handlePlaceChange,
-      addPlace,
-      removePlace,
-      handlePlaceImageChange,
-      handleImageChange,
-      setMainImage,
-      removeImage,
-      handleCategoryToggle,
-      validateForm,
-      onSubmit,
+      handleFlightChange, handlePlaceChange, addPlace, removePlace,
+      handlePlaceImageChange, handleImageChange, setMainImage, removeImage,
+      handleCategoryToggle, validateForm, onSubmit,
     } = {
       handleFlightChange: (index, field, value) => {
         const updatedConnections = [...flightConnections];
@@ -114,10 +135,7 @@ const AddOfferModal = ({
       },
       addPlace: () => setPlacesToVisit([...placesToVisit, { name: "", description: "", image: null }]),
       removePlace: (index) => {
-        if (placesToVisit.length === 1) {
-          setError("At least one place to visit is required.");
-          return;
-        }
+        if (placesToVisit.length === 1) { setError("At least one place to visit is required."); return; }
         const newPlaces = placesToVisit.filter((_, i) => i !== index);
         setPlacesToVisit(newPlaces);
         setNewOfferData(prev => ({ ...prev, placesToVisit: newPlaces }));
@@ -126,19 +144,15 @@ const AddOfferModal = ({
         const newPlaces = [...placesToVisit];
         newPlaces[index].image = file;
         setPlacesToVisit(newPlaces);
-        setNewOfferData(prev => ({ ...prev, placesToVisit: newPlaces }));
       },
       handleImageChange: (e) => {
         const files = Array.from(e.target.files);
-        if (previewImages.length + files.length > 15) {
-          setError("You can upload a maximum of 15 images.");
-          return;
-        }
+        if (previewImages.length + files.length > 15) { setError("You can upload a maximum of 15 images."); return; }
         const newImages = files.map(file => ({ file, preview: URL.createObjectURL(file) }));
         setPreviewImages(prev => [...prev, ...newImages]);
         setNewOfferData(prev => ({ ...prev, images: [...(prev.images || []), ...files] }));
         if (mainImageIndex === null && newImages.length > 0) {
-          setMainImageIndex(previewImages.length);
+          setMainImageIndex(0);
         }
       },
       setMainImage: (index) => {
@@ -148,10 +162,10 @@ const AddOfferModal = ({
       removeImage: (index) => {
         setPreviewImages(prev => {
           const newPreviews = prev.filter((_, i) => i !== index);
-          URL.revokeObjectURL(prev[index].preview);
+          if(prev[index]) URL.revokeObjectURL(prev[index].preview);
           return newPreviews;
         });
-        setNewOfferData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+        setNewOfferData(prev => ({ ...prev, images: (prev.images || []).filter((_, i) => i !== index) }));
         if (mainImageIndex === index) {
           setMainImageIndex(null);
         } else if (mainImageIndex !== null && index < mainImageIndex) {
@@ -171,7 +185,7 @@ const AddOfferModal = ({
           }
         });
       },
-      validateForm: () => { /* ... Ваша логіка ... */ return null; },
+      validateForm: () => {  return null; },
       onSubmit: async (e) => {
         e.preventDefault();
         setError(null);
@@ -194,7 +208,7 @@ const AddOfferModal = ({
         formData.append("availableDates", JSON.stringify(newOfferData.availableDates || []));
         formData.append("placesToVisit", JSON.stringify(placesToVisit.map(({ name, description }) => ({ name, description }))));
         formData.append("flightConnections", JSON.stringify(newOfferData.flightConnections || []));
-        newOfferData.images.forEach((image) => formData.append("images", image));
+        (newOfferData.images || []).forEach((image) => formData.append("images", image));
         placesToVisit.forEach((place) => { if (place.image) formData.append("placeImages", place.image); });
         formData.append("mainImageIndex", mainImageIndex);
         try {
@@ -205,7 +219,8 @@ const AddOfferModal = ({
         }
       },
   };
-  
+  // END: Скорочені функції
+
   useEffect(() => {
     if (location.city && location.country) {
       setNewOfferData((prev) => ({
@@ -223,7 +238,7 @@ const AddOfferModal = ({
         { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "return" },
       ]);
     }
-  }, [location, setNewOfferData]); // 5. ВИПРАВЛЕНО: Додано 'setNewOfferData'
+  }, [location, setNewOfferData]);
 
   const ALL_CATEGORIES = [
     "Adventure", "Culture", "Relaxation", "Nature", "Hiking", "Skiing", "Beach",
@@ -233,30 +248,8 @@ const AddOfferModal = ({
   ];
 
   return (
-    <div
-      className="modal-overlay"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        background: "rgba(0,0,0,0.5)",
-        zIndex: 1000,
-      }}
-    >
-      {" "}
-      <div
-        className="modal"
-        style={{
-          background: "white",
-          margin: "50px auto",
-          padding: "20px",
-          maxWidth: "800px",
-          borderRadius: "8px",
-        }}
-      >
-        {" "}
+    <div className="modal-overlay">
+      <div className="modal">
         <div className="modal-header">
           <h3 className="modal-title">Add New Offer</h3>
           <button
@@ -277,173 +270,15 @@ const AddOfferModal = ({
             </div>
           )}
           <form id="offer-form" onSubmit={onSubmit}>
-            <div className="form-group">
-              <label className="form-label">Title:</label>
-              <input
-                className="form-input"
-                type="text"
-                name="title"
-                value={newOfferData.title || ""}
-                onChange={handleNewOfferChange}
-                required
-                placeholder="Enter title"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Description:</label>
-              <textarea
-                className="form-input"
-                name="description"
-                value={newOfferData.description || ""}
-                onChange={handleNewOfferChange}
-                required
-                placeholder="Enter description"
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Categories (select 1 to 5):</label>
-              <div className="category-list">
-                {ALL_CATEGORIES.map((category) => (
-                  <button
-                    key={category}
-                    type="button"
-                    className={`category-chip ${
-                      newOfferData.categories?.includes(category)
-                        ? "selected"
-                        : ""
-                    }`}
-                    onClick={() => handleCategoryToggle(category)}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Pick Location:</label>
-              <LocationPicker setCityCountry={setLocation} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Flight Connections:</label>
-              {flightConnections.map((fc, index) => (
-                <div key={index} className="flight-connection form-group">
-                  <h4>{index === 0 ? "Outbound Flight" : "Return Flight"}</h4>
-                  <label>
-                    Departure Airport{" "}
-                    {index === 0 ? "(Poland)" : `(from ${newOfferData.city})`}:
-                  </label>
-                  <AirportSelect
-                    {...(index === 0
-                      ? { country: "PL" }
-                      : {
-                          city: newOfferData.city,
-                          country: newOfferData.country,
-                        })}
-                    value={flightConnections[index].departureAirportIATA}
-                    onChange={(iata) =>
-                      handleFlightChange(index, "departureAirportIATA", iata)
-                    }
-                    isDeparture={true}
-                  />
-                  <label>
-                    Arrival Airport{" "}
-                    {index === 0 ? `(to ${newOfferData.city})` : "(Poland)"}:
-                  </label>
-                  <AirportSelect
-                    {...(index === 0
-                      ? {
-                          city: newOfferData.city,
-                          country: newOfferData.country,
-                        }
-                      : { country: "PL" })}
-                    value={flightConnections[index].arrivalAirportIATA}
-                    onChange={(iata) =>
-                      handleFlightChange(index, "arrivalAirportIATA", iata)
-                    }
-                    {...(index === 1 ? { isDeparture: true } : {})}
-                  />
-                  <label>Departure Time:</label>
-                  <input
-                    type="time"
-                    value={flightConnections[index].departureTime || ""}
-                    onChange={(e) =>
-                      handleFlightChange(index, "departureTime", e.target.value)
-                    }
-                    className="form-input"
-                    required
-                  />
-                  <label>Arrival Time:</label>
-                  <input
-                    type="time"
-                    value={flightConnections[index].arrivalTime || ""}
-                    onChange={(e) =>
-                      handleFlightChange(index, "arrivalTime", e.target.value)
-                    }
-                    className="form-input"
-                    required
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="form-group">
-              <label className="form-label">Places to Visit:</label>
-              {placesToVisit.map((place, index) => (
-                <div
-                  key={`${place.name}-${index}`}
-                  className="form-group place-group"
-                >
-                  <input
-                    type="text"
-                    value={place.name || ""}
-                    onChange={(e) =>
-                      handlePlaceChange(index, "name", e.target.value)
-                    }
-                    placeholder="Place Name"
-                    required
-                    className="form-input"
-                  />
-                  <textarea
-                    value={place.description || ""}
-                    onChange={(e) =>
-                      handlePlaceChange(index, "description", e.target.value)
-                    }
-                    placeholder="Place Description"
-                    className="form-input"
-                  />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) =>
-                      handlePlaceImageChange(index, e.target.files[0])
-                    }
-                    className="form-input"
-                  />
-                  {placesToVisit.length > 1 && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => removePlace(index)}
-                      aria-label={`Remove place ${index + 1}`}
-                    >
-                      Remove Place
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                className="btn btn-icon-only"
-                onClick={addPlace}
-                aria-label="Add new place to visit"
-              >
-                <img
-                  src={plusIcon}
-                  alt=""
-                  aria-hidden="true"
-                  style={{ width: "35px", height: "35px" }}
-                />
-              </button>
-            </div>
+            
+            <div className="form-group"><label className="form-label">Title:</label><input className="form-input" type="text" name="title" value={newOfferData.title || ""} onChange={handleNewOfferChange} required placeholder="Enter title" /></div>
+            <div className="form-group"><label className="form-label">Description:</label><textarea className="form-input" name="description" value={newOfferData.description || ""} onChange={handleNewOfferChange} required placeholder="Enter description" /></div>
+            <div className="form-group"><label className="form-label">Categories (select 1 to 5):</label><div className="category-list">{ALL_CATEGORIES.map((category) => (<button key={category} type="button" className={`category-chip ${ newOfferData.categories?.includes(category) ? "selected" : "" }`} onClick={() => handleCategoryToggle(category)}>{category}</button>))}</div></div>
+            <div className="form-group"><label className="form-label">Pick Location:</label><LocationPicker setCityCountry={setLocation} /></div>
+            <div className="form-group"><label className="form-label">Flight Connections:</label>{flightConnections.map((fc, index) => (<div key={index} className="flight-connection form-group"><h4>{index === 0 ? "Outbound Flight" : "Return Flight"}</h4><label>Departure Airport {index === 0 ? "(Poland)" : `(from ${newOfferData.city})`}:</label><AirportSelect {...(index === 0 ? { country: "PL" } : { city: newOfferData.city, country: newOfferData.country })} value={flightConnections[index].departureAirportIATA} onChange={(iata) => handleFlightChange(index, "departureAirportIATA", iata)} isDeparture={true} /><label>Arrival Airport {index === 0 ? `(to ${newOfferData.city})` : "(Poland)"}:</label><AirportSelect {...(index === 0 ? { city: newOfferData.city, country: newOfferData.country } : { country: "PL" })} value={flightConnections[index].arrivalAirportIATA} onChange={(iata) => handleFlightChange(index, "arrivalAirportIATA", iata)} {...(index === 1 ? { isDeparture: true } : {})} /><label>Departure Time:</label><input type="time" value={flightConnections[index].departureTime || ""} onChange={(e) => handleFlightChange(index, "departureTime", e.target.value)} className="form-input" required /><label>Arrival Time:</label><input type="time" value={flightConnections[index].arrivalTime || ""} onChange={(e) => handleFlightChange(index, "arrivalTime", e.target.value)} className="form-input" required /></div>))}</div>
+            <div className="form-group"><label className="form-label">Places to Visit:</label>{placesToVisit.map((place, index) => (<div key={`${place.name}-${index}`} className="form-group place-group"><input type="text" value={place.name || ""} onChange={(e) => handlePlaceChange(index, "name", e.target.value)} placeholder="Place Name" required className="form-input" /><textarea value={place.description || ""} onChange={(e) => handlePlaceChange(index, "description", e.target.value)} placeholder="Place Description" className="form-input" /><input type="file" accept="image/*" onChange={(e) => handlePlaceImageChange(index, e.target.files[0])} className="form-input" />{placesToVisit.length > 1 && (<button type="button" className="btn btn-secondary" onClick={() => removePlace(index)} aria-label={`Remove place ${index + 1}`}>Remove Place</button>)}</div>))}<button type="button" className="btn btn-icon-only" onClick={addPlace} aria-label="Add new place to visit"><img src={plusIcon} alt="" aria-hidden="true" style={{ width: "35px", height: "35px" }} /></button></div>
+
+
             <div className="form-group">
               <label className="form-label">Duration (days):</label>
               <input
@@ -452,30 +287,12 @@ const AddOfferModal = ({
                 name="duration"
                 value={newOfferData.duration || ""}
                 readOnly
-                placeholder="Number of days"
+                placeholder="Set by adding the first date period"
               />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Available Dates (manual selection):</label>
-              <div className="date-picker-container">
-                <DatePicker
-                  multiple
-                  value={newOfferData.availableDates || []}
-                  onChange={(dates) =>
-                    setNewOfferData((prev) => ({
-                      ...prev,
-                      availableDates: (dates || []).map((d) =>
-                        d?.toDate ? d.toDate().toISOString().split("T")[0] : d
-                      ),
-                    }))
-                  }
-                  format="YYYY-MM-DD"
-                />
-              </div>
             </div>
             
             <div className="form-group">
-              <label className="form-label">Add Date Period (includes duration):</label>
+              <label className="form-label">Add Available Periods:</label>
               <div className="date-period-container">
                 <div className="date-picker-container">
                   <DatePicker
@@ -510,6 +327,31 @@ const AddOfferModal = ({
                 </button>
               </div>
             </div>
+
+            {newOfferData.availableDates && newOfferData.availableDates.length > 0 && (
+              <div className="form-group" style={{ padding: '10px', background: '#f9f9f9', borderRadius: '6px' }}>
+                <label style={{ fontWeight: 'bold' }}>
+                  Trip Duration: <strong>{newOfferData.duration || 'Not set'} days</strong>
+                </label>
+                <p style={{ margin: '5px 0 0 0' }}>Added start dates:</p>
+                <ul style={{ paddingLeft: '20px', margin: '5px 0 0 0' }}>
+                  {newOfferData.availableDates.map(dateStr => {
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    const startDate = new Date(Date.UTC(year, month - 1, day));
+                    
+                    const endDate = new Date(startDate);
+                    endDate.setUTCDate(startDate.getUTCDate() + (newOfferData.duration || 1) - 1);
+                    
+                    return (
+                      <li key={dateStr}>
+                        {startDate.toLocaleDateString("uk-UA")} - {endDate.toLocaleDateString("uk-UA")}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label">Price (PLN):</label>
               <input
