@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import PlacesToVisit from "./PlacesToVisit.jsx";
 import UserNavbar from "./UserNavbar.jsx";
 import Navbar from "./Navbar.jsx";
-import AirportSelect from "./AirportSelect.js";
-import "../assets/styles/Offerts.css";
+
+import styles from "../assets/styles/TripDetails.module.css";
+import "../assets/styles/Offerts.css"; 
+import modalStyles from "../assets/styles/Modals.module.css"; 
+
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import RecommendedHotels from './RecommendedHotels.jsx';
@@ -38,7 +41,6 @@ const TripDetails = () => {
   const { offerId } = useParams();
   const navigate = useNavigate();
   const [tripDetails, setTripDetails] = useState(null);
-  const sliderRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [monthlyWeather, setMonthlyWeather] = useState(null);
@@ -49,7 +51,6 @@ const TripDetails = () => {
   });
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
-  const [selectedFlight, setSelectedFlight] = useState("");
   const [selectedDepartureAirport, setSelectedDepartureAirport] = useState("");
   const [arrivalIATA, setArrivalIATA] = useState("");
   const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
@@ -62,13 +63,27 @@ const TripDetails = () => {
   const [errors, setErrors] = useState([]);
   const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
-const getFullFlightDate = (baseDate, timeString) => {
+  const photosRef = useRef(null);
+  const descriptionRef = useRef(null);
+  const reviewsRef = useRef(null);
+  const weatherRef = useRef(null);
+  const placesRef = useRef(null);
+
+  const handleScrollTo = (ref) => {
+    if (ref.current) {
+      ref.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  };
+
+  const getFullFlightDate = (baseDate, timeString) => {
     if (!baseDate || !timeString) return null;
     const [hours, minutes] = timeString.split(':').map(Number);
     if (isNaN(hours) || isNaN(minutes)) return null;
     const newDate = new Date(baseDate);
     newDate.setHours(hours, minutes, 0, 0); 
-    
     return newDate;
   };
 
@@ -76,42 +91,32 @@ const getFullFlightDate = (baseDate, timeString) => {
     if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
       return "N/A";
     }
-
     let diffMs = end.getTime() - start.getTime();
     if (diffMs < 0) {
       end.setDate(end.getDate() + 1); 
       diffMs = end.getTime() - start.getTime(); 
     }
-
     if (diffMs < 0) {
-        console.warn("Negative duration detected even after date adjustment");
         return "N/A";
     }
-
     const totalMinutes = Math.floor(diffMs / (1000 * 60));
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-
     return `${hours}h ${minutes}min`;
   };
 
-  const fetchTripDetails = async (offerId) => {
-    console.log("Fetching trip details for ID:", offerId);
+  const fetchTripDetails = useCallback(async (offerId) => {
     try {
       const response = await fetch(`${apiUrl}/api/offers/${offerId}`);
       if (!response.ok) {
         if (response.status === 404) {
-          setErrorMessage(
-            "Trip not found. It may have been deleted or does not exist."
-          );
+          setErrorMessage("Trip not found. It may have been deleted or does not exist.");
           setIsLoading(false);
           return;
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       const data = await response.json();
-
-      console.log("Fetched data:", data);
       if (data.offer && data.weather) {
         setTripDetails(data.offer);
         setMonthlyWeather(data.weather);
@@ -119,17 +124,15 @@ const getFullFlightDate = (baseDate, timeString) => {
         setTripDetails(data.offer || data);
         setMonthlyWeather(null);
       }
-
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching trip details:", error);
       setErrorMessage(error.message);
       setIsLoading(false);
     }
-  };
+  }, [apiUrl]);
 
-  const fetchTripReviews = async (offerId) => {
-    console.log("Fetching reviews for ID:", offerId);
+  const fetchTripReviews = useCallback(async (offerId) => {
     try {
       const reviewResponse = await fetch(`${apiUrl}/api/comments/${offerId}`);
       if (!reviewResponse.ok) {
@@ -137,9 +140,7 @@ const getFullFlightDate = (baseDate, timeString) => {
           setTripReviews([]);
           return;
         }
-        throw new Error(
-          `HTTP ${reviewResponse.status}: ${reviewResponse.statusText}`
-        );
+        throw new Error(`HTTP ${reviewResponse.status}: ${reviewResponse.statusText}`);
       }
       const reviewData = await reviewResponse.json();
       setTripReviews(reviewData.comments || reviewData || []);
@@ -148,56 +149,45 @@ const getFullFlightDate = (baseDate, timeString) => {
       setTripReviews([]);
       setErrorMessage("Failed to fetch reviews: " + error.message);
     }
-  };
+  }, [apiUrl]);
 
   useEffect(() => {
     const authToken = localStorage.getItem("token");
     setIsUserAuthenticated(!!authToken);
-
     if (!/^[0-9a-fA-F]{24}$/.test(offerId)) {
       setErrorMessage("Invalid trip ID format");
       setIsLoading(false);
       return;
     }
-
     fetchTripDetails(offerId);
-  }, [offerId, apiUrl]);
+  }, [offerId, apiUrl, fetchTripDetails]);
 
   useEffect(() => {
     if (tripDetails && offerId) {
       fetchTripReviews(offerId);
     }
-  }, [tripDetails, offerId, apiUrl]);
+  }, [tripDetails, offerId, apiUrl, fetchTripReviews]);
 
   const [mainImage, setMainImage] = useState(null);
 
   useEffect(() => {
-    if (
-      tripDetails &&
-      tripDetails.imageUrls &&
-      tripDetails.imageUrls.length > 0
-    ) {
+    if (tripDetails && tripDetails.imageUrls && tripDetails.imageUrls.length > 0) {
       setMainImage(tripDetails.imageUrls[0]);
     }
   }, [tripDetails]);
 
   useEffect(() => {
     if (tripDetails?.flightConnections?.length > 0) {
-      // Initialize selectedDepartureAirport to the first available if not set
       if (!selectedDepartureAirport) {
-        const firstDeparture =
-          tripDetails.flightConnections[0].departureAirportIATA;
+        const firstDeparture = tripDetails.flightConnections[0].departureAirportIATA;
         setSelectedDepartureAirport(firstDeparture);
         setArrivalIATA(tripDetails.flightConnections[0].arrivalAirportIATA);
       }
     }
-  }, [tripDetails]);
+  }, [tripDetails, selectedDepartureAirport]);
 
   useEffect(() => {
-    if (
-      selectedDepartureAirport &&
-      tripDetails?.flightConnections?.length > 0
-    ) {
+    if (selectedDepartureAirport && tripDetails?.flightConnections?.length > 0) {
       const connection = tripDetails.flightConnections.find(
         (f) => f.departureAirportIATA === selectedDepartureAirport
       );
@@ -209,43 +199,27 @@ const getFullFlightDate = (baseDate, timeString) => {
     }
   }, [selectedDepartureAirport, tripDetails]);
 
-  useEffect(() => {
-    setSelectedFlight("");
-  }, [selectedDepartureAirport]);
-
   const handleBookNowClick = () => {
     navigate("/top-up-balance");
   };
-  const getMonthName = (monthNumber) => {
-    const date = new Date();
-    date.setMonth(monthNumber - 1);
-    return date.toLocaleString("en-US", { month: "short" });
-  };
+
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!isUserAuthenticated) {
       navigate("/login");
       return;
     }
-    if (
-      newReviewInput.rating < 1 ||
-      newReviewInput.rating > 5 ||
-      !newReviewInput.comment.trim()
-    ) {
+    if (!newReviewInput.rating || !newReviewInput.comment.trim()) {
       alert("Please provide a valid rating (1-5) and comment.");
       return;
     }
-
     try {
       const authToken = localStorage.getItem("token");
       const reviewResponse = await fetch(
         `${apiUrl}/api/comments/${offerId}/comments`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
           body: JSON.stringify({
             message: newReviewInput.comment,
             rating: newReviewInput.rating,
@@ -277,50 +251,41 @@ const getFullFlightDate = (baseDate, timeString) => {
     setIsFullScreenOpen(true);
   };
 
-  const closeFullScreen = () => {
+  const closeFullScreen = useCallback(() => {
     setIsFullScreenOpen(false);
-  };
-
-  const handleKeyDown = (e) => {
-    if (!isFullScreenOpen) return;
-    if (e.key === "ArrowLeft") {
-      setCurrentSlide((prev) => Math.max(0, prev - 1));
-    } else if (e.key === "ArrowRight") {
-      setCurrentSlide((prev) =>
-        Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1)
-      );
-    } else if (e.key === "Escape") {
-      closeFullScreen();
-    }
-  };
+  }, []);
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft") {
+        setCurrentSlide((prev) => Math.max(0, prev - 1));
+      } else if (e.key === "ArrowRight") {
+        setCurrentSlide((prev) =>
+          Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1)
+        );
+      } else if (e.key === "Escape") {
+        closeFullScreen();
+      }
+    };
     if (isFullScreenOpen) {
       window.addEventListener("keydown", handleKeyDown);
-    } else {
-      window.removeEventListener("keydown", handleKeyDown);
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isFullScreenOpen, handleKeyDown]);
+  }, [isFullScreenOpen, closeFullScreen, tripDetails?.imageUrls?.length]);
 
   const calculateAge = (birthDate, referenceDate) => {
     const refDate = referenceDate ? new Date(referenceDate) : new Date();
     const birth = new Date(birthDate);
-    const age = refDate.getFullYear() - birth.getFullYear();
+    let age = refDate.getFullYear() - birth.getFullYear();
     const monthDiff = refDate.getMonth() - birth.getMonth();
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && refDate.getDate() < birth.getDate())
-    ) {
-      return age - 1;
+    if (monthDiff < 0 || (monthDiff === 0 && refDate.getDate() < birth.getDate())) {
+      age--;
     }
     return age;
   };
 
   const validateBirthDate = (birthDate, index) => {
-    if (!birthDate) {
-      return "Please select a birth date.";
-    }
+    if (!birthDate) return "Please select a birth date.";
     const referenceDate = selectedDate ? new Date(selectedDate) : new Date();
     const maxDate = new Date(referenceDate);
     maxDate.setFullYear(referenceDate.getFullYear() - 11);
@@ -340,13 +305,9 @@ const getFullFlightDate = (baseDate, timeString) => {
     let total = travelers.adults * basePrice;
     travelers.children.forEach((child) => {
       const age = calculateAge(child.birthDate, selectedDate);
-      if (age <= 2) {
-        total += basePrice * 0.1;
-      } else if (age <= 11) {
-        total += basePrice * 0.6;
-      } else {
-        total += basePrice;
-      }
+      if (age <= 2) total += basePrice * 0.1;
+      else if (age <= 11) total += basePrice * 0.6;
+      else total += basePrice;
     });
     return total.toFixed(2);
   };
@@ -362,9 +323,7 @@ const getFullFlightDate = (baseDate, timeString) => {
         if (delta > 0 && newCount > prev.children.length) {
           newChildren.push({ birthDate: "" });
         }
-        const newErrors = newChildren.map((child, i) =>
-          validateBirthDate(child.birthDate, i)
-        );
+        const newErrors = newChildren.map((child, i) => validateBirthDate(child.birthDate, i));
         setErrors(newErrors);
         return { ...prev, children: newChildren };
       }
@@ -378,7 +337,6 @@ const getFullFlightDate = (baseDate, timeString) => {
       newChildren[index] = { ...newChildren[index], birthDate };
       return { ...prev, children: newChildren };
     });
-
     setErrors((prev) => {
       const newErrors = [...prev];
       newErrors[index] = validateBirthDate(birthDate, index);
@@ -389,47 +347,36 @@ const getFullFlightDate = (baseDate, timeString) => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     const hasErrors = errors.some((error) => error !== "");
-    if (!hasErrors) {
-      setIsModalOpen(false);
-    } else {
-      alert("Please fix all errors before saving.");
-    }
+    if (!hasErrors) setIsModalOpen(false);
+    else alert("Please fix all errors before saving.");
   };
+  
+  const averageRating = useMemo(() => {
+    if (!tripReviews || tripReviews.length === 0) return 0;
+    const total = tripReviews.reduce((acc, review) => acc + (review.rating || 0), 0);
+    return Math.round(total / tripReviews.length);
+  }, [tripReviews]);
 
   if (isLoading)
-    return (
-      <div className="loading-container">
-        <p className="text-xl">Loading...</p>
-      </div>
-    );
+    return <div className="loading-container"><p className="text-xl">Loading...</p></div>;
   if (errorMessage)
     return (
       <div className="error-message">
         Error: {errorMessage}
-        <button onClick={() => navigate("/")} className="book-button mt-4">
-          Go Back
-        </button>
+        <button onClick={() => navigate("/")} className="book-button mt-4">Go Back</button>
       </div>
     );
   if (!tripDetails) return <div className="error-message">Trip not found</div>;
-let outboundFlight = tripDetails.flightConnections.find(
-    (f) => f.flightType === "outbound"
-  );
-  let returnFlight = tripDetails.flightConnections.find(
-    (f) => f.flightType === "return"
-  );
+  
+  let outboundFlight = tripDetails.flightConnections.find((f) => f.flightType === "outbound");
+  let returnFlight = tripDetails.flightConnections.find((f) => f.flightType === "return");
 
-  if (!outboundFlight && tripDetails.flightConnections.length > 0) {
-    outboundFlight = tripDetails.flightConnections[0];
-  }
-  if (!returnFlight && tripDetails.flightConnections.length > 1) {
-    returnFlight = tripDetails.flightConnections[1];
-  }
+  if (!outboundFlight && tripDetails.flightConnections.length > 0) outboundFlight = tripDetails.flightConnections[0];
+  if (!returnFlight && tripDetails.flightConnections.length > 1) returnFlight = tripDetails.flightConnections[1];
 
   let outboundDepDate, outboundArrDate, returnDepDate, returnArrDate;
   if (selectedDate) {
     const departureBaseDate = new Date(selectedDate);
-    
     const returnBaseDate = new Date(departureBaseDate);
     returnBaseDate.setDate(departureBaseDate.getDate() + (tripDetails.duration - 1));
 
@@ -443,145 +390,55 @@ let outboundFlight = tripDetails.flightConnections.find(
     }
   }
 
-  const monthLabels = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const sortedWeather = monthlyWeather
-    ? [...monthlyWeather].sort((a, b) => a.month - b.month)
-    : [];
+  const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const sortedWeather = monthlyWeather ? [...monthlyWeather].sort((a, b) => a.month - b.month) : [];
 
   const chartData = {
     labels: monthLabels,
     datasets: [
-      {
-        label: "Avg. Temp (°C)",
-        data: sortedWeather.map((m) => m.avg_temp),
-        borderColor: "rgb(255, 99, 132)",
-        backgroundColor: "rgba(255, 99, 132, 0.5)",
-        type: "line",
-        yAxisID: "y_temp",
-      },
-      {
-        label: "Night Temp (°C)",
-        data: sortedWeather.map((m) => m.avg_min_temp),
-        borderColor: "rgb(75, 192, 192)",
-        backgroundColor: "rgba(75, 192, 192, 0.5)",
-        type: "line",
-        yAxisID: "y_temp",
-        hidden: true,
-      },
-      {
-        label: "Precipitation (mm)", 
-        data: sortedWeather.map((m) => m.precipitation),
-        borderColor: "rgb(54, 162, 235)",
-        backgroundColor: "rgba(54, 162, 235, 0.5)",
-        type: "bar", 
-        yAxisID: "y_prcp", 
-      },
+      { label: "Avg. Temp (°C)", data: sortedWeather.map((m) => m.avg_temp), borderColor: "rgb(255, 99, 132)", backgroundColor: "rgba(255, 99, 132, 0.5)", type: "line", yAxisID: "y_temp" },
+      { label: "Night Temp (°C)", data: sortedWeather.map((m) => m.avg_min_temp), borderColor: "rgb(75, 192, 192)", backgroundColor: "rgba(75, 192, 192, 0.5)", type: "line", yAxisID: "y_temp", hidden: true },
+      { label: "Precipitation (mm)", data: sortedWeather.map((m) => m.precipitation), borderColor: "rgb(54, 162, 235)", backgroundColor: "rgba(54, 162, 235, 0.5)", type: "bar", yAxisID: "y_prcp" },
     ],
   };
 
   const chartOptions = {
     responsive: true,
-    plugins: {
-      legend: {
-        position: "top",
-      },
-      title: {
-        display: true,
-        text: `Average Monthly Weather in ${tripDetails.city}`,
-      },
-    },
+    plugins: { legend: { position: "top" }, title: { display: true, text: `Average Monthly Weather in ${tripDetails.city}` } },
     scales: {
-      y_temp: {
-        type: "linear",
-        display: true,
-        position: "left",
-        title: {
-          display: true,
-          text: "Temperature (°C)",
-        },
-      },
-      y_prcp: {
-        type: "linear",
-        display: true,
-        position: "right",
-        title: {
-          display: true,
-          text: "Precipitation (mm)",
-        },
-        grid: {
-          drawOnChartArea: false, 
-        },
-      },
+      y_temp: { type: "linear", display: true, position: "left", title: { display: true, text: "Temperature (°C)" } },
+      y_prcp: { type: "linear", display: true, position: "right", title: { display: true, text: "Precipitation (mm)" }, grid: { drawOnChartArea: false } },
     },
   };
   
-
   const availableDepartureAirports =
     tripDetails?.flightConnections?.length > 0
-      ? [
-          ...new Set(
-            tripDetails.flightConnections.map((fc) => fc.departureAirportIATA)
-          ),
-        ].map((iata) => ({
-          iata,
-          name: `${iata} Airport`,
-        }))
+      ? [...new Set(tripDetails.flightConnections.map((fc) => fc.departureAirportIATA))]
+          .map((iata) => ({ iata, name: `${iata} Airport` }))
       : [];
 
   const buildImageUrl = (filename) => {
     if (!filename || filename === "") return null;
-    if (filename.startsWith("http")) {
-      return filename;
-    }
+    if (filename.startsWith("http")) return filename;
     return `${apiUrl}${filename}`;
   };
 
   const FullScreenModal = () => (
     <div
-      className="fullscreen-modal"
-      style={{ display: isFullScreenOpen ? "flex" : "none" }}
+      className={`${styles.fullscreenModal} ${isFullScreenOpen ? styles.open : ''}`}
       onClick={closeFullScreen}
     >
-      <div className="fullscreen-content" onClick={(e) => e.stopPropagation()}>
-        <button className="close-fullscreen" onClick={closeFullScreen}>
-          ×
-        </button>
+      <div className={styles.fullscreenContent} onClick={(e) => e.stopPropagation()}>
+        <button className={styles.closeFullscreen} onClick={closeFullScreen}>×</button>
         {tripDetails?.imageUrls && tripDetails.imageUrls[currentSlide] && (
           <img
             src={buildImageUrl(tripDetails.imageUrls[currentSlide])}
             alt="Fullscreen"
-            style={{ maxWidth: "100%", maxHeight: "100%" }}
+            className={styles.fullscreenImage}
           />
         )}
-        <button
-          className="nav-arrow left"
-          onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}
-        >
-          ‹
-        </button>
-        <button
-          className="nav-arrow right"
-          onClick={() =>
-            setCurrentSlide((prev) =>
-              Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1)
-            )
-          }
-        >
-          ›
-        </button>
+        <button className={`${styles.navArrow} ${styles.left}`} onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}>‹</button>
+        <button className={`${styles.navArrow} ${styles.right}`} onClick={() => setCurrentSlide((prev) => Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1))}>›</button>
       </div>
     </div>
   );
@@ -589,30 +446,30 @@ let outboundFlight = tripDetails.flightConnections.find(
   return (
     <>
       {isUserAuthenticated ? <UserNavbar /> : <Navbar />}
-      <div className="trip-details-page">
-        <div className="trip-header">
-          <h2 className="trip-title">{tripDetails.title}</h2>
-          <div className="trip-rating">
+      <div className={styles.tripDetailsPage}>
+        <div className={styles.tripHeader}>
+          <h2 className={styles.tripTitle}>{tripDetails.title}</h2>
+          <div className={styles.tripRating}>
             {[...Array(5)].map((_, i) => (
               <FaStar
                 key={i}
-                className={i < 4 ? "star-selected" : "star-unselected"}
+                className={i < averageRating ? styles.starSelected : styles.starUnselected}
               />
             ))}
           </div>
-          <p className="trip-location">
+          <p className={styles.tripLocation}>
             {tripDetails.city}, {tripDetails.country}
           </p>
         </div>
 
-        <div className="trip-grid">
-          <div className="trip-main">
-            <div className="photo-gallery">
+        <div className={styles.tripGrid}>
+          <div className={styles.tripMain}>
+            <div className={styles.photoGallery} ref={photosRef}>
               {tripDetails.imageUrls && tripDetails.imageUrls.length > 0 ? (
                 <>
                   {mainImage && buildImageUrl(mainImage) && (
                     <div
-                      className="main-photo"
+                      className={styles.mainPhoto}
                       onClick={() =>
                         openFullScreen(tripDetails.imageUrls.indexOf(mainImage))
                       }
@@ -620,31 +477,23 @@ let outboundFlight = tripDetails.flightConnections.find(
                       <img
                         src={buildImageUrl(mainImage)}
                         alt="Main trip"
-                        onError={(e) => {
-                          e.target.src =
-                            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=="; // UPDATED: Fallback SVG
-                        }}
+                        onError={(e) => { e.target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=="; }}
                       />
                     </div>
                   )}
-                  <div className="thumbnails">
+                  <div className={styles.thumbnails}>
                     {tripDetails.imageUrls.map(
                       (filename, index) =>
                         buildImageUrl(filename) && (
                           <div
                             key={index}
-                            className={`thumbnail ${
-                              mainImage === filename ? "active" : ""
-                            }`}
+                            className={`${styles.thumbnail} ${mainImage === filename ? styles.active : ""}`}
                             onClick={() => setMainImage(filename)}
                           >
                             <img
                               src={buildImageUrl(filename)}
                               alt={`Thumbnail ${index + 1}`}
-                              onError={(e) => {
-                                e.target.src =
-                                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzUiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=";
-                              }}
+                              onError={(e) => { e.target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzUiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4="; }}
                             />
                           </div>
                         )
@@ -657,19 +506,15 @@ let outboundFlight = tripDetails.flightConnections.find(
             </div>
           </div>
 
-          <div className="booking-card">
-            <div className="traveler-selection">
-              <button onClick={openModal} className="traveler-button">
+          <div className={styles.bookingCard}>
+            <div className={styles.travelerSelection}>
+              <button onClick={openModal} className={styles.travelerButton}>
                 {travelers.adults} Adult{travelers.adults > 1 ? "s" : ""}{" "}
-                {travelers.children.length > 0
-                  ? `, ${travelers.children.length} Child${
-                      travelers.children.length > 1 ? "ren" : ""
-                    }`
-                  : ""}
+                {travelers.children.length > 0 ? `, ${travelers.children.length} Child${travelers.children.length > 1 ? "ren" : ""}` : ""}
               </button>
             </div>
             <select
-              className="date-dropdown"
+              className={styles.dateDropdown}
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
             >
@@ -677,20 +522,12 @@ let outboundFlight = tripDetails.flightConnections.find(
               {tripDetails.availableDates &&
               tripDetails.availableDates.length > 0 ? (
                 tripDetails.availableDates.map((date, index) => {
-                  const d = new Date(date);
-                  const startDate = d.toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  });
-                  const endDate = new Date(
-                    d.setDate(d.getDate() + 6)
-                  ).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  });
-                  const nights = 7;
+                  const d_start = new Date(date);
+                  const startDate = d_start.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                  const d_end = new Date(d_start);
+                  d_end.setDate(d_start.getDate() + (tripDetails.duration - 1));
+                  const endDate = d_end.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                  const nights = tripDetails.duration - 1;
                   return (
                     <option key={index} value={date}>
                       {`${startDate} - ${endDate} / ${nights} nights`}
@@ -701,100 +538,50 @@ let outboundFlight = tripDetails.flightConnections.find(
                 <option value="">No dates available</option>
               )}
             </select>
-            <div className="airport-selection">
-              <label className="airport-label">
-                Departure Airport (Poland)
-              </label>
-              <select
-                className="airport-dropdown"
-                value={selectedDepartureAirport}
-                onChange={(e) => setSelectedDepartureAirport(e.target.value)}
-              >
-                <option value="">Select departure airport</option>
-                {availableDepartureAirports.map((airport) => (
-                  <option key={airport.iata} value={airport.iata}>
-                    {airport.iata} - {airport.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="airport-selection">
-              <label className="airport-label">Arrival Airport</label>
-              <input
-                type="text"
-                value={arrivalIATA || "N/A"}
-                placeholder="Select departure first"
-                readOnly
-                className="arrival-airport"
-              />
-            </div>
-
-            <p className="price">Total: {calculateTotalPrice()} PLN</p>
-            <button className="book-button" onClick={handleBookNowClick}>
+            
+            <p className={styles.price}>Total: {calculateTotalPrice()} PLN</p>
+            <button className={styles.bookButton} onClick={handleBookNowClick}>
               Book for 48h
             </button>
           </div>
         </div>
 
         {isModalOpen && (
-          <div className="modal-overlay">
-            <div className="modal-content">
+          <div className={modalStyles.modalOverlay}>
+            <div className={styles.modalContent}>
               <h3>Select Travelers</h3>
-              <div className="traveler-group">
+              <div className={styles.travelerGroup}>
                 <label>Adults (12+ years):</label>
-                <div className="traveler-controls">
-                  <button
-                    onClick={() => handleTravelerChange("adults", -1)}
-                    disabled={travelers.adults <= 1}
-                  >
-                    -
-                  </button>
+                <div className={styles.travelerControls}>
+                  <button onClick={() => handleTravelerChange("adults", -1)} disabled={travelers.adults <= 1}>-</button>
                   <span>{travelers.adults}</span>
-                  <button onClick={() => handleTravelerChange("adults", 1)}>
-                    +
-                  </button>
+                  <button onClick={() => handleTravelerChange("adults", 1)}>+</button>
                 </div>
               </div>
-              <div className="traveler-group">
+              <div className={styles.travelerGroup}>
                 <label>Children (0–11 years):</label>
-                <div className="traveler-controls">
-                  <button
-                    onClick={() => handleTravelerChange("children", -1)}
-                    disabled={travelers.children.length === 0}
-                  >
-                    -
-                  </button>
+                <div className={styles.travelerControls}>
+                  <button onClick={() => handleTravelerChange("children", -1)} disabled={travelers.children.length === 0}>-</button>
                   <span>{travelers.children.length}</span>
-                  <button onClick={() => handleTravelerChange("children", 1)}>
-                    +
-                  </button>
+                  <button onClick={() => handleTravelerChange("children", 1)}>+</button>
                 </div>
               </div>
               {travelers.children.map((child, index) => (
-                <div key={index} className="child-birth-date">
+                <div key={index} className={styles.childBirthDate}>
                   <label>Child {index + 1} Date of Birth:</label>
                   <input
                     type="date"
                     value={child.birthDate}
-                    onChange={(e) =>
-                      handleChildBirthDateChange(index, e.target.value)
-                    }
+                    onChange={(e) => handleChildBirthDateChange(index, e.target.value)}
                     max={new Date().toISOString().split("T")[0]}
                   />
-                  {child.birthDate && (
-                    <p>
-                      Age: {calculateAge(child.birthDate, selectedDate)} years
-                    </p>
-                  )}
-                  {errors[index] && (
-                    <p className="error-text">{errors[index]}</p>
-                  )}
+                  {child.birthDate && (<p>Age: {calculateAge(child.birthDate, selectedDate)} years</p>)}
+                  {errors[index] && (<p className="error-text">{errors[index]}</p>)}
                 </div>
               ))}
               <button
                 onClick={closeModal}
-                className="modal-close-button"
+                className={styles.modalCloseButton}
                 disabled={errors.some((error) => error !== "")}
               >
                 Save
@@ -803,19 +590,18 @@ let outboundFlight = tripDetails.flightConnections.find(
           </div>
         )}
 
-        <div className="trip-tabs">
+        <div className={styles.tripTabs}>
           <ul>
-            <li>Photos</li>
-            <li>Description</li>
-            <li>Reviews</li>
-            <li>Maps</li>
-            <li>Weather</li>
-            <li>What to do</li>
+            <li onClick={() => handleScrollTo(photosRef)}>• Photos</li>
+            <li onClick={() => handleScrollTo(descriptionRef)}>• Description</li>
+            <li onClick={() => handleScrollTo(reviewsRef)}>• Reviews</li>
+            <li onClick={() => handleScrollTo(weatherRef)}>• Weather</li>
+            <li onClick={() => handleScrollTo(placesRef)}>• What to do</li>
           </ul>
         </div>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-8" ref={descriptionRef}>
         <h2 className="section-heading">Trip Details</h2>
         <p className="detail-text">
           <strong>Description:</strong>{" "}
@@ -835,48 +621,30 @@ let outboundFlight = tripDetails.flightConnections.find(
 
       <div className="mb-8">
         <h2 className="section-heading">Flight Details</h2>
-
-{outboundFlight && (
-          <div className="flight-segment">
+        {outboundFlight && (
+          <div className={styles.flightSegment}>
             <h4>Outbound Flight</h4>
-            <p>
-              {outboundFlight.departureAirportIATA} →{" "}
-              {outboundFlight.arrivalAirportIATA}
-            </p>
+            <p>{outboundFlight.departureAirportIATA} → {outboundFlight.arrivalAirportIATA}</p>
             <p>Departure: {outboundFlight.departureTime}</p>
             <p>Arrival: {outboundFlight.arrivalTime}</p>
-            <p>
-              Duration:{" "}
-              {selectedDate
-                ? calculateDuration(outboundDepDate, outboundArrDate)
-                : "Select date to see duration"}
-            </p>
+            <p>Duration: {selectedDate ? calculateDuration(outboundDepDate, outboundArrDate) : "Select date to see duration"}</p>
           </div>
         )}
-
         {returnFlight && (
-          <div className="flight-segment">
+          <div className={styles.flightSegment}>
             <h4>Return Flight</h4>
-            <p>
-              {returnFlight.departureAirportIATA} →{" "}
-              {returnFlight.arrivalAirportIATA}
-            </p>
+            <p>{returnFlight.departureAirportIATA} → {returnFlight.arrivalAirportIATA}</p>
             <p>Departure: {returnFlight.departureTime}</p>
             <p>Arrival: {returnFlight.arrivalTime}</p>
-            <p>
-              Duration:{" "}
-              {selectedDate
-                ? calculateDuration(returnDepDate, returnArrDate)
-                : "Select date to see duration"}
-            </p>
+            <p>Duration: {selectedDate ? calculateDuration(returnDepDate, returnArrDate) : "Select date to see duration"}</p>
           </div>
         )}
       </div>
 
-      <div className="mb-8">
+      <div className="mb-8" ref={weatherRef}>
         <h2 className="section-heading">Average Monthly Weather</h2>
         {monthlyWeather && monthlyWeather.length > 0 ? (
-          <div className="weather-chart-container">
+          <div className={styles.weatherChartContainer}>
             <Line options={chartOptions} data={chartData} />
           </div>
         ) : (
@@ -886,7 +654,7 @@ let outboundFlight = tripDetails.flightConnections.find(
         )}
       </div>
 
-      <div className="mb-8">
+      <div className="mb-8" ref={placesRef}>
         <h2 className="section-heading">Places to Visit</h2>
         {tripDetails.placesToVisit && tripDetails.placesToVisit.length > 0 ? (
           <PlacesToVisit places={tripDetails.placesToVisit} />
@@ -894,31 +662,29 @@ let outboundFlight = tripDetails.flightConnections.find(
           <p className="empty-section-text">No places listed.</p>
         )}
       </div>
-        <RecommendedHotels city={tripDetails.city} />
+      
+      <RecommendedHotels city={tripDetails.city} />
+      
       <button className="book-button" onClick={handleBookNowClick}>
         Book Now
       </button>
 
-      <div className="mb-8">
+      <div className="mb-8" ref={reviewsRef}>
         <h2 className="section-heading">Reviews & Ratings</h2>
         {tripReviews.length > 0 ? (
           <div className="space-y-4">
             {tripReviews.map((review) => (
-              <div key={review._id || review.id} className="review-card">
+              <div key={review._id || review.id} className={styles.reviewCard}>
                 <div className="flex items-center mb-2">
                   {[...Array(5)].map((_, i) => (
                     <FaStar
                       key={i}
-                      className={
-                        i < review.rating ? "star-selected" : "star-unselected"
-                      }
+                      className={i < review.rating ? styles.starSelected : styles.starUnselected}
                     />
                   ))}
                 </div>
-                <p className="detail-text">
-                  {review.message || review.comment}
-                </p>
-                <p className="review-username">
+                <p className="detail-text">{review.message || review.comment}</p>
+                <p className={styles.reviewUsername}>
                   By {review.username || review.user?.username || "Anonymous"}
                 </p>
               </div>
@@ -932,7 +698,7 @@ let outboundFlight = tripDetails.flightConnections.find(
       {isUserAuthenticated && (
         <div className="mb-8">
           <h2 className="section-heading">Submit a Review</h2>
-          <form onSubmit={handleReviewSubmit} className="review-form">
+          <form onSubmit={handleReviewSubmit} className={styles.reviewForm}>
             <div>
               <label className="block detail-text mb-1">Rating:</label>
               <div className="flex">
@@ -941,11 +707,10 @@ let outboundFlight = tripDetails.flightConnections.find(
                     key={i}
                     className={
                       i < newReviewInput.rating
-                        ? "star-selected cursor-pointer"
-                        : "star-unselected cursor-pointer"
+                        ? `${styles.starSelected} ${styles.clickableStar}`
+                        : `${styles.starUnselected} ${styles.clickableStar}`
                     }
                     onClick={() => handleStarRatingClick(i + 1)}
-                    style={{ cursor: "pointer" }}
                   />
                 ))}
               </div>
@@ -961,7 +726,7 @@ let outboundFlight = tripDetails.flightConnections.find(
                 placeholder="Write your review..."
               />
             </div>
-            <button type="submit" className="submit-review-button">
+            <button type="submit" className={styles.submitReviewButton}>
               Submit Review
             </button>
           </form>

@@ -4,7 +4,8 @@ import DatePicker from "react-multi-date-picker";
 import plusIcon from "../assets/img/plus.png";
 import LocationPicker from "./LocationPicker.js";
 import AirportSelect from "./AirportSelect.js";
-
+import styles from '../assets/styles/Modals.module.css';
+import '../assets/styles/Offerts.css';
 
 
 const AddOfferModal = ({
@@ -219,7 +220,6 @@ const AddOfferModal = ({
         }
       },
   };
-  // END: Скорочені функції
 
   useEffect(() => {
     if (location.city && location.country) {
@@ -248,19 +248,19 @@ const AddOfferModal = ({
   ];
 
   return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <div className="modal-header">
-          <h3 className="modal-title">Add New Offer</h3>
+<div className={`${styles.modalOverlay} ${styles.offerModalWrapper}`}>
+      <div className={styles.modal}>
+        <div className={styles.modalHeader}>
+          <h3 className={styles.modalTitle}>Add New Offer</h3>
           <button
-            className="modal-close"
+            className={styles.modalClose}
             onClick={closeModal}
             aria-label="Close modal"
           >
             ×
           </button>
         </div>
-        <div className="modal-body">
+        <div className={styles.modalBody}>
           {error && (
             <div
               className="error-message"
@@ -406,17 +406,17 @@ const AddOfferModal = ({
             </div>
           </form>
         </div>
-        <div className="modal-footer sticky-footer my-modal">
-          <span className="modal-price">{newOfferData.price || 0} PLN</span>
-          <div className="buttons-group">
+        <div className={`${styles.modalFooter} ${styles.stickyFooter} ${styles.myModal}`}>
+          <span className={styles.modalPrice}>{newOfferData.price || 0} PLN</span>
+          <div className={styles.buttonsGroup}>
             <button
               type="button"
-              className="btn btn-secondary"
+              className={`btn ${styles.btnSecondary}`}
               onClick={closeModal}
             >
               Cancel
             </button>
-            <button type="submit" form="offer-form" className="btn btn-primary">
+            <button type="submit" form="offer-form" className={`btn ${styles.btnPrimary}`}>
               Add Trip
             </button>
           </div>
@@ -425,7 +425,6 @@ const AddOfferModal = ({
     </div>
   );
 };
-
 AddOfferModal.propTypes = {
   newOfferData: PropTypes.shape({
     title: PropTypes.string,
