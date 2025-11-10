@@ -1,7 +1,7 @@
 .tripDetailsPage {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 80px 20px; 
+  padding: 80px 20px;
 }
 
 .tripHeader {
@@ -30,13 +30,15 @@
 
 .tripGrid {
   display: flex;
-  gap: 20px; 
-  align-items: flex-start; 
+  gap: 20px;
+  align-items: stretch;
 }
 
 .tripMain {
   flex: 3;
   background: #fff;
+  display: flex;
+  flex-direction: column;
 }
 
 .tripTabs ul {
@@ -55,20 +57,131 @@
 
 .bookingCard {
   flex: 1;
-  max-width: 320px; 
-  background: #e2d4bb;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  padding: 20px;
+  max-width: 350px;
+  background: rgba(27, 58, 75, 0.4);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.bookingCard input,
-.bookingCard select {
+.bookingCard input.arrivalAirport,
+.airportSelection {
+  display: none;
+}
+
+.bookingCard .price {
+  font-family: "Playfair Display", serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  margin: 15px 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.cardInfoSection {
+  padding: 20px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cardInfoTitle {
+  font-family: "Playfair Display", serif;
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: #fff;
+  margin: 0 0 15px 0;
+  text-align: center;
+}
+
+.cardCategoryChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.cardCategoryChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(240, 234, 218, 0.8);
+  color: #1b3a4b;
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+
+.bookingCard .bookButton {
   width: 100%;
-  padding: 12px 16px;
-  margin-bottom: 15px;
-  border: 1px solid #dcdcdc;
-  border-radius: 12px;
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-family: "Poppins", sans-serif;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  background: rgba(240, 234, 218, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #1b3a4b;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(15px) saturate(180%);
+  -webkit-backdrop-filter: blur(15px) saturate(180%);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 0 8px rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.bookingCard .bookButton:hover {
+  background: rgba(240, 234, 218, 1);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 4px 60px rgba(0, 0, 0, 0.1);
+}
+
+.bookingCard .bookButton:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
+}
+
+.bookingCard .bookButton::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: all 0.6s ease;
+}
+
+.bookingCard .bookButton:hover::before {
+  left: 125%;
+}
+
+.travelerButton,
+.bookingCard select.dateDropdown {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 50px;
+  padding: 12px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: none;
   font-family: "Poppins", sans-serif;
   font-size: 1rem;
   color: #333;
@@ -76,60 +189,14 @@
   -moz-appearance: none;
   appearance: none;
   cursor: pointer;
-  background-color: #ffffff;
+  text-align: left;
+  margin-bottom: 10px;
 }
 
-.bookingCard select.dateDropdown,
-.bookingCard select.airportDropdown {
+.bookingCard select.dateDropdown {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23555" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
   background-repeat: no-repeat;
-  background-position: right 16px center;
-}
-
-.bookingCard input.arrivalAirport {
-  background-color: #f8f9fa;
-  cursor: not-allowed;
-}
-
-.bookingCard .price {
-  font-family: "Poppins", sans-serif;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1b3a4b;
-  text-align: center;
-  margin: 20px 0;
-}
-
-.bookingCard .bookButton {
-  width: 100%;
-  background: #ffffff;
-  border: 1.5px solid #1b3a4b;
-  color: #1b3a4b;
-  padding: 12px;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-family: "Poppins", sans-serif;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.bookingCard .bookButton:hover {
-  background: #1b3a4b;
-  color: #ffffff;
-}
-
-.travelerButton {
-  background: #ffffff;
-  border: 1px solid #dcdcdc;
-  padding: 12px 16px;
-  border-radius: 12px;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  margin-bottom: 15px;
-  font-family: "Poppins", sans-serif;
-  font-size: 1rem;
+  background-position: right 20px center;
 }
 
 .airportSelection {
@@ -146,8 +213,6 @@
   text-align: left;
 }
 
-
-/* --- Галерея --- */
 .photoGallery {
   display: flex;
   flex-direction: column;
@@ -156,9 +221,10 @@
 
 .mainPhoto img {
   width: 100%;
-  max-height: 400px;
+  height: auto;
+  aspect-ratio: 16 / 10;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 16px;
   cursor: pointer;
   transition: transform 0.3s ease;
 }
@@ -170,6 +236,7 @@
   display: flex;
   gap: 10px;
   overflow-x: auto;
+  margin-top: 10px;
 }
 
 .thumbnail {
@@ -191,15 +258,14 @@
 }
 
 .starSelected {
-  color: #e2d4bb; 
+  color: #e2d4bb;
   font-size: 1.2rem;
 }
 
 .starUnselected {
-  color: #ccc; 
+  color: #ccc;
   font-size: 1.2rem;
 }
-
 
 .modalContent {
   background: white;
@@ -230,7 +296,7 @@
 }
 
 .travelerControls button {
-  background: #1b3a4b; 
+  background: #1b3a4b;
   color: white;
   border: none;
   border-radius: 4px;
@@ -261,8 +327,8 @@
 }
 
 .modalCloseButton {
-  background: #e2d4bb; 
-  color: #1b3a4b; 
+  background: #e2d4bb;
+  color: #1b3a4b;
   border: none;
   padding: 10px 20px;
   border-radius: 4px;
@@ -273,13 +339,13 @@
 }
 
 .fullscreenModal {
-  display: none; 
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0, 0, 0, 0.85);
   align-items: center;
   justify-content: center;
   z-index: 2000;
@@ -316,7 +382,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
   font-size: 2rem;
@@ -324,9 +390,12 @@
   padding: 10px;
   z-index: 2001;
 }
-.navArrow.left { left: -50px; }
-.navArrow.right { right: -50px; }
-
+.navArrow.left {
+  left: -50px;
+}
+.navArrow.right {
+  right: -50px;
+}
 
 .weatherChartContainer {
   max-width: 900px;
@@ -371,7 +440,7 @@
   font-size: 1.15rem;
   font-weight: 600;
   margin-bottom: 10px;
-  min-height: 2.5em; 
+  min-height: 2.5em;
 }
 
 .hotelRating {
@@ -383,13 +452,13 @@
 .hotelLink {
   display: inline-block;
   padding: 10px 15px;
-  background-color: #0071c2; 
+  background-color: #0071c2;
   color: white;
   text-decoration: none;
   border-radius: 5px;
   font-weight: 500;
   text-align: center;
-  margin-top: auto; 
+  margin-top: auto;
   transition: background-color 0.2s;
 }
 
@@ -433,4 +502,65 @@
   font-family: "Poppins", sans-serif;
   font-weight: 500;
   align-self: flex-start;
+}
+
+@media (max-width: 900px) {
+  .tripGrid {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tripMain {
+    flex: 1 1 auto;
+  }
+
+  .bookingCard {
+    flex: 1 1 auto;
+    max-width: 100%;
+    margin-top: 2rem;
+    justify-content: flex-start;
+  }
+
+  .mainPhoto img {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+@media (max-width: 480px) {
+  .tripDetailsPage {
+    padding: 40px 15px;
+  }
+
+  .tripGrid {
+    gap: 1.5rem;
+  }
+
+  .tripTitle {
+    font-size: 20px;
+  }
+
+  .bookingCard {
+    padding: 15px;
+  }
+
+  .bookingCard .price {
+    font-size: 1.75rem;
+  }
+
+  .travelerButton,
+  .bookingCard select.dateDropdown {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+  }
+
+  .bookingCard .bookButton {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+
+  .tripTabs ul {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
 }

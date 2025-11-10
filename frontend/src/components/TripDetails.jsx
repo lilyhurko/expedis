@@ -1,17 +1,23 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaTag } from "react-icons/fa";
 import PlacesToVisit from "./PlacesToVisit.jsx";
 import UserNavbar from "./UserNavbar.jsx";
 import Navbar from "./Navbar.jsx";
 
 import styles from "../assets/styles/TripDetails.module.css";
-import "../assets/styles/Offerts.css"; 
-import modalStyles from "../assets/styles/Modals.module.css"; 
+import "../assets/styles/Offerts.css";
+import modalStyles from "../assets/styles/Modals.module.css";
 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import RecommendedHotels from './RecommendedHotels.jsx';
+import RecommendedHotels from "./RecommendedHotels.jsx";
 
 import { Line } from "react-chartjs-2";
 import {
@@ -72,18 +78,18 @@ const TripDetails = () => {
   const handleScrollTo = (ref) => {
     if (ref.current) {
       ref.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
+        behavior: "smooth",
+        block: "start",
       });
     }
   };
 
   const getFullFlightDate = (baseDate, timeString) => {
     if (!baseDate || !timeString) return null;
-    const [hours, minutes] = timeString.split(':').map(Number);
+    const [hours, minutes] = timeString.split(":").map(Number);
     if (isNaN(hours) || isNaN(minutes)) return null;
     const newDate = new Date(baseDate);
-    newDate.setHours(hours, minutes, 0, 0); 
+    newDate.setHours(hours, minutes, 0, 0);
     return newDate;
   };
 
@@ -93,11 +99,11 @@ const TripDetails = () => {
     }
     let diffMs = end.getTime() - start.getTime();
     if (diffMs < 0) {
-      end.setDate(end.getDate() + 1); 
-      diffMs = end.getTime() - start.getTime(); 
+      end.setDate(end.getDate() + 1);
+      diffMs = end.getTime() - start.getTime();
     }
     if (diffMs < 0) {
-        return "N/A";
+      return "N/A";
     }
     const totalMinutes = Math.floor(diffMs / (1000 * 60));
     const hours = Math.floor(totalMinutes / 60);
@@ -105,51 +111,61 @@ const TripDetails = () => {
     return `${hours}h ${minutes}min`;
   };
 
-  const fetchTripDetails = useCallback(async (offerId) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/offers/${offerId}`);
-      if (!response.ok) {
-        if (response.status === 404) {
-          setErrorMessage("Trip not found. It may have been deleted or does not exist.");
-          setIsLoading(false);
-          return;
+  const fetchTripDetails = useCallback(
+    async (offerId) => {
+      try {
+        const response = await fetch(`${apiUrl}/api/offers/${offerId}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            setErrorMessage(
+              "Trip not found. It may have been deleted or does not exist."
+            );
+            setIsLoading(false);
+            return;
+          }
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const data = await response.json();
+        if (data.offer && data.weather) {
+          setTripDetails(data.offer);
+          setMonthlyWeather(data.weather);
+        } else {
+          setTripDetails(data.offer || data);
+          setMonthlyWeather(null);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching trip details:", error);
+        setErrorMessage(error.message);
+        setIsLoading(false);
       }
-      const data = await response.json();
-      if (data.offer && data.weather) {
-        setTripDetails(data.offer);
-        setMonthlyWeather(data.weather);
-      } else {
-        setTripDetails(data.offer || data);
-        setMonthlyWeather(null);
-      }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching trip details:", error);
-      setErrorMessage(error.message);
-      setIsLoading(false);
-    }
-  }, [apiUrl]);
+    },
+    [apiUrl]
+  );
 
-  const fetchTripReviews = useCallback(async (offerId) => {
-    try {
-      const reviewResponse = await fetch(`${apiUrl}/api/comments/${offerId}`);
-      if (!reviewResponse.ok) {
-        if (reviewResponse.status === 404) {
-          setTripReviews([]);
-          return;
+  const fetchTripReviews = useCallback(
+    async (offerId) => {
+      try {
+        const reviewResponse = await fetch(`${apiUrl}/api/comments/${offerId}`);
+        if (!reviewResponse.ok) {
+          if (reviewResponse.status === 404) {
+            setTripReviews([]);
+            return;
+          }
+          throw new Error(
+            `HTTP ${reviewResponse.status}: ${reviewResponse.statusText}`
+          );
         }
-        throw new Error(`HTTP ${reviewResponse.status}: ${reviewResponse.statusText}`);
+        const reviewData = await reviewResponse.json();
+        setTripReviews(reviewData.comments || reviewData || []);
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+        setTripReviews([]);
+        setErrorMessage("Failed to fetch reviews: " + error.message);
       }
-      const reviewData = await reviewResponse.json();
-      setTripReviews(reviewData.comments || reviewData || []);
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-      setTripReviews([]);
-      setErrorMessage("Failed to fetch reviews: " + error.message);
-    }
-  }, [apiUrl]);
+    },
+    [apiUrl]
+  );
 
   useEffect(() => {
     const authToken = localStorage.getItem("token");
@@ -171,7 +187,11 @@ const TripDetails = () => {
   const [mainImage, setMainImage] = useState(null);
 
   useEffect(() => {
-    if (tripDetails && tripDetails.imageUrls && tripDetails.imageUrls.length > 0) {
+    if (
+      tripDetails &&
+      tripDetails.imageUrls &&
+      tripDetails.imageUrls.length > 0
+    ) {
       setMainImage(tripDetails.imageUrls[0]);
     }
   }, [tripDetails]);
@@ -179,7 +199,8 @@ const TripDetails = () => {
   useEffect(() => {
     if (tripDetails?.flightConnections?.length > 0) {
       if (!selectedDepartureAirport) {
-        const firstDeparture = tripDetails.flightConnections[0].departureAirportIATA;
+        const firstDeparture =
+          tripDetails.flightConnections[0].departureAirportIATA;
         setSelectedDepartureAirport(firstDeparture);
         setArrivalIATA(tripDetails.flightConnections[0].arrivalAirportIATA);
       }
@@ -187,7 +208,10 @@ const TripDetails = () => {
   }, [tripDetails, selectedDepartureAirport]);
 
   useEffect(() => {
-    if (selectedDepartureAirport && tripDetails?.flightConnections?.length > 0) {
+    if (
+      selectedDepartureAirport &&
+      tripDetails?.flightConnections?.length > 0
+    ) {
       const connection = tripDetails.flightConnections.find(
         (f) => f.departureAirportIATA === selectedDepartureAirport
       );
@@ -219,7 +243,10 @@ const TripDetails = () => {
         `${apiUrl}/api/comments/${offerId}/comments`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
           body: JSON.stringify({
             message: newReviewInput.comment,
             rating: newReviewInput.rating,
@@ -278,7 +305,10 @@ const TripDetails = () => {
     const birth = new Date(birthDate);
     let age = refDate.getFullYear() - birth.getFullYear();
     const monthDiff = refDate.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && refDate.getDate() < birth.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && refDate.getDate() < birth.getDate())
+    ) {
       age--;
     }
     return age;
@@ -323,7 +353,9 @@ const TripDetails = () => {
         if (delta > 0 && newCount > prev.children.length) {
           newChildren.push({ birthDate: "" });
         }
-        const newErrors = newChildren.map((child, i) => validateBirthDate(child.birthDate, i));
+        const newErrors = newChildren.map((child, i) =>
+          validateBirthDate(child.birthDate, i)
+        );
         setErrors(newErrors);
         return { ...prev, children: newChildren };
       }
@@ -350,71 +382,157 @@ const TripDetails = () => {
     if (!hasErrors) setIsModalOpen(false);
     else alert("Please fix all errors before saving.");
   };
-  
+
   const averageRating = useMemo(() => {
     if (!tripReviews || tripReviews.length === 0) return 0;
-    const total = tripReviews.reduce((acc, review) => acc + (review.rating || 0), 0);
+    const total = tripReviews.reduce(
+      (acc, review) => acc + (review.rating || 0),
+      0
+    );
     return Math.round(total / tripReviews.length);
   }, [tripReviews]);
 
   if (isLoading)
-    return <div className="loading-container"><p className="text-xl">Loading...</p></div>;
+    return (
+      <div className="loading-container">
+        <p className="text-xl">Loading...</p>
+      </div>
+    );
   if (errorMessage)
     return (
       <div className="error-message">
         Error: {errorMessage}
-        <button onClick={() => navigate("/")} className="book-button mt-4">Go Back</button>
+        <button onClick={() => navigate("/")} className="book-button mt-4">
+          Go Back
+        </button>
       </div>
     );
   if (!tripDetails) return <div className="error-message">Trip not found</div>;
-  
-  let outboundFlight = tripDetails.flightConnections.find((f) => f.flightType === "outbound");
-  let returnFlight = tripDetails.flightConnections.find((f) => f.flightType === "return");
 
-  if (!outboundFlight && tripDetails.flightConnections.length > 0) outboundFlight = tripDetails.flightConnections[0];
-  if (!returnFlight && tripDetails.flightConnections.length > 1) returnFlight = tripDetails.flightConnections[1];
+  let outboundFlight = tripDetails.flightConnections.find(
+    (f) => f.flightType === "outbound"
+  );
+  let returnFlight = tripDetails.flightConnections.find(
+    (f) => f.flightType === "return"
+  );
+
+  if (!outboundFlight && tripDetails.flightConnections.length > 0)
+    outboundFlight = tripDetails.flightConnections[0];
+  if (!returnFlight && tripDetails.flightConnections.length > 1)
+    returnFlight = tripDetails.flightConnections[1];
 
   let outboundDepDate, outboundArrDate, returnDepDate, returnArrDate;
   if (selectedDate) {
     const departureBaseDate = new Date(selectedDate);
     const returnBaseDate = new Date(departureBaseDate);
-    returnBaseDate.setDate(departureBaseDate.getDate() + (tripDetails.duration - 1));
+    returnBaseDate.setDate(
+      departureBaseDate.getDate() + (tripDetails.duration - 1)
+    );
 
     if (outboundFlight) {
-      outboundDepDate = getFullFlightDate(departureBaseDate, outboundFlight.departureTime);
-      outboundArrDate = getFullFlightDate(departureBaseDate, outboundFlight.arrivalTime);
+      outboundDepDate = getFullFlightDate(
+        departureBaseDate,
+        outboundFlight.departureTime
+      );
+      outboundArrDate = getFullFlightDate(
+        departureBaseDate,
+        outboundFlight.arrivalTime
+      );
     }
     if (returnFlight) {
-      returnDepDate = getFullFlightDate(returnBaseDate, returnFlight.departureTime);
-      returnArrDate = getFullFlightDate(returnBaseDate, returnFlight.arrivalTime);
+      returnDepDate = getFullFlightDate(
+        returnBaseDate,
+        returnFlight.departureTime
+      );
+      returnArrDate = getFullFlightDate(
+        returnBaseDate,
+        returnFlight.arrivalTime
+      );
     }
   }
 
-  const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const sortedWeather = monthlyWeather ? [...monthlyWeather].sort((a, b) => a.month - b.month) : [];
+  const monthLabels = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const sortedWeather = monthlyWeather
+    ? [...monthlyWeather].sort((a, b) => a.month - b.month)
+    : [];
 
   const chartData = {
     labels: monthLabels,
     datasets: [
-      { label: "Avg. Temp (°C)", data: sortedWeather.map((m) => m.avg_temp), borderColor: "rgb(255, 99, 132)", backgroundColor: "rgba(255, 99, 132, 0.5)", type: "line", yAxisID: "y_temp" },
-      { label: "Night Temp (°C)", data: sortedWeather.map((m) => m.avg_min_temp), borderColor: "rgb(75, 192, 192)", backgroundColor: "rgba(75, 192, 192, 0.5)", type: "line", yAxisID: "y_temp", hidden: true },
-      { label: "Precipitation (mm)", data: sortedWeather.map((m) => m.precipitation), borderColor: "rgb(54, 162, 235)", backgroundColor: "rgba(54, 162, 235, 0.5)", type: "bar", yAxisID: "y_prcp" },
+      {
+        label: "Avg. Temp (°C)",
+        data: sortedWeather.map((m) => m.avg_temp),
+        borderColor: "rgb(255, 99, 132)",
+        backgroundColor: "rgba(255, 99, 132, 0.5)",
+        type: "line",
+        yAxisID: "y_temp",
+      },
+      {
+        label: "Night Temp (°C)",
+        data: sortedWeather.map((m) => m.avg_min_temp),
+        borderColor: "rgb(75, 192, 192)",
+        backgroundColor: "rgba(75, 192, 192, 0.5)",
+        type: "line",
+        yAxisID: "y_temp",
+        hidden: true,
+      },
+      {
+        label: "Precipitation (mm)",
+        data: sortedWeather.map((m) => m.precipitation),
+        borderColor: "rgb(54, 162, 235)",
+        backgroundColor: "rgba(54, 162, 235, 0.5)",
+        type: "bar",
+        yAxisID: "y_prcp",
+      },
     ],
   };
 
   const chartOptions = {
     responsive: true,
-    plugins: { legend: { position: "top" }, title: { display: true, text: `Average Monthly Weather in ${tripDetails.city}` } },
+    plugins: {
+      legend: { position: "top" },
+      title: {
+        display: true,
+        text: `Average Monthly Weather in ${tripDetails.city}`,
+      },
+    },
     scales: {
-      y_temp: { type: "linear", display: true, position: "left", title: { display: true, text: "Temperature (°C)" } },
-      y_prcp: { type: "linear", display: true, position: "right", title: { display: true, text: "Precipitation (mm)" }, grid: { drawOnChartArea: false } },
+      y_temp: {
+        type: "linear",
+        display: true,
+        position: "left",
+        title: { display: true, text: "Temperature (°C)" },
+      },
+      y_prcp: {
+        type: "linear",
+        display: true,
+        position: "right",
+        title: { display: true, text: "Precipitation (mm)" },
+        grid: { drawOnChartArea: false },
+      },
     },
   };
-  
+
   const availableDepartureAirports =
     tripDetails?.flightConnections?.length > 0
-      ? [...new Set(tripDetails.flightConnections.map((fc) => fc.departureAirportIATA))]
-          .map((iata) => ({ iata, name: `${iata} Airport` }))
+      ? [
+          ...new Set(
+            tripDetails.flightConnections.map((fc) => fc.departureAirportIATA)
+          ),
+        ].map((iata) => ({ iata, name: `${iata} Airport` }))
       : [];
 
   const buildImageUrl = (filename) => {
@@ -425,11 +543,18 @@ const TripDetails = () => {
 
   const FullScreenModal = () => (
     <div
-      className={`${styles.fullscreenModal} ${isFullScreenOpen ? styles.open : ''}`}
+      className={`${styles.fullscreenModal} ${
+        isFullScreenOpen ? styles.open : ""
+      }`}
       onClick={closeFullScreen}
     >
-      <div className={styles.fullscreenContent} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.closeFullscreen} onClick={closeFullScreen}>×</button>
+      <div
+        className={styles.fullscreenContent}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button className={styles.closeFullscreen} onClick={closeFullScreen}>
+          ×
+        </button>
         {tripDetails?.imageUrls && tripDetails.imageUrls[currentSlide] && (
           <img
             src={buildImageUrl(tripDetails.imageUrls[currentSlide])}
@@ -437,8 +562,22 @@ const TripDetails = () => {
             className={styles.fullscreenImage}
           />
         )}
-        <button className={`${styles.navArrow} ${styles.left}`} onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}>‹</button>
-        <button className={`${styles.navArrow} ${styles.right}`} onClick={() => setCurrentSlide((prev) => Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1))}>›</button>
+        <button
+          className={`${styles.navArrow} ${styles.left}`}
+          onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}
+        >
+          ‹
+        </button>
+        <button
+          className={`${styles.navArrow} ${styles.right}`}
+          onClick={() =>
+            setCurrentSlide((prev) =>
+              Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1)
+            )
+          }
+        >
+          ›
+        </button>
       </div>
     </div>
   );
@@ -453,7 +592,11 @@ const TripDetails = () => {
             {[...Array(5)].map((_, i) => (
               <FaStar
                 key={i}
-                className={i < averageRating ? styles.starSelected : styles.starUnselected}
+                className={
+                  i < averageRating
+                    ? styles.starSelected
+                    : styles.starUnselected
+                }
               />
             ))}
           </div>
@@ -477,28 +620,13 @@ const TripDetails = () => {
                       <img
                         src={buildImageUrl(mainImage)}
                         alt="Main trip"
-                        onError={(e) => { e.target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=="; }}
+                        onError={(e) => {
+                          e.target.src =
+                            "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==";
+                        }}
                       />
                     </div>
                   )}
-                  <div className={styles.thumbnails}>
-                    {tripDetails.imageUrls.map(
-                      (filename, index) =>
-                        buildImageUrl(filename) && (
-                          <div
-                            key={index}
-                            className={`${styles.thumbnail} ${mainImage === filename ? styles.active : ""}`}
-                            onClick={() => setMainImage(filename)}
-                          >
-                            <img
-                              src={buildImageUrl(filename)}
-                              alt={`Thumbnail ${index + 1}`}
-                              onError={(e) => { e.target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzUiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4="; }}
-                            />
-                          </div>
-                        )
-                    )}
-                  </div>
                 </>
               ) : (
                 <p>No images available</p>
@@ -507,44 +635,105 @@ const TripDetails = () => {
           </div>
 
           <div className={styles.bookingCard}>
-            <div className={styles.travelerSelection}>
-              <button onClick={openModal} className={styles.travelerButton}>
-                {travelers.adults} Adult{travelers.adults > 1 ? "s" : ""}{" "}
-                {travelers.children.length > 0 ? `, ${travelers.children.length} Child${travelers.children.length > 1 ? "ren" : ""}` : ""}
+            <div>
+              <div className={styles.travelerSelection}>
+                <button onClick={openModal} className={styles.travelerButton}>
+                  {travelers.adults} Adult{travelers.adults > 1 ? "s" : ""}{" "}
+                  {travelers.children.length > 0
+                    ? `, ${travelers.children.length} Child${
+                        travelers.children.length > 1 ? "ren" : ""
+                      }`
+                    : ""}
+                </button>
+              </div>
+              <select
+                className={styles.dateDropdown}
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              >
+                <option value="">Select a date</option>
+                {tripDetails.availableDates &&
+                tripDetails.availableDates.length > 0 ? (
+                  tripDetails.availableDates.map((date, index) => {
+                    const d_start = new Date(date);
+                    const startDate = d_start.toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    });
+                    const d_end = new Date(d_start);
+                    d_end.setDate(
+                      d_start.getDate() + (tripDetails.duration - 1)
+                    );
+                    const endDate = d_end.toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    });
+                    const nights = tripDetails.duration - 1;
+                    return (
+                      <option key={index} value={date}>
+                        {`${startDate} - ${endDate} / ${nights} nights`}
+                      </option>
+                    );
+                  })
+                ) : (
+                  <option value="">No dates available</option>
+                )}
+              </select>
+            </div>
+
+            <div className={styles.cardInfoSection}>
+              <h4 className={styles.cardInfoTitle}>
+                {tripDetails.duration} days in {tripDetails.city}
+              </h4>
+              <div className={styles.cardCategoryChips}>
+                {tripDetails.categories &&
+                  tripDetails.categories.map((cat) => (
+                    <span key={cat} className={styles.cardCategoryChip}>
+                      <FaTag /> {cat}
+                    </span>
+                  ))}
+              </div>
+            </div>
+
+            <div className={styles.cardFooter}>
+              <p className={styles.price}>Total: {calculateTotalPrice()} PLN</p>
+              <button
+                className={styles.bookButton}
+                onClick={handleBookNowClick}
+              >
+                Book for 48h
               </button>
             </div>
-            <select
-              className={styles.dateDropdown}
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-            >
-              <option value="">Select a date</option>
-              {tripDetails.availableDates &&
-              tripDetails.availableDates.length > 0 ? (
-                tripDetails.availableDates.map((date, index) => {
-                  const d_start = new Date(date);
-                  const startDate = d_start.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-                  const d_end = new Date(d_start);
-                  d_end.setDate(d_start.getDate() + (tripDetails.duration - 1));
-                  const endDate = d_end.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-                  const nights = tripDetails.duration - 1;
-                  return (
-                    <option key={index} value={date}>
-                      {`${startDate} - ${endDate} / ${nights} nights`}
-                    </option>
-                  );
-                })
-              ) : (
-                <option value="">No dates available</option>
-              )}
-            </select>
-            
-            <p className={styles.price}>Total: {calculateTotalPrice()} PLN</p>
-            <button className={styles.bookButton} onClick={handleBookNowClick}>
-              Book for 48h
-            </button>
           </div>
         </div>
+
+        {tripDetails.imageUrls && tripDetails.imageUrls.length > 0 && (
+          <div className={styles.thumbnails}>
+            {tripDetails.imageUrls.map(
+              (filename, index) =>
+                buildImageUrl(filename) && (
+                  <div
+                    key={index}
+                    className={`${styles.thumbnail} ${
+                      mainImage === filename ? styles.active : ""
+                    }`}
+                    onClick={() => setMainImage(filename)}
+                  >
+                    <img
+                      src={buildImageUrl(filename)}
+                      alt={`Thumbnail ${index + 1}`}
+                      onError={(e) => {
+                        e.target.src =
+                          "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzUiIGhlaWdodD0iNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=";
+                      }}
+                    />
+                  </div>
+                )
+            )}
+          </div>
+        )}
 
         {isModalOpen && (
           <div className={modalStyles.modalOverlay}>
@@ -553,17 +742,31 @@ const TripDetails = () => {
               <div className={styles.travelerGroup}>
                 <label>Adults (12+ years):</label>
                 <div className={styles.travelerControls}>
-                  <button onClick={() => handleTravelerChange("adults", -1)} disabled={travelers.adults <= 1}>-</button>
+                  <button
+                    onClick={() => handleTravelerChange("adults", -1)}
+                    disabled={travelers.adults <= 1}
+                  >
+                    -
+                  </button>
                   <span>{travelers.adults}</span>
-                  <button onClick={() => handleTravelerChange("adults", 1)}>+</button>
+                  <button onClick={() => handleTravelerChange("adults", 1)}>
+                    +
+                  </button>
                 </div>
               </div>
               <div className={styles.travelerGroup}>
                 <label>Children (0–11 years):</label>
                 <div className={styles.travelerControls}>
-                  <button onClick={() => handleTravelerChange("children", -1)} disabled={travelers.children.length === 0}>-</button>
+                  <button
+                    onClick={() => handleTravelerChange("children", -1)}
+                    disabled={travelers.children.length === 0}
+                  >
+                    -
+                  </button>
                   <span>{travelers.children.length}</span>
-                  <button onClick={() => handleTravelerChange("children", 1)}>+</button>
+                  <button onClick={() => handleTravelerChange("children", 1)}>
+                    +
+                  </button>
                 </div>
               </div>
               {travelers.children.map((child, index) => (
@@ -572,11 +775,19 @@ const TripDetails = () => {
                   <input
                     type="date"
                     value={child.birthDate}
-                    onChange={(e) => handleChildBirthDateChange(index, e.target.value)}
+                    onChange={(e) =>
+                      handleChildBirthDateChange(index, e.target.value)
+                    }
                     max={new Date().toISOString().split("T")[0]}
                   />
-                  {child.birthDate && (<p>Age: {calculateAge(child.birthDate, selectedDate)} years</p>)}
-                  {errors[index] && (<p className="error-text">{errors[index]}</p>)}
+                  {child.birthDate && (
+                    <p>
+                      Age: {calculateAge(child.birthDate, selectedDate)} years
+                    </p>
+                  )}
+                  {errors[index] && (
+                    <p className="error-text">{errors[index]}</p>
+                  )}
                 </div>
               ))}
               <button
@@ -592,11 +803,11 @@ const TripDetails = () => {
 
         <div className={styles.tripTabs}>
           <ul>
-            <li onClick={() => handleScrollTo(photosRef)}>• Photos</li>
-            <li onClick={() => handleScrollTo(descriptionRef)}>• Description</li>
-            <li onClick={() => handleScrollTo(reviewsRef)}>• Reviews</li>
-            <li onClick={() => handleScrollTo(weatherRef)}>• Weather</li>
-            <li onClick={() => handleScrollTo(placesRef)}>• What to do</li>
+            <li onClick={() => handleScrollTo(photosRef)}>Photos</li>
+            <li onClick={() => handleScrollTo(descriptionRef)}>Description</li>
+            <li onClick={() => handleScrollTo(reviewsRef)}>Reviews</li>
+            <li onClick={() => handleScrollTo(weatherRef)}>Weather</li>
+            <li onClick={() => handleScrollTo(placesRef)}>What to do</li>
           </ul>
         </div>
       </div>
@@ -624,19 +835,35 @@ const TripDetails = () => {
         {outboundFlight && (
           <div className={styles.flightSegment}>
             <h4>Outbound Flight</h4>
-            <p>{outboundFlight.departureAirportIATA} → {outboundFlight.arrivalAirportIATA}</p>
+            <p>
+              {outboundFlight.departureAirportIATA} →{" "}
+              {outboundFlight.arrivalAirportIATA}
+            </p>
             <p>Departure: {outboundFlight.departureTime}</p>
             <p>Arrival: {outboundFlight.arrivalTime}</p>
-            <p>Duration: {selectedDate ? calculateDuration(outboundDepDate, outboundArrDate) : "Select date to see duration"}</p>
+            <p>
+              Duration:{" "}
+              {selectedDate
+                ? calculateDuration(outboundDepDate, outboundArrDate)
+                : "Select date to see duration"}
+            </p>
           </div>
         )}
         {returnFlight && (
           <div className={styles.flightSegment}>
             <h4>Return Flight</h4>
-            <p>{returnFlight.departureAirportIATA} → {returnFlight.arrivalAirportIATA}</p>
+            <p>
+              {returnFlight.departureAirportIATA} →{" "}
+              {returnFlight.arrivalAirportIATA}
+            </p>
             <p>Departure: {returnFlight.departureTime}</p>
             <p>Arrival: {returnFlight.arrivalTime}</p>
-            <p>Duration: {selectedDate ? calculateDuration(returnDepDate, returnArrDate) : "Select date to see duration"}</p>
+            <p>
+              Duration:{" "}
+              {selectedDate
+                ? calculateDuration(returnDepDate, returnArrDate)
+                : "Select date to see duration"}
+            </p>
           </div>
         )}
       </div>
@@ -662,9 +889,9 @@ const TripDetails = () => {
           <p className="empty-section-text">No places listed.</p>
         )}
       </div>
-      
+
       <RecommendedHotels city={tripDetails.city} />
-      
+
       <button className="book-button" onClick={handleBookNowClick}>
         Book Now
       </button>
@@ -679,11 +906,17 @@ const TripDetails = () => {
                   {[...Array(5)].map((_, i) => (
                     <FaStar
                       key={i}
-                      className={i < review.rating ? styles.starSelected : styles.starUnselected}
+                      className={
+                        i < review.rating
+                          ? styles.starSelected
+                          : styles.starUnselected
+                      }
                     />
                   ))}
                 </div>
-                <p className="detail-text">{review.message || review.comment}</p>
+                <p className="detail-text">
+                  {review.message || review.comment}
+                </p>
                 <p className={styles.reviewUsername}>
                   By {review.username || review.user?.username || "Anonymous"}
                 </p>
