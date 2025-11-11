@@ -6,7 +6,13 @@ import React, {
   useCallback,
 } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaStar, FaTag } from "react-icons/fa";
+import {
+  FaStar,
+  FaTag,
+  FaPlane,
+  FaPlaneDeparture,
+  FaPlaneArrival,
+} from "react-icons/fa";
 import PlacesToVisit from "./PlacesToVisit.jsx";
 import UserNavbar from "./UserNavbar.jsx";
 import Navbar from "./Navbar.jsx";
@@ -109,6 +115,28 @@ const TripDetails = () => {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     return `${hours}h ${minutes}min`;
+  };
+
+ const formatFlightArcDate = (date) => {
+    if (!date || isNaN(date.getTime())) return "Select Date";
+    return date.toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatFlightTimeline = (date) => {
+    if (!date || isNaN(date.getTime())) return "N/A";
+    return date
+      .toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      .replace(",", ", "); 
   };
 
   const fetchTripDetails = useCallback(
@@ -582,6 +610,8 @@ const TripDetails = () => {
     </div>
   );
 
+  const sampleTripDescription = `Embark on an unforgettable journey to ${tripDetails.city}, ${tripDetails.country}, where ancient history blends seamlessly with vibrant modern life. Over ${tripDetails.duration} days, you'll explore iconic landmarks like the historic old town and stunning coastal views. Indulge in authentic local cuisine, from fresh seafood to traditional pastries, and unwind in charming accommodations. This carefully curated trip includes guided tours, insider tips, and plenty of free time to discover hidden gems at your own pace. Whether you're a culture enthusiast or a nature lover, this adventure promises memories that last a lifetime.`;
+
   return (
     <>
       {isUserAuthenticated ? <UserNavbar /> : <Navbar />}
@@ -814,59 +844,87 @@ const TripDetails = () => {
 
       <div className="mb-8" ref={descriptionRef}>
         <h2 className="section-heading">Trip Details</h2>
-        <p className="detail-text">
-          <strong>Description:</strong>{" "}
-          {tripDetails.description || "No description available"}
-        </p>
-        <p className="detail-text">
-          <strong>City:</strong> {tripDetails.city}, {tripDetails.country}
-        </p>
-        <p className="detail-text">
-          <strong>Duration:</strong> {tripDetails.duration} days
-        </p>
-        <p className="detail-text">
-          <strong>Price:</strong>{" "}
-          {tripDetails.price ? `${tripDetails.price} PLN` : "Price unavailable"}
-        </p>
+        <div className={styles.sectionContent}>
+          <p className="detail-text">
+            {tripDetails.description || sampleTripDescription}
+          </p>
+        </div>
       </div>
 
       <div className="mb-8">
         <h2 className="section-heading">Flight Details</h2>
-        {outboundFlight && (
-          <div className={styles.flightSegment}>
-            <h4>Outbound Flight</h4>
-            <p>
-              {outboundFlight.departureAirportIATA} →{" "}
-              {outboundFlight.arrivalAirportIATA}
-            </p>
-            <p>Departure: {outboundFlight.departureTime}</p>
-            <p>Arrival: {outboundFlight.arrivalTime}</p>
-            <p>
-              Duration:{" "}
-              {selectedDate
-                ? calculateDuration(outboundDepDate, outboundArrDate)
-                : "Select date to see duration"}
-            </p>
+        <div className="section-content">
+          <div className={styles.flightDetailsGrid}>
+            
+            {outboundFlight && (
+              <div className={styles.flightSegment}>
+                <div className={styles.flightArc}>
+                  <span className={styles.arcIata}>{outboundFlight.departureAirportIATA}</span>
+                  <div className={styles.arcDate}>
+                    <FaPlane />
+                    <span>{formatFlightArcDate(outboundDepDate)}</span>
+                  </div>
+                  <span className={styles.arcIata}>{outboundFlight.arrivalAirportIATA}</span>
+                </div>
+                
+                <div className={styles.flightTimeline}>
+                  <div className={styles.timelinePoint}>
+                    <FaPlaneDeparture className={styles.timelineIcon} />
+                    <div className={styles.timelineInfo}>
+                      <p>{formatFlightTimeline(outboundDepDate)}</p>
+                      <strong>{outboundFlight.departureAirportIATA}</strong>
+                    </div>
+                  </div>
+                  <div className={styles.timelineConnector}>
+                    <span>{selectedDate ? calculateDuration(outboundDepDate, outboundArrDate) : "N/A"}</span>
+                  </div>
+                  <div className={styles.timelinePoint}>
+                    <FaPlaneArrival className={styles.timelineIcon} />
+                    <div className={styles.timelineInfo}>
+                      <p>{formatFlightTimeline(outboundArrDate)}</p>
+                      <strong>{outboundFlight.arrivalAirportIATA}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {returnFlight && (
+              <div className={styles.flightSegment}>
+                <div className={styles.flightArc}>
+                  <span className={styles.arcIata}>{returnFlight.departureAirportIATA}</span>
+                  <div className={styles.arcDate}>
+                    <FaPlane />
+                    <span>{formatFlightArcDate(returnDepDate)}</span>
+                  </div>
+                  <span className={styles.arcIata}>{returnFlight.arrivalAirportIATA}</span>
+                </div>
+                
+                <div className={styles.flightTimeline}>
+                  <div className={styles.timelinePoint}>
+                    <FaPlaneDeparture className={styles.timelineIcon} />
+                    <div className={styles.timelineInfo}>
+                      <p>{formatFlightTimeline(returnDepDate)}</p>
+                      <strong>{returnFlight.departureAirportIATA}</strong>
+                    </div>
+                  </div>
+                  <div className={styles.timelineConnector}>
+                    <span>{selectedDate ? calculateDuration(returnDepDate, returnArrDate) : "N/A"}</span>
+                  </div>
+                  <div className={styles.timelinePoint}>
+                    <FaPlaneArrival className={styles.timelineIcon} />
+                    <div className={styles.timelineInfo}>
+                      <p>{formatFlightTimeline(returnArrDate)}</p>
+                      <strong>{returnFlight.arrivalAirportIATA}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
           </div>
-        )}
-        {returnFlight && (
-          <div className={styles.flightSegment}>
-            <h4>Return Flight</h4>
-            <p>
-              {returnFlight.departureAirportIATA} →{" "}
-              {returnFlight.arrivalAirportIATA}
-            </p>
-            <p>Departure: {returnFlight.departureTime}</p>
-            <p>Arrival: {returnFlight.arrivalTime}</p>
-            <p>
-              Duration:{" "}
-              {selectedDate
-                ? calculateDuration(returnDepDate, returnArrDate)
-                : "Select date to see duration"}
-            </p>
-          </div>
-        )}
+        </div>
       </div>
+
 
       <div className="mb-8" ref={weatherRef}>
         <h2 className="section-heading">Average Monthly Weather</h2>
@@ -875,9 +933,11 @@ const TripDetails = () => {
             <Line options={chartOptions} data={chartData} />
           </div>
         ) : (
-          <p className="empty-section-text">
-            Average monthly weather data unavailable.
-          </p>
+          <div className={styles.sectionContent}>
+            <p className="empty-section-text">
+              Average monthly weather data unavailable.
+            </p>
+          </div>
         )}
       </div>
 
@@ -886,7 +946,9 @@ const TripDetails = () => {
         {tripDetails.placesToVisit && tripDetails.placesToVisit.length > 0 ? (
           <PlacesToVisit places={tripDetails.placesToVisit} />
         ) : (
-          <p className="empty-section-text">No places listed.</p>
+          <div className={styles.sectionContent}>
+            <p className="empty-section-text">No places listed.</p>
+          </div>
         )}
       </div>
 
@@ -924,7 +986,9 @@ const TripDetails = () => {
             ))}
           </div>
         ) : (
-          <p className="empty-section-text">No reviews yet.</p>
+          <div className={styles.sectionContent}>
+            <p className="empty-section-text">No reviews yet.</p>
+          </div>
         )}
       </div>
 

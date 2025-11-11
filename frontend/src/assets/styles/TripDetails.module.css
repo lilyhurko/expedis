@@ -466,13 +466,6 @@
   background-color: #0056b3;
 }
 
-.flightSegment {
-  border: 1px solid #eee;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 8px;
-}
-
 .reviewCard {
   border: 1px solid #eee;
   padding: 15px;
@@ -504,6 +497,154 @@
   align-self: flex-start;
 }
 
+.section-heading {
+  display: inline-flex !important;
+  align-items: center;
+  font-family: "Playfair Display", serif;
+  font-weight: 600;
+  color: #1b3a4b;
+  font-size: 2.5rem;
+  margin: 0;
+  padding-left: 80px;
+  padding-right: 80px;
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.section-heading::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 65px;
+  height: 2px;
+  background-color: #1b3a4b;
+}
+
+.sectionContent {
+  padding: 0 80px 1.5rem 80px !important;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.detail-text {
+  font-family: "Poppins", sans-serif !important;
+  line-height: 1.7;
+  color: #333 !important;
+  font-size: 1rem;
+  text-align: justify;
+  margin: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  white-space: pre-wrap;
+  width: 100%;
+}
+
+.empty-section-text {
+  font-family: "Poppins", sans-serif;
+  color: #777;
+  margin: 0;
+}
+
+.flightDetailsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.flightSegment {
+  background: rgba(27, 58, 75, 0.05);
+  backdrop-filter: blur(15px) saturate(180%);
+  -webkit-backdrop-filter: blur(15px) saturate(180%);
+  border: 1px solid rgba(27, 58, 75, 0.1); 
+  border-radius: 16px;
+  padding: 1.5rem;
+  font-family: "Poppins", sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; 
+  margin-left: 80px; 
+  max-width: 600px;
+}
+.flightArc {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 1.5rem;
+}
+
+.arcIata {
+  font-family: "Playfair Display", serif;
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #1b3a4b;
+}
+
+.arcDate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  background-image: linear-gradient(to right, #aaa 33%, rgba(255,255,255,0) 0%);
+  background-position: 50% 18px;
+  background-size: 8px 2px;
+  background-repeat: repeat-x;
+  padding: 0 1rem;
+  flex-grow: 1;
+  margin: 0 1rem;
+  text-align: center;
+}
+
+
+.flightTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.timelinePoint {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.timelineIcon {
+  font-size: 1.5rem;
+  color: #1b3a4b;
+}
+
+.timelineInfo p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+.timelineInfo strong {
+  font-size: 1.1rem;
+  color: #1b3a4b;
+  font-weight: 600;
+}
+
+.timelineConnector {
+  height: 40px;
+  border-left: 2px dotted #ccc;
+  margin-left: calc((1.5rem / 2) - 1px);
+  display: flex;
+  align-items: center;
+  padding-left: 1.5rem;
+  font-size: 0.9rem;
+  color: #555;
+  font-style: italic;
+}
+
+
 @media (max-width: 900px) {
   .tripGrid {
     flex-direction: column;
@@ -523,6 +664,19 @@
 
   .mainPhoto img {
     aspect-ratio: 4 / 3;
+  }
+
+  .section-heading,
+  .sectionContent {
+    padding-left: 40px !important;
+    padding-right: 15px !important;
+  }
+
+  .section-heading::before {
+    width: 40px;
+  }
+  .flightDetailsGrid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -562,5 +716,26 @@
     flex-direction: column;
     gap: 10px;
     align-items: center;
+  }
+
+  .section-heading,
+  .sectionContent {
+    padding-left: 20px !important;
+    padding-right: 10px !important;
+  }
+
+  .section-heading {
+    font-size: 2rem;
+  }
+
+  .section-heading::before {
+    width: 20px;
+  }
+
+  .flightDetailsGrid {
+    grid-template-columns: 1fr;
+  }
+  .arcIata {
+    font-size: 2rem;
   }
 }
