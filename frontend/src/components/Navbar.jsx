@@ -19,7 +19,7 @@ function Navbar() {
     <nav className={`navbar ${isHome ? 'navbar-light' : 'navbar-dark'}`}>
       <div className="navbar-logo">
         <img src={logo} alt="Logo" className="navbar-logo-img" />
-        <h1 className="navbar-title">Expedis</h1>
+        <a href="/" className="navbar-title">Expedis</a>
       </div>
 
       <div className="navbar-toggle" onClick={toggleMenu}>

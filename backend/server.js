@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const protectedRoutes = require('./routes/protected');
 const flightConnectionsRoutes = require("./routes/flightConnection");
+const carrentRoutes = require('./routes/carrent');
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -29,6 +30,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/protected', protectedRoutes);
 app.use("/api/flight-connections", flightConnectionsRoutes);
+app.use('/api/cars', carrentRoutes);
 
 
 

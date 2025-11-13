@@ -67,7 +67,7 @@ const handleCardClick = () => {
           <div className="offer-actions">
             {userRole !== 'admin' && (
               <button 
-                className="book-now-button" 
+                className="book-now-button navbar-login-button" 
                 onClick={(e) => handleActionClick(e, () => handleBookNow(offer._id))}
               >
                 Book Now

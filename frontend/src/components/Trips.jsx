@@ -357,7 +357,7 @@ const Trips = () => {
           <h2 className="offers-title">Available Offers</h2>
           {userRole === "admin" && (
             <button
-              className="add-offer-button"
+              className="add-offer-button navbar-login-button"
               onClick={handleAddNewOfferClick}
             >
               Add New Offer
