@@ -397,10 +397,6 @@
   right: -50px;
 }
 
-.weatherChartContainer {
-  max-width: 900px;
-  margin: 0 auto;
-}
 
 .clickableStar {
   cursor: pointer;
@@ -524,7 +520,7 @@
 
 .sectionContent {
   padding: 0 80px 1.5rem 80px !important;
-  margin-bottom: 1.5rem;
+  margin-bottom: 3rem;
   width: 100%;
   box-sizing: border-box;
 }
@@ -543,10 +539,16 @@
   width: 100%;
 }
 
+.section-content {
+  padding-left: 80px; 
+  margin-bottom: 1.5rem; 
+}
+
 .empty-section-text {
   font-family: "Poppins", sans-serif;
   color: #777;
-  margin: 0;
+  padding-left: 80px;
+
 }
 
 .flightDetailsGrid {
@@ -569,6 +571,7 @@
   gap: 1.5rem; 
   margin-left: 80px; 
   max-width: 600px;
+  margin-bottom: 2rem;
 }
 .flightArc {
   display: flex;
@@ -644,6 +647,158 @@
   font-style: italic;
 }
 
+.flight-details-section{
+  max-width: 900px;
+  margin: 0 auto;
+  margin-bottom: 3rem; 
+}
+
+
+.weatherChartContainer {
+  max-width: 100%; 
+  margin: 0 0 3rem 0;
+  background: #f9f9f9; 
+  border-radius: 12px; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 1.5rem 2rem;
+  font-family: "Poppins", sans-serif;
+  border: 1px solid #e0e0e0;
+  margin-left: 80px;
+  margin-right: 80px;
+}
+
+.weatherSwitch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.weatherSwitch span:first-child {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1b3a4b;
+  font-family: "Poppins", sans-serif; 
+}
+
+.weatherSwitch .link {
+  color: #007bff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.chartWrapper {
+  height: 250px; 
+  margin-top: 1.5rem;
+  position: relative;
+}
+
+.weatherTable {
+  width: 100%;
+  margin-top: 1.5rem;
+  border-collapse: collapse; 
+}
+
+.weatherRow {
+  display: flex;
+  border-bottom: 1px solid #eee;
+}
+.weatherRow:last-child {
+  border-bottom: none;
+}
+
+.weatherRowHeader {
+  flex: 0 0 250px; 
+  padding: 1rem 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+  color: #1b3a4b;
+  font-size: 0.9rem;
+}
+
+.weatherIcon {
+  font-size: 1.2rem;
+  color: #1b3a4b;
+  opacity: 0.7;
+}
+
+.weatherRowValues {
+  display: flex;
+  flex-grow: 1;
+}
+
+.weatherRowValues span {
+  flex: 1; 
+  text-align: center;
+  padding: 1rem 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+  border-left: 1px solid #eee;
+}
+
+.monthLabels {
+  display: flex;
+
+  padding-left: 250px; 
+}
+
+.monthLabels span {
+  flex: 1;
+  text-align: center;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #555;
+  border-bottom: 2px solid #ddd;
+}
+
+
+.sunnyHours,
+.sunnyValues {
+  display: none; 
+}
+
+.monthlyWeather {
+  padding: 1rem 0;
+}
+
+.monthlyWeather select {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: "Poppins", sans-serif;
+  font-size: 1rem;
+  background: #f9f9f9;
+}
+
+.weatherItems {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  color: #1b3a4b;
+  font-size: 1rem;
+}
+
+.weatherItems div {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+}
+
+.weatherItems .icon {
+  color: #1b3a4b;
+  font-size: 1.2rem;
+  opacity: 0.8;
+}
+
 
 @media (max-width: 900px) {
   .tripGrid {
@@ -678,6 +833,21 @@
   .flightDetailsGrid {
     grid-template-columns: 1fr;
   }
+
+  .weatherChartContainer {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 1rem 1.5rem;
+  }
+  .weatherRowHeader {
+    flex: 0 0 150px; 
+    font-size: 0.8rem;
+    gap: 0.5rem;
+  }
+  .monthLabels {
+    padding-left: 150px; 
+  }
+
 }
 
 @media (max-width: 480px) {
@@ -737,5 +907,30 @@
   }
   .arcIata {
     font-size: 2rem;
+  }
+.weatherChartContainer {
+    padding: 1rem;
+  }
+  .weatherRowHeader {
+    flex: 0 0 100px; 
+    font-size: 0.7rem;
+    gap: 0.25rem;
+  }
+  .weatherRowHeader span {
+     white-space: normal;
+  }
+  .monthLabels {
+    padding-left: 100px; 
+  }
+  .weatherRowValues span, .monthLabels span {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.25rem;
+  }
+  .weatherSwitch {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .weatherSwitch span:first-child {
+    font-size: 1.2rem;
   }
 }

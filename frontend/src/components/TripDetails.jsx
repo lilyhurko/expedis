@@ -12,20 +12,22 @@ import {
   FaPlane,
   FaPlaneDeparture,
   FaPlaneArrival,
+  FaSun,
+  FaMoon,
+  FaTint,
+  FaWater, // Додано для температури води
 } from "react-icons/fa";
 import PlacesToVisit from "./PlacesToVisit.jsx";
 import UserNavbar from "./UserNavbar.jsx";
 import Navbar from "./Navbar.jsx";
-
 import styles from "../assets/styles/TripDetails.module.css";
 import "../assets/styles/Offerts.css";
 import modalStyles from "../assets/styles/Modals.module.css";
-
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import RecommendedHotels from "./RecommendedHotels.jsx";
-
 import { Line } from "react-chartjs-2";
+import ChartDataLabels from "chartjs-plugin-datalabels";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -46,7 +48,8 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ChartDataLabels
 );
 
 const TripDetails = () => {
@@ -73,6 +76,8 @@ const TripDetails = () => {
     children: [],
   });
   const [errors, setErrors] = useState([]);
+  const [viewMode, setViewMode] = useState("year");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
   const photosRef = useRef(null);
@@ -117,7 +122,7 @@ const TripDetails = () => {
     return `${hours}h ${minutes}min`;
   };
 
- const formatFlightArcDate = (date) => {
+  const formatFlightArcDate = (date) => {
     if (!date || isNaN(date.getTime())) return "Select Date";
     return date.toLocaleDateString("en-US", {
       day: "numeric",
@@ -136,7 +141,7 @@ const TripDetails = () => {
         hour: "2-digit",
         minute: "2-digit",
       })
-      .replace(",", ", "); 
+      .replace(",", ", ");
   };
 
   const fetchTripDetails = useCallback(
@@ -156,7 +161,9 @@ const TripDetails = () => {
         const data = await response.json();
         if (data.offer && data.weather) {
           setTripDetails(data.offer);
-          setMonthlyWeather(data.weather);
+          setMonthlyWeather(
+            data.weather && data.weather.length > 0 ? data.weather : null
+          );
         } else {
           setTripDetails(data.offer || data);
           setMonthlyWeather(null);
@@ -213,7 +220,6 @@ const TripDetails = () => {
   }, [tripDetails, offerId, apiUrl, fetchTripReviews]);
 
   const [mainImage, setMainImage] = useState(null);
-
   useEffect(() => {
     if (
       tripDetails &&
@@ -254,7 +260,6 @@ const TripDetails = () => {
   const handleBookNowClick = () => {
     navigate("/top-up-balance");
   };
-
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!isUserAuthenticated) {
@@ -291,25 +296,20 @@ const TripDetails = () => {
       alert("Failed to submit review: " + error.message);
     }
   };
-
   const handleReviewInputChange = (e) => {
     const { name, value } = e.target;
     setNewReviewInput((prev) => ({ ...prev, [name]: value }));
   };
-
   const handleStarRatingClick = (rating) => {
     setNewReviewInput((prev) => ({ ...prev, rating }));
   };
-
   const openFullScreen = (index) => {
     setCurrentSlide(index);
     setIsFullScreenOpen(true);
   };
-
   const closeFullScreen = useCallback(() => {
     setIsFullScreenOpen(false);
   }, []);
-
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "ArrowLeft") {
@@ -327,7 +327,6 @@ const TripDetails = () => {
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFullScreenOpen, closeFullScreen, tripDetails?.imageUrls?.length]);
-
   const calculateAge = (birthDate, referenceDate) => {
     const refDate = referenceDate ? new Date(referenceDate) : new Date();
     const birth = new Date(birthDate);
@@ -341,7 +340,6 @@ const TripDetails = () => {
     }
     return age;
   };
-
   const validateBirthDate = (birthDate, index) => {
     if (!birthDate) return "Please select a birth date.";
     const referenceDate = selectedDate ? new Date(selectedDate) : new Date();
@@ -356,7 +354,6 @@ const TripDetails = () => {
     }
     return "";
   };
-
   const calculateTotalPrice = () => {
     if (!tripDetails) return 0;
     const basePrice = tripDetails.price || 0;
@@ -369,7 +366,6 @@ const TripDetails = () => {
     });
     return total.toFixed(2);
   };
-
   const handleTravelerChange = (type, delta) => {
     setTravelers((prev) => {
       if (type === "adults") {
@@ -390,7 +386,6 @@ const TripDetails = () => {
       return prev;
     });
   };
-
   const handleChildBirthDateChange = (index, birthDate) => {
     setTravelers((prev) => {
       const newChildren = [...prev.children];
@@ -403,14 +398,12 @@ const TripDetails = () => {
       return newErrors;
     });
   };
-
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     const hasErrors = errors.some((error) => error !== "");
     if (!hasErrors) setIsModalOpen(false);
     else alert("Please fix all errors before saving.");
   };
-
   const averageRating = useMemo(() => {
     if (!tripReviews || tripReviews.length === 0) return 0;
     const total = tripReviews.reduce(
@@ -419,6 +412,117 @@ const TripDetails = () => {
     );
     return Math.round(total / tripReviews.length);
   }, [tripReviews]);
+
+  const monthLabels = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+  const sortedWeather = useMemo(
+    () =>
+      monthlyWeather
+        ? [...monthlyWeather].sort((a, b) => a.month - b.month)
+        : [],
+    [monthlyWeather]
+  );
+
+  const chartData = useMemo(
+    () => ({
+      labels: monthLabels,
+      datasets: [
+        {
+          label: "Temperatura w dniu (°C)",
+          data: sortedWeather.map((m) => m.avg_temp),
+          borderColor: "rgb(255, 165, 0)",
+          backgroundColor: "rgba(255, 165, 0, 0.5)",
+          type: "line",
+          yAxisID: "y_temp",
+          datalabels: {
+            align: "top",
+            color: "#333",
+            font: { weight: "bold" },
+            formatter: (value) => (value ? value + "°C" : ""),
+          },
+        },
+      ],
+    }),
+    [sortedWeather, monthLabels]
+  );
+
+  const chartOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        title: { display: false },
+        datalabels: {
+          display: true,
+          anchor: "end",
+          offset: -20,
+          font: {
+            size: 10,
+            family: "Poppins",
+          },
+        },
+      },
+      scales: {
+        y_temp: {
+          display: false,
+          min: 0,
+          max: 35,
+        },
+        x: {
+          display: true,
+          grid: { display: false },
+          ticks: {
+            display: true,
+            font: {
+              family: "Poppins",
+              weight: "500",
+              size: 14,
+            },
+            color: "#555",
+          },
+        },
+      },
+      elements: {
+        line: {
+          tension: 0.4,
+        },
+        point: {
+          radius: 4,
+          backgroundColor: "rgb(255, 165, 0)",
+        },
+      },
+    }),
+    []
+  );
 
   if (isLoading)
     return (
@@ -443,12 +547,10 @@ const TripDetails = () => {
   let returnFlight = tripDetails.flightConnections.find(
     (f) => f.flightType === "return"
   );
-
   if (!outboundFlight && tripDetails.flightConnections.length > 0)
     outboundFlight = tripDetails.flightConnections[0];
   if (!returnFlight && tripDetails.flightConnections.length > 1)
     returnFlight = tripDetails.flightConnections[1];
-
   let outboundDepDate, outboundArrDate, returnDepDate, returnArrDate;
   if (selectedDate) {
     const departureBaseDate = new Date(selectedDate);
@@ -456,7 +558,6 @@ const TripDetails = () => {
     returnBaseDate.setDate(
       departureBaseDate.getDate() + (tripDetails.duration - 1)
     );
-
     if (outboundFlight) {
       outboundDepDate = getFullFlightDate(
         departureBaseDate,
@@ -479,96 +580,11 @@ const TripDetails = () => {
     }
   }
 
-  const monthLabels = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const sortedWeather = monthlyWeather
-    ? [...monthlyWeather].sort((a, b) => a.month - b.month)
-    : [];
-
-  const chartData = {
-    labels: monthLabels,
-    datasets: [
-      {
-        label: "Avg. Temp (°C)",
-        data: sortedWeather.map((m) => m.avg_temp),
-        borderColor: "rgb(255, 99, 132)",
-        backgroundColor: "rgba(255, 99, 132, 0.5)",
-        type: "line",
-        yAxisID: "y_temp",
-      },
-      {
-        label: "Night Temp (°C)",
-        data: sortedWeather.map((m) => m.avg_min_temp),
-        borderColor: "rgb(75, 192, 192)",
-        backgroundColor: "rgba(75, 192, 192, 0.5)",
-        type: "line",
-        yAxisID: "y_temp",
-        hidden: true,
-      },
-      {
-        label: "Precipitation (mm)",
-        data: sortedWeather.map((m) => m.precipitation),
-        borderColor: "rgb(54, 162, 235)",
-        backgroundColor: "rgba(54, 162, 235, 0.5)",
-        type: "bar",
-        yAxisID: "y_prcp",
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { position: "top" },
-      title: {
-        display: true,
-        text: `Average Monthly Weather in ${tripDetails.city}`,
-      },
-    },
-    scales: {
-      y_temp: {
-        type: "linear",
-        display: true,
-        position: "left",
-        title: { display: true, text: "Temperature (°C)" },
-      },
-      y_prcp: {
-        type: "linear",
-        display: true,
-        position: "right",
-        title: { display: true, text: "Precipitation (mm)" },
-        grid: { drawOnChartArea: false },
-      },
-    },
-  };
-
-  const availableDepartureAirports =
-    tripDetails?.flightConnections?.length > 0
-      ? [
-          ...new Set(
-            tripDetails.flightConnections.map((fc) => fc.departureAirportIATA)
-          ),
-        ].map((iata) => ({ iata, name: `${iata} Airport` }))
-      : [];
-
   const buildImageUrl = (filename) => {
     if (!filename || filename === "") return null;
     if (filename.startsWith("http")) return filename;
     return `${apiUrl}${filename}`;
   };
-
   const FullScreenModal = () => (
     <div
       className={`${styles.fullscreenModal} ${
@@ -609,7 +625,6 @@ const TripDetails = () => {
       </div>
     </div>
   );
-
   const sampleTripDescription = `Embark on an unforgettable journey to ${tripDetails.city}, ${tripDetails.country}, where ancient history blends seamlessly with vibrant modern life. Over ${tripDetails.duration} days, you'll explore iconic landmarks like the historic old town and stunning coastal views. Indulge in authentic local cuisine, from fresh seafood to traditional pastries, and unwind in charming accommodations. This carefully curated trip includes guided tours, insider tips, and plenty of free time to discover hidden gems at your own pace. Whether you're a culture enthusiast or a nature lover, this adventure promises memories that last a lifetime.`;
 
   return (
@@ -634,7 +649,6 @@ const TripDetails = () => {
             {tripDetails.city}, {tripDetails.country}
           </p>
         </div>
-
         <div className={styles.tripGrid}>
           <div className={styles.tripMain}>
             <div className={styles.photoGallery} ref={photosRef}>
@@ -663,7 +677,6 @@ const TripDetails = () => {
               )}
             </div>
           </div>
-
           <div className={styles.bookingCard}>
             <div>
               <div className={styles.travelerSelection}>
@@ -712,7 +725,6 @@ const TripDetails = () => {
                 )}
               </select>
             </div>
-
             <div className={styles.cardInfoSection}>
               <h4 className={styles.cardInfoTitle}>
                 {tripDetails.duration} days in {tripDetails.city}
@@ -726,7 +738,6 @@ const TripDetails = () => {
                   ))}
               </div>
             </div>
-
             <div className={styles.cardFooter}>
               <p className={styles.price}>Total: {calculateTotalPrice()} PLN</p>
               <button
@@ -738,7 +749,6 @@ const TripDetails = () => {
             </div>
           </div>
         </div>
-
         {tripDetails.imageUrls && tripDetails.imageUrls.length > 0 && (
           <div className={styles.thumbnails}>
             {tripDetails.imageUrls.map(
@@ -764,7 +774,6 @@ const TripDetails = () => {
             )}
           </div>
         )}
-
         {isModalOpen && (
           <div className={modalStyles.modalOverlay}>
             <div className={styles.modalContent}>
@@ -830,7 +839,6 @@ const TripDetails = () => {
             </div>
           </div>
         )}
-
         <div className={styles.tripTabs}>
           <ul>
             <li onClick={() => handleScrollTo(photosRef)}>Photos</li>
@@ -841,7 +849,6 @@ const TripDetails = () => {
           </ul>
         </div>
       </div>
-
       <div className="mb-8" ref={descriptionRef}>
         <h2 className="section-heading">Trip Details</h2>
         <div className={styles.sectionContent}>
@@ -855,18 +862,20 @@ const TripDetails = () => {
         <h2 className="section-heading">Flight Details</h2>
         <div className="section-content">
           <div className={styles.flightDetailsGrid}>
-            
             {outboundFlight && (
               <div className={styles.flightSegment}>
                 <div className={styles.flightArc}>
-                  <span className={styles.arcIata}>{outboundFlight.departureAirportIATA}</span>
+                  <span className={styles.arcIata}>
+                    {outboundFlight.departureAirportIATA}
+                  </span>
                   <div className={styles.arcDate}>
                     <FaPlane />
                     <span>{formatFlightArcDate(outboundDepDate)}</span>
                   </div>
-                  <span className={styles.arcIata}>{outboundFlight.arrivalAirportIATA}</span>
+                  <span className={styles.arcIata}>
+                    {outboundFlight.arrivalAirportIATA}
+                  </span>
                 </div>
-                
                 <div className={styles.flightTimeline}>
                   <div className={styles.timelinePoint}>
                     <FaPlaneDeparture className={styles.timelineIcon} />
@@ -876,7 +885,11 @@ const TripDetails = () => {
                     </div>
                   </div>
                   <div className={styles.timelineConnector}>
-                    <span>{selectedDate ? calculateDuration(outboundDepDate, outboundArrDate) : "N/A"}</span>
+                    <span>
+                      {selectedDate
+                        ? calculateDuration(outboundDepDate, outboundArrDate)
+                        : "N/A"}
+                    </span>
                   </div>
                   <div className={styles.timelinePoint}>
                     <FaPlaneArrival className={styles.timelineIcon} />
@@ -891,14 +904,17 @@ const TripDetails = () => {
             {returnFlight && (
               <div className={styles.flightSegment}>
                 <div className={styles.flightArc}>
-                  <span className={styles.arcIata}>{returnFlight.departureAirportIATA}</span>
+                  <span className={styles.arcIata}>
+                    {returnFlight.departureAirportIATA}
+                  </span>
                   <div className={styles.arcDate}>
                     <FaPlane />
                     <span>{formatFlightArcDate(returnDepDate)}</span>
                   </div>
-                  <span className={styles.arcIata}>{returnFlight.arrivalAirportIATA}</span>
+                  <span className={styles.arcIata}>
+                    {returnFlight.arrivalAirportIATA}
+                  </span>
                 </div>
-                
                 <div className={styles.flightTimeline}>
                   <div className={styles.timelinePoint}>
                     <FaPlaneDeparture className={styles.timelineIcon} />
@@ -908,7 +924,11 @@ const TripDetails = () => {
                     </div>
                   </div>
                   <div className={styles.timelineConnector}>
-                    <span>{selectedDate ? calculateDuration(returnDepDate, returnArrDate) : "N/A"}</span>
+                    <span>
+                      {selectedDate
+                        ? calculateDuration(returnDepDate, returnArrDate)
+                        : "N/A"}
+                    </span>
                   </div>
                   <div className={styles.timelinePoint}>
                     <FaPlaneArrival className={styles.timelineIcon} />
@@ -920,119 +940,195 @@ const TripDetails = () => {
                 </div>
               </div>
             )}
-            
           </div>
         </div>
       </div>
 
-
       <div className="mb-8" ref={weatherRef}>
-        <h2 className="section-heading">Average Monthly Weather</h2>
+        <h2 className="section-heading">Weather</h2>
+        <div className="section-content">
         {monthlyWeather && monthlyWeather.length > 0 ? (
           <div className={styles.weatherChartContainer}>
-            <Line options={chartOptions} data={chartData} />
+            <div className={styles.weatherSwitch}>
+              <span>
+                {viewMode === "year"
+                  ? "Average weather throughout the year"
+                  : monthNames[selectedMonth - 1]}
+              </span>
+              <span
+                className={styles.link}
+                onClick={() =>
+                  setViewMode(viewMode === "year" ? "month" : "year")
+                }
+              >
+                {viewMode === "year" ? "View month" : "View entire year"}
+              </span>
+            </div>
+
+            {viewMode === "year" ? (
+              <>
+                <div className={styles.chartWrapper}>
+                  <Line options={chartOptions} data={chartData} />
+                </div>
+
+                <div className={styles.weatherTable}>
+                  <div className={styles.weatherRow}>
+                    <div className={styles.weatherRowHeader}>
+                      <FaSun className={styles.weatherIcon} />
+                      <span>Temperature on the day</span>
+                    </div>
+                    <div className={styles.weatherRowValues}>
+                      {sortedWeather.map((m) => (
+                        <span key={`temp-${m.month}`}>{m.avg_temp}°C</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={styles.weatherRow}>
+                    <div className={styles.weatherRowHeader}>
+                      <FaTint className={styles.weatherIcon} />
+                      <span>Precipitation</span>
+                    </div>
+                    <div className={styles.weatherRowValues}>
+                      {sortedWeather.map((m) => (
+                        <span key={`precip-${m.month}`}>
+                          {m.precipitation}mm
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className={styles.monthlyWeather}>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                >
+                  {monthNames.map((name, i) => (
+                    <option key={i} value={i + 1}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <div className={styles.weatherItems}>
+                  <div>
+                    <FaSun className={styles.icon} />
+                    Temperature on the day:{" "}
+                    {sortedWeather[selectedMonth - 1]?.avg_temp}°C
+                  </div>
+
+                  <div>
+                    <FaTint className={styles.icon} />
+                    Precipitation:{" "}
+                    {sortedWeather[selectedMonth - 1]?.precipitation ||
+                      "N/A"}{" "}
+                    mm
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          <div className={styles.sectionContent}>
+          <div className="section-content">
             <p className="empty-section-text">
               Average monthly weather data unavailable.
             </p>
           </div>
         )}
       </div>
+      </div>
 
       <div className="mb-8" ref={placesRef}>
         <h2 className="section-heading">Places to Visit</h2>
-        {tripDetails.placesToVisit && tripDetails.placesToVisit.length > 0 ? (
-          <PlacesToVisit places={tripDetails.placesToVisit} />
-        ) : (
-          <div className={styles.sectionContent}>
+        <div className="section-content">
+          {tripDetails.placesToVisit && tripDetails.placesToVisit.length > 0 ? (
+            <PlacesToVisit places={tripDetails.placesToVisit} />
+          ) : (
             <p className="empty-section-text">No places listed.</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-
       <RecommendedHotels city={tripDetails.city} />
-
       <button className="book-button" onClick={handleBookNowClick}>
         Book Now
       </button>
-
       <div className="mb-8" ref={reviewsRef}>
         <h2 className="section-heading">Reviews & Ratings</h2>
-        {tripReviews.length > 0 ? (
-          <div className="space-y-4">
-            {tripReviews.map((review) => (
-              <div key={review._id || review.id} className={styles.reviewCard}>
-                <div className="flex items-center mb-2">
+        <div className="section-content">
+          {tripReviews.length > 0 ? (
+            <div className="space-y-4">
+              {tripReviews.map((review) => (
+                <div
+                  key={review._id || review.id}
+                  className={styles.reviewCard}
+                >
+                  <div className="flex items-center mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <FaStar
+                        key={i}
+                        className={
+                          i < review.rating
+                            ? styles.starSelected
+                            : styles.starUnselected
+                        }
+                      />
+                    ))}
+                  </div>
+                  <p className="detail-text">
+                    {review.message || review.comment}
+                  </p>
+                  <p className={styles.reviewUsername}>
+                    By {review.username || review.user?.username || "Anonymous"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-section-text">No reviews yet.</p>
+          )}
+        </div>
+      </div>
+      {isUserAuthenticated && (
+        <div className="mb-8">
+          <h2 className="section-heading">Submit a Review</h2>
+          <div className="section-content">
+            <form onSubmit={handleReviewSubmit} className={styles.reviewForm}>
+              <div>
+                <label className="block detail-text mb-1">Rating:</label>
+                <div className="flex">
                   {[...Array(5)].map((_, i) => (
                     <FaStar
                       key={i}
                       className={
-                        i < review.rating
-                          ? styles.starSelected
-                          : styles.starUnselected
+                        i < newReviewInput.rating
+                          ? `${styles.starSelected} ${styles.clickableStar}`
+                          : `${styles.starUnselected} ${styles.clickableStar}`
                       }
+                      onClick={() => handleStarRatingClick(i + 1)}
                     />
                   ))}
                 </div>
-                <p className="detail-text">
-                  {review.message || review.comment}
-                </p>
-                <p className={styles.reviewUsername}>
-                  By {review.username || review.user?.username || "Anonymous"}
-                </p>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.sectionContent}>
-            <p className="empty-section-text">No reviews yet.</p>
-          </div>
-        )}
-      </div>
-
-      {isUserAuthenticated && (
-        <div className="mb-8">
-          <h2 className="section-heading">Submit a Review</h2>
-          <form onSubmit={handleReviewSubmit} className={styles.reviewForm}>
-            <div>
-              <label className="block detail-text mb-1">Rating:</label>
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <FaStar
-                    key={i}
-                    className={
-                      i < newReviewInput.rating
-                        ? `${styles.starSelected} ${styles.clickableStar}`
-                        : `${styles.starUnselected} ${styles.clickableStar}`
-                    }
-                    onClick={() => handleStarRatingClick(i + 1)}
-                  />
-                ))}
+              <div>
+                <label className="block detail-text mb-1">Comment:</label>
+                <textarea
+                  name="comment"
+                  value={newReviewInput.comment}
+                  onChange={handleReviewInputChange}
+                  className="w-full p-2 border rounded-lg"
+                  rows="4"
+                  placeholder="Write your review..."
+                />
               </div>
-            </div>
-            <div>
-              <label className="block detail-text mb-1">Comment:</label>
-              <textarea
-                name="comment"
-                value={newReviewInput.comment}
-                onChange={handleReviewInputChange}
-                className="w-full p-2 border rounded-lg"
-                rows="4"
-                placeholder="Write your review..."
-              />
-            </div>
-            <button type="submit" className={styles.submitReviewButton}>
-              Submit Review
-            </button>
-          </form>
+              <button type="submit" className={styles.submitReviewButton}>
+                Submit Review
+              </button>
+            </form>
+          </div>
         </div>
       )}
-
       <FullScreenModal />
     </>
   );
 };
-
 export default TripDetails;
