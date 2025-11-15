@@ -15,9 +15,9 @@ import {
   FaSun,
   FaMoon,
   FaTint,
-  FaWater, // Додано для температури води
+  FaWater,
 } from "react-icons/fa";
-import PlacesToVisit from "./PlacesToVisit.jsx";
+import PlacesToVisit from "./PlacesToVisit.jsx"; 
 import UserNavbar from "./UserNavbar.jsx";
 import Navbar from "./Navbar.jsx";
 import styles from "../assets/styles/TripDetails.module.css";
@@ -79,7 +79,6 @@ const TripDetails = () => {
   const [viewMode, setViewMode] = useState("year");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001";
-
   const photosRef = useRef(null);
   const descriptionRef = useRef(null);
   const reviewsRef = useRef(null);
@@ -94,7 +93,7 @@ const TripDetails = () => {
       });
     }
   };
-
+  
   const getFullFlightDate = (baseDate, timeString) => {
     if (!baseDate || !timeString) return null;
     const [hours, minutes] = timeString.split(":").map(Number);
@@ -121,7 +120,7 @@ const TripDetails = () => {
     const minutes = totalMinutes % 60;
     return `${hours}h ${minutes}min`;
   };
-
+  
   const formatFlightArcDate = (date) => {
     if (!date || isNaN(date.getTime())) return "Select Date";
     return date.toLocaleDateString("en-US", {
@@ -414,34 +413,11 @@ const TripDetails = () => {
   }, [tripReviews]);
 
   const monthLabels = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-const monthNames = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+    "Sty", "Lut", "Mar", "Kwi", "Maj", "Cze", "Lip", "Sie", "Wrz", "Paź", "Lis", "Gru",
+  ];
+  const monthNames = [
+    "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień",
+  ];
 
   const sortedWeather = useMemo(
     () =>
@@ -465,8 +441,9 @@ const monthNames = [
           datalabels: {
             align: "top",
             color: "#333",
-            font: { weight: "bold" },
+            font: { weight: "bold", family: "Poppins", size: 10 },
             formatter: (value) => (value ? value + "°C" : ""),
+            offset: 8,
           },
         },
       ],
@@ -484,18 +461,13 @@ const monthNames = [
         datalabels: {
           display: true,
           anchor: "end",
-          offset: -20,
-          font: {
-            size: 10,
-            family: "Poppins",
-          },
         },
       },
       scales: {
         y_temp: {
           display: false,
-          min: 0,
-          max: 35,
+          min: Math.min(...sortedWeather.map(m => m.avg_temp)) - 5,
+          max: Math.max(...sortedWeather.map(m => m.avg_temp)) + 5,
         },
         x: {
           display: true,
@@ -514,6 +486,7 @@ const monthNames = [
       elements: {
         line: {
           tension: 0.4,
+          borderWidth: 3
         },
         point: {
           radius: 4,
@@ -521,7 +494,7 @@ const monthNames = [
         },
       },
     }),
-    []
+    [sortedWeather]
   );
 
   if (isLoading)
@@ -585,6 +558,7 @@ const monthNames = [
     if (filename.startsWith("http")) return filename;
     return `${apiUrl}${filename}`;
   };
+  
   const FullScreenModal = () => (
     <div
       className={`${styles.fullscreenModal} ${
@@ -625,8 +599,9 @@ const monthNames = [
       </div>
     </div>
   );
+  
   const sampleTripDescription = `Embark on an unforgettable journey to ${tripDetails.city}, ${tripDetails.country}, where ancient history blends seamlessly with vibrant modern life. Over ${tripDetails.duration} days, you'll explore iconic landmarks like the historic old town and stunning coastal views. Indulge in authentic local cuisine, from fresh seafood to traditional pastries, and unwind in charming accommodations. This carefully curated trip includes guided tours, insider tips, and plenty of free time to discover hidden gems at your own pace. Whether you're a culture enthusiast or a nature lover, this adventure promises memories that last a lifetime.`;
-
+  
   return (
     <>
       {isUserAuthenticated ? <UserNavbar /> : <Navbar />}
@@ -851,7 +826,7 @@ const monthNames = [
       </div>
       <div className="mb-8" ref={descriptionRef}>
         <h2 className="section-heading">Trip Details</h2>
-        <div className={styles.sectionContent}>
+        <div className="section-content">
           <p className="detail-text">
             {tripDetails.description || sampleTripDescription}
           </p>
@@ -945,14 +920,13 @@ const monthNames = [
       </div>
 
       <div className="mb-8" ref={weatherRef}>
-        <h2 className="section-heading">Weather</h2>
-        <div className="section-content">
+        <h2 className="section-heading">Average Monthly Weather</h2>
         {monthlyWeather && monthlyWeather.length > 0 ? (
           <div className={styles.weatherChartContainer}>
             <div className={styles.weatherSwitch}>
               <span>
                 {viewMode === "year"
-                  ? "Average weather throughout the year"
+                  ? "Średnia pogoda w ciągu roku"
                   : monthNames[selectedMonth - 1]}
               </span>
               <span
@@ -961,7 +935,7 @@ const monthNames = [
                   setViewMode(viewMode === "year" ? "month" : "year")
                 }
               >
-                {viewMode === "year" ? "View month" : "View entire year"}
+                {viewMode === "year" ? "Zobaczyć miesiąc" : "Zobaczyć cały rok"}
               </span>
             </div>
 
@@ -970,12 +944,17 @@ const monthNames = [
                 <div className={styles.chartWrapper}>
                   <Line options={chartOptions} data={chartData} />
                 </div>
-
+                <div className={styles.monthLabels}>
+                  <span></span> {/* Пустий кут */}
+                  {monthLabels.map((label, i) => (
+                    <span key={i}>{label}</span>
+                  ))}
+                </div>
                 <div className={styles.weatherTable}>
                   <div className={styles.weatherRow}>
                     <div className={styles.weatherRowHeader}>
                       <FaSun className={styles.weatherIcon} />
-                      <span>Temperature on the day</span>
+                      <span>Temperatura powietrza w ciągu dnia</span>
                     </div>
                     <div className={styles.weatherRowValues}>
                       {sortedWeather.map((m) => (
@@ -1035,7 +1014,6 @@ const monthNames = [
             </p>
           </div>
         )}
-      </div>
       </div>
 
       <div className="mb-8" ref={placesRef}>

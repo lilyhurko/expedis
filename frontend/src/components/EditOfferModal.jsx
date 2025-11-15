@@ -5,16 +5,38 @@ import plusIcon from "../assets/img/plus.png";
 import LocationPicker from "./LocationPicker.js";
 import AirportSelect from "./AirportSelect.js";
 import { flushSync } from "react-dom";
-import styles from '../assets/styles/Modals.module.css'; 
-import '../assets/styles/Offerts.css'; 
-
+import styles from "../assets/styles/Modals.module.css";
+import "../assets/styles/Offerts.css";
 
 const ALL_CATEGORIES = [
-  "Adventure", "Culture", "Relaxation", "Nature", "Hiking", "Skiing", "Beach",
-  "History", "Nightlife", "Food", "Wildlife", "Romantic", "Luxury", "Budget",
-  "Camping", "Backpacking", "Photography", "Yoga", "Surfing", "Diving", "Art",
-  "Architecture", "Shopping", "Festival", "Wellness",
+  "Adventure",
+  "Culture",
+  "Relaxation",
+  "Nature",
+  "Hiking",
+  "Skiing",
+  "Beach",
+  "History",
+  "Nightlife",
+  "Food",
+  "Wildlife",
+  "Romantic",
+  "Luxury",
+  "Budget",
+  "Camping",
+  "Backpacking",
+  "Photography",
+  "Yoga",
+  "Surfing",
+  "Diving",
+  "Art",
+  "Architecture",
+  "Shopping",
+  "Festival",
+  "Wellness",
 ];
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
 const EditOfferModal = ({
   offer,
@@ -33,7 +55,7 @@ const EditOfferModal = ({
     country: "",
   });
   const [placesToVisit, setPlacesToVisit] = useState([
-    { name: "", description: "", image: null },
+    { name: "", description: "", address: "", image: null, imageUrl: null },
   ]);
   const [flightConnections, setFlightConnections] = useState([
     {
@@ -81,11 +103,20 @@ const EditOfferModal = ({
     prevCountryRef.current = initCountry;
 
     const initPlaces = (offer.placesToVisit || []).map((place) => ({
-      ...place,
+      name: place.name || "",
+      description: place.description || "",
+      address: place.address || "",
+      imageUrl: place.imageUrl || null,
       image: null,
     }));
     if (initPlaces.length === 0) {
-      initPlaces.push({ name: "", description: "", image: null });
+      initPlaces.push({
+        name: "",
+        description: "",
+        address: "",
+        image: null,
+        imageUrl: null,
+      });
     }
     setPlacesToVisit(initPlaces);
 
@@ -133,10 +164,10 @@ const EditOfferModal = ({
     const initDates = (offer.availableDates || [])
       .map((date) => {
         if (typeof date === "string") {
-          return date.split('T')[0];
+          return date.split("T")[0];
         }
         if (date instanceof Date && !isNaN(date.getTime())) {
-          return date.toISOString().split('T')[0];
+          return date.toISOString().split("T")[0];
         }
         return null;
       })
@@ -162,7 +193,7 @@ const EditOfferModal = ({
         flightConnections: initConnections,
       });
     });
-  }, [offer, setEditFormData, ALL_CATEGORIES]); 
+  }, [offer, setEditFormData]); // ❗️ Видалено ALL_CATEGORIES з масиву залежностей
 
   useEffect(() => {
     if (isInitializedRef.current && editFormData.flightConnections) {
@@ -236,7 +267,6 @@ const EditOfferModal = ({
     });
   };
 
-
   const addPeriodDates = () => {
     if (!periodStart || !periodEnd) {
       setError("Please select both start and end dates.");
@@ -268,12 +298,14 @@ const EditOfferModal = ({
       Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
     const startDateString = startDate.toISOString().split("T")[0];
 
-    const existingDates = (editFormData.availableDates || []).map((date) => {
-      if (typeof date === "string") return date.split('T')[0];
-      if (date instanceof Date) return date.toISOString().split("T")[0];
-      if (date?.toDate) return date.toDate().toISOString().split("T")[0];
-      return null;
-    }).filter((date) => date !== null);
+    const existingDates = (editFormData.availableDates || [])
+      .map((date) => {
+        if (typeof date === "string") return date.split("T")[0];
+        if (date instanceof Date) return date.toISOString().split("T")[0];
+        if (date?.toDate) return date.toDate().toISOString().split("T")[0];
+        return null;
+      })
+      .filter((date) => date !== null);
 
     const currentDuration = editFormData.duration || 0;
 
@@ -305,137 +337,208 @@ const EditOfferModal = ({
     setPeriodStart(null);
     setPeriodEnd(null);
   };
-  
-  // ( ... решта ваших обробників ... )
-  // START: Скорочені функції
+
   const {
-      handleFlightChange, handlePlaceChange, addPlace, removePlace,
-      handlePlaceImageChange, handleImageChange, setMainImage, removeImage,
-      validateForm, onSubmit,
-    } = {
-      handleFlightChange: (index, field, value) => {
-        setFlightConnections((prevConnections) => {
-          const updatedConnections = [...prevConnections];
-          updatedConnections[index] = { ...updatedConnections[index], [field]: value };
-          setEditFormData((prev) => ({
-            ...prev,
-            flightConnections: updatedConnections,
-            ...(field === "departureAirportIATA" && index === 0 ? { departureAirportIATA: value } : {}),
-          }));
-          return updatedConnections;
-        });
-      },
-      handlePlaceChange: (index, field, value) => {
-        const newPlaces = [...placesToVisit];
-        newPlaces[index][field] = value;
-        setPlacesToVisit(newPlaces);
-      },
-      addPlace: () => setPlacesToVisit([...placesToVisit, { name: "", description: "", image: null }]),
-      removePlace: (index) => {
-        if (placesToVisit.length === 1) { setError("At least one place to visit is required."); return; }
-        const newPlaces = placesToVisit.filter((_, i) => i !== index);
-        setPlacesToVisit(newPlaces);
-      },
-      handlePlaceImageChange: (index, file) => {
-        const newPlaces = [...placesToVisit];
-        newPlaces[index].image = file;
-        setPlacesToVisit(newPlaces);
-      },
-      handleImageChange: (e) => {
-        const files = Array.from(e.target.files);
-        setPreviewImages((prevImages) => {
-          if (prevImages.length + files.length > 15) {
-            setError("You can upload a maximum of 15 images.");
-            return prevImages;
-          }
-          const newImages = files.map((file) => ({ file, preview: URL.createObjectURL(file) }));
-          const updatedImages = [...prevImages, ...newImages];
-          setEditFormData((prev) => ({ ...prev, images: [...(prev.images || []), ...files] }));
-          setMainImageIndex((prevMainIndex) => (prevMainIndex === null && newImages.length > 0 ? prevImages.length : prevMainIndex));
-          return updatedImages;
-        });
-      },
-      setMainImage: (index) => {
-        setMainImageIndex(index);
-        setEditFormData((prev) => ({ ...prev, mainImageIndex: index }));
-      },
-      removeImage: (index) => {
-        const removedPreview = previewImages[index]?.preview;
-        if (previewImages[index]?.file) {
-          URL.revokeObjectURL(removedPreview);
-        }
-        setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+    handleFlightChange,
+    handlePlaceChange,
+    addPlace,
+    removePlace,
+    handlePlaceImageChange,
+    handleImageChange,
+    setMainImage,
+    removeImage,
+    validateForm,
+    onSubmit,
+  } = {
+    handleFlightChange: (index, field, value) => {
+      setFlightConnections((prevConnections) => {
+        const updatedConnections = [...prevConnections];
+        updatedConnections[index] = {
+          ...updatedConnections[index],
+          [field]: value,
+        };
         setEditFormData((prev) => ({
           ...prev,
-          images: (prev.images || []).filter((_, i) => i !== index),
-          imageUrls: (prev.imageUrls || []).filter((url) => url !== removedPreview),
+          flightConnections: updatedConnections,
+          ...(field === "departureAirportIATA" && index === 0
+            ? { departureAirportIATA: value }
+            : {}),
         }));
-        if (mainImageIndex === index) {
-          setMainImageIndex(null);
-        } else if (mainImageIndex !== null && index < mainImageIndex) {
-          setMainImageIndex(mainImageIndex - 1);
+        return updatedConnections;
+      });
+    },
+    handlePlaceChange: (index, field, value) => {
+      const newPlaces = [...placesToVisit];
+      newPlaces[index][field] = value;
+      setPlacesToVisit(newPlaces);
+    },
+    // ❗️ ВИПРАВЛЕНО: Додано 'address' та 'imageUrl' при створенні нового місця
+    addPlace: () =>
+      setPlacesToVisit([
+        ...placesToVisit,
+        {
+          name: "",
+          description: "",
+          address: "", // ❗️
+          image: null,
+          imageUrl: null, // ❗️
+        },
+      ]),
+    removePlace: (index) => {
+      if (placesToVisit.length === 1) {
+        setError("At least one place to visit is required.");
+        return;
+      }
+      const newPlaces = placesToVisit.filter((_, i) => i !== index);
+      setPlacesToVisit(newPlaces);
+    },
+    handlePlaceImageChange: (index, file) => {
+      if (!file) return;
+      const newPlaces = [...placesToVisit];
+      newPlaces[index].image = file;
+      newPlaces[index].imageUrl = null;
+      setPlacesToVisit(newPlaces);
+    },
+    handleImageChange: (e) => {
+      const files = Array.from(e.target.files);
+      setPreviewImages((prevImages) => {
+        if (prevImages.length + files.length > 15) {
+          setError("You can upload a maximum of 15 images.");
+          return prevImages;
         }
-      },
-      validateForm: () => null,
-      onSubmit: async (e) => {
-        e.preventDefault();
-        setError(null);
-        const validationError = validateForm();
-        if (validationError) {
-          setError(validationError);
-          return;
+        const newImages = files.map((file) => ({
+          file,
+          preview: URL.createObjectURL(file),
+        }));
+        const updatedImages = [...prevImages, ...newImages];
+        setEditFormData((prev) => ({
+          ...prev,
+          images: [...(prev.images || []), ...files],
+        }));
+        setMainImageIndex((prevMainIndex) =>
+          prevMainIndex === null && newImages.length > 0
+            ? prevImages.length
+            : prevMainIndex
+        );
+        return updatedImages;
+      });
+    },
+    setMainImage: (index) => {
+      setMainImageIndex(index);
+      setEditFormData((prev) => ({ ...prev, mainImageIndex: index }));
+    },
+    removeImage: (index) => {
+      const removedPreview = previewImages[index]?.preview;
+      if (previewImages[index]?.file) {
+        URL.revokeObjectURL(removedPreview);
+      }
+      setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+      setEditFormData((prev) => ({
+        ...prev,
+        images: (prev.images || []).filter((_, i) => i !== index),
+        imageUrls: (prev.imageUrls || []).filter(
+          (url) => url !== removedPreview
+        ),
+      }));
+      if (mainImageIndex === index) {
+        setMainImageIndex(null);
+      } else if (mainImageIndex !== null && index < mainImageIndex) {
+        setMainImageIndex(mainImageIndex - 1);
+      }
+    },
+    validateForm: () => null,
+    onSubmit: async (e) => {
+      e.preventDefault();
+      setError(null);
+      const validationError = validateForm();
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+      const formData = new FormData();
+      if (editFormData._id) formData.append("_id", editFormData._id);
+      formData.append("title", editFormData.title || "");
+      formData.append("description", editFormData.description || "");
+      formData.append("price", editFormData.price || "");
+      formData.append("duration", editFormData.duration || "");
+      formData.append("city", editFormData.city || "");
+      formData.append("country", editFormData.country || "");
+      formData.append(
+        "departureAirportIATA",
+        editFormData.departureAirportIATA || ""
+      );
+      formData.append(
+        "categories",
+        JSON.stringify(editFormData.categories || [])
+      );
+
+      const validDates = (editFormData.availableDates || [])
+        .map((date) => {
+          if (date instanceof Date) return date.toISOString().split("T")[0];
+          return date.split("T")[0];
+        })
+        .filter(Boolean);
+      formData.append("availableDates", JSON.stringify(validDates));
+
+      formData.append(
+        "placesToVisit",
+        JSON.stringify(
+          placesToVisit.map(
+            ({ name, description, address, imageUrl, image }) => ({
+              name: name || "",
+              description: description || "",
+              address: address || "",
+              imageUrl: image ? null : imageUrl,
+            })
+          )
+        )
+      );
+      const safeFlightConnections = editFormData.flightConnections || [
+        {
+          departureAirportIATA: "",
+          arrivalAirportIATA: "",
+          departureTime: "",
+          arrivalTime: "",
+          flightType: "outbound",
+        },
+        {
+          departureAirportIATA: "",
+          arrivalAirportIATA: "",
+          departureTime: "",
+          arrivalTime: "",
+          flightType: "return",
+        },
+      ];
+      formData.append(
+        "flightConnections",
+        JSON.stringify(safeFlightConnections)
+      );
+      formData.append("mainImageIndex", mainImageIndex || 0);
+
+      (editFormData.images || []).forEach((image) => {
+        formData.append("images", image);
+      });
+
+      const existingImageUrls = previewImages
+        .filter((img) => !img.file && img.preview)
+        .map((img) => img.preview);
+      formData.append("imageUrls", JSON.stringify(existingImageUrls));
+
+      placesToVisit.forEach((place) => {
+        if (place.image) {
+          formData.append("placeImages", place.image);
         }
-        const formData = new FormData();
-        if (editFormData._id) formData.append("_id", editFormData._id);
-        formData.append("title", editFormData.title || "");
-        formData.append("description", editFormData.description || "");
-        formData.append("price", editFormData.price || "");
-        formData.append("duration", editFormData.duration || "");
-        formData.append("city", editFormData.city || "");
-        formData.append("country", editFormData.country || "");
-        formData.append("departureAirportIATA", editFormData.departureAirportIATA || "");
-        formData.append("categories", JSON.stringify(editFormData.categories || []));
-        
-        const validDates = (editFormData.availableDates || []).map((date) => {
-            if (date instanceof Date) return date.toISOString().split("T")[0];
-            return date.split('T')[0];
-        }).filter(Boolean);
-        formData.append("availableDates", JSON.stringify(validDates));
-        
-        formData.append("placesToVisit", JSON.stringify(placesToVisit.map(({ name, description }) => ({ name: name || "", description: description || "" }))));
-        
-        const safeFlightConnections = editFormData.flightConnections || [
-          { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "outbound" },
-          { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "", arrivalTime: "", flightType: "return" },
-        ];
-        formData.append("flightConnections", JSON.stringify(safeFlightConnections));
-        formData.append("mainImageIndex", mainImageIndex || 0);
+      });
 
-        (editFormData.images || []).forEach((image) => {
-          formData.append("images", image);
-        });
-
-        const existingImageUrls = previewImages
-          .filter(img => !img.file && img.preview)
-          .map(img => img.preview);
-        formData.append("imageUrls", JSON.stringify(existingImageUrls));
-
-        placesToVisit.forEach((place) => {
-          if (place.image) {
-            formData.append("placeImages", place.image);
-          }
-        });
-
-        try {
-          await handleEditSubmit(formData);
-          closeModal();
-        } catch (err) {
-          setError(err.message || "Failed to update offer. Please try again.");
-        }
-      },
+      try {
+        await handleEditSubmit(formData);
+        closeModal();
+      } catch (err) {
+        setError(err.message || "Failed to update offer. Please try again.");
+      }
+    },
   };
-  // END: Скорочені функції
-  
+
   return (
     <div className={`${styles.modalOverlay} ${styles.offerModalWrapper}`}>
       <div className={`${styles.modal} ${styles.modalAdd}`}>
@@ -457,14 +560,220 @@ const EditOfferModal = ({
             </div>
           )}
           <form id="offer-form" onSubmit={onSubmit}>
-            
-            <div className="form-group"><label className="form-label">Title:</label><input className="form-input" type="text" name="title" value={editFormData.title || ""} onChange={handleEditFormChange} placeholder="Enter title" /></div>
-            <div className="form-group"><label className="form-label">Description:</label><textarea className="form-input form-textarea" name="description" value={editFormData.description || ""} onChange={handleEditFormChange} placeholder="Enter description" /></div>
-            <div className="form-group"><label className="form-label">Categories (select 1 to 5):</label><div className="category-list">{ALL_CATEGORIES.map((category) => (<button key={category} type="button" className={`category-chip ${ editFormData.categories?.includes(category) ? "selected" : "" }`} onClick={() => handleCategoryToggle(category)}>{category}</button>))}</div></div>
-            <div className="form-group"><label className="form-label">Pick Location:</label><LocationPicker setCityCountry={setLocation} initialCity={location.city} initialCountry={location.country} /></div>
-            <div className="form-group"><label className="form-label">Flight Connections:</label>{flightConnections.map((fc, index) => (<div key={`flight-${index}`} className="flight-connection form-group"><h4>{index === 0 ? "Outbound Flight" : "Return Flight"}</h4><label>Departure Airport {index === 0 ? "(Poland)" : `(from ${editFormData.city})`}:</label><AirportSelect key={`dep-${index}-${location.city || "none"}-${ location.country || "none" }-${fc.departureAirportIATA || "empty"}`} {...(index === 0 ? { country: "PL" } : { city: editFormData.city, country: editFormData.country })} value={fc.departureAirportIATA || ""} onChange={(iata) => handleFlightChange(index, "departureAirportIATA", iata)} isDeparture={true} /><label>Arrival Airport {index === 0 ? `(to ${editFormData.city})` : "(Poland)"}:</label><AirportSelect key={`arr-${index}-${location.city || "none"}-${ location.country || "none" }-${fc.arrivalAirportIATA || "empty"}`} {...(index === 0 ? { city: editFormData.city, country: editFormData.country } : { country: "PL" })} value={fc.arrivalAirportIATA || ""} onChange={(iata) => handleFlightChange(index, "arrivalAirportIATA", iata)} {...(index === 1 ? { isDeparture: true } : {})} /><label>Departure Time:</label><input type="time" value={fc.departureTime || ""} onChange={(e) => handleFlightChange(index, "departureTime", e.target.value)} className="form-input" /><label>Arrival Time:</label><input type="time" value={fc.arrivalTime || ""} onChange={(e) => handleFlightChange(index, "arrivalTime", e.target.value)} className="form-input" /></div>))}</div>
-            <div className="form-group"><label className="form-label">Places to Visit:</label>{placesToVisit.map((place, index) => (<div key={index} className="form-group place-group"><input type="text" value={place.name || ""} onChange={(e) => handlePlaceChange(index, "name", e.target.value)} placeholder="Place Name" className="form-input" /><textarea value={place.description || ""} onChange={(e) => handlePlaceChange(index, "description", e.target.value)} placeholder="Place Description" className="form-input form-textarea" /><input type="file" accept="image/*" onChange={(e) => handlePlaceImageChange(index, e.target.files[0])} className="form-input" />{placesToVisit.length > 1 && (<button type="button" className={`btn ${styles.btnSecondary}`} onClick={() => removePlace(index)}>Remove Place</button>)}</div>))}<button type="button" className="btn btn-icon-only" onClick={addPlace} title="Add Place"><img src={plusIcon} alt="Add" style={{ width: "35px", height: "35px" }} /></button></div>
+            <div className="form-group">
+              <label className="form-label">Title:</label>
+              <input
+                className="form-input"
+                type="text"
+                name="title"
+                value={editFormData.title || ""}
+                onChange={handleEditFormChange}
+                placeholder="Enter title"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Description:</label>
+              <textarea
+                className="form-input form-textarea"
+                name="description"
+                value={editFormData.description || ""}
+                onChange={handleEditFormChange}
+                placeholder="Enter description"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Categories (select 1 to 5):</label>
+              <div className="category-list">
+                {ALL_CATEGORIES.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    className={`category-chip ${
+                      editFormData.categories?.includes(category)
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() => handleCategoryToggle(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Pick Location:</label>
+              <LocationPicker
+                setCityCountry={setLocation}
+                initialCity={location.city}
+                initialCountry={location.country}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Flight Connections:</label>
+              {flightConnections.map((fc, index) => (
+                <div
+                  key={`flight-${index}`}
+                  className="flight-connection form-group"
+                >
+                  <h4>{index === 0 ? "Outbound Flight" : "Return Flight"}</h4>
+                  <label>
+                    Departure Airport{" "}
+                    {index === 0 ? "(Poland)" : `(from ${editFormData.city})`}:
+                  </label>
+                  <AirportSelect
+                    key={`dep-${index}-${location.city || "none"}-${
+                      location.country || "none"
+                    }-${fc.departureAirportIATA || "empty"}`}
+                    {...(index === 0
+                      ? { country: "PL" }
+                      : {
+                          city: editFormData.city,
+                          country: editFormData.country,
+                        })}
+                    value={fc.departureAirportIATA || ""}
+                    onChange={(iata) =>
+                      handleFlightChange(index, "departureAirportIATA", iata)
+                    }
+                    isDeparture={true}
+                  />
+                  <label>
+                    Arrival Airport{" "}
+                    {index === 0 ? `(to ${editFormData.city})` : "(Poland)"}:
+                  </label>
+                  <AirportSelect
+                    key={`arr-${index}-${location.city || "none"}-${
+                      location.country || "none"
+                    }-${fc.arrivalAirportIATA || "empty"}`}
+                    {...(index === 0
+                      ? {
+                          city: editFormData.city,
+                          country: editFormData.country,
+                        }
+                      : { country: "PL" })}
+                    value={fc.arrivalAirportIATA || ""}
+                    onChange={(iata) =>
+                      handleFlightChange(index, "arrivalAirportIATA", iata)
+                    }
+                    {...(index === 1 ? { isDeparture: true } : {})}
+                  />
+                  <label>Departure Time:</label>
+                  <input
+                    type="time"
+                    value={fc.departureTime || ""}
+                    onChange={(e) =>
+                      handleFlightChange(index, "departureTime", e.target.value)
+                    }
+                    className="form-input"
+                  />
+                  <label>Arrival Time:</label>
+                  <input
+                    type="time"
+                    value={fc.arrivalTime || ""}
+                    onChange={(e) =>
+                      handleFlightChange(index, "arrivalTime", e.target.value)
+                    }
+                    className="form-input"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="form-group">
+              <label className="form-label">Places to Visit:</label>
+              {placesToVisit.map((place, index) => (
+                <div key={index} className="form-group place-group">
+                  <input
+                    type="text"
+                    value={place.name || ""}
+                    onChange={(e) =>
+                      handlePlaceChange(index, "name", e.target.value)
+                    }
+                    placeholder="Place Name"
+                    className="form-input"
+                  />
+                  <textarea
+                    value={place.description || ""}
+                    onChange={(e) =>
+                      handlePlaceChange(index, "description", e.target.value)
+                    }
+                    placeholder="Place Description"
+                    className="form-input form-textarea"
+                  />
 
+                  <input
+                    type="text"
+                    value={place.address || ""}
+                    onChange={(e) =>
+                      handlePlaceChange(index, "address", e.target.value)
+                    }
+                    placeholder="Place Address (e.g., 123 Main St, Rome)"
+                    className="form-input"
+                  />
+
+                  <div className="place-image-preview">
+                    {place.image && (
+                      <img
+                        src={URL.createObjectURL(place.image)}
+                        alt="New preview"
+                      />
+                    )}
+                    {!place.image && place.imageUrl && (
+                      <img
+                        src={
+                          place.imageUrl.startsWith("http")
+                            ? place.imageUrl
+                            : `${API_URL}${place.imageUrl}`
+                        }
+                        alt="Existing"
+                      />
+                    )}
+                    {!place.image && !place.imageUrl && (
+                      <div className="no-image-placeholder">No Image</div>
+                    )}
+                  </div>
+
+                  <label className="form-label-file">
+                    <span className="btn-file-dummy">Select file</span>
+                    <span className="file-name-display">
+                      {place.image
+                        ? place.image.name
+                        : place.imageUrl
+                        ? "Current image selected"
+                        : "No file selected"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        handlePlaceImageChange(index, e.target.files[0])
+                      }
+                      className="form-input-hidden"
+                    />
+                  </label>
+
+                  {placesToVisit.length > 1 && (
+                    <button
+                      type="button"
+                      className={`btn ${styles.btnSecondary} ${styles.removePlaceBtn}`}
+                      onClick={() => removePlace(index)}
+                    >
+                      Remove Place
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                className="btn btn-icon-only"
+                onClick={addPlace}
+                title="Add Place"
+              >
+                <img
+                  src={plusIcon}
+                  alt="Add"
+                  style={{ width: "35px", height: "35px" }}
+                />
+              </button>
+            </div>
             <div className="form-group">
               <label className="form-label">Duration (days):</label>
               <input
@@ -472,7 +781,7 @@ const EditOfferModal = ({
                 type="number"
                 name="duration"
                 value={editFormData.duration || ""}
-                readOnly 
+                readOnly
                 placeholder="Set by adding the first date period"
               />
             </div>
@@ -531,10 +840,14 @@ const EditOfferModal = ({
                   <ul style={{ paddingLeft: "20px", margin: "5px 0 0 0" }}>
                     {editFormData.availableDates.map((dateStr) => {
                       const [year, month, day] = dateStr.split("-").map(Number);
-                      const startDate = new Date(Date.UTC(year, month - 1, day));
+                      const startDate = new Date(
+                        Date.UTC(year, month - 1, day)
+                      );
                       const endDate = new Date(startDate);
                       endDate.setUTCDate(
-                        startDate.getUTCDate() + (editFormData.duration || 1) - 1
+                        startDate.getUTCDate() +
+                          (editFormData.duration || 1) -
+                          1
                       );
                       return (
                         <li key={dateStr}>
@@ -601,8 +914,12 @@ const EditOfferModal = ({
             </div>
           </form>
         </div>
-        <div className={`${styles.modalFooter} ${styles.stickyFooter} ${styles.myModal}`}>
-          <span className={styles.modalPrice}>{editFormData.price || 0} PLN</span>
+        <div
+          className={`${styles.modalFooter} ${styles.stickyFooter} ${styles.myModal}`}
+        >
+          <span className={styles.modalPrice}>
+            {editFormData.price || 0} PLN
+          </span>
           <div className={styles.buttonsGroup}>
             <button
               type="button"
@@ -611,7 +928,11 @@ const EditOfferModal = ({
             >
               Cancel
             </button>
-            <button type="submit" form="offer-form" className={`btn ${styles.btnPrimary}`}>
+            <button
+              type="submit"
+              form="offer-form"
+              className={`btn ${styles.btnPrimary}`}
+            >
               Save Changes
             </button>
           </div>
@@ -641,6 +962,8 @@ EditOfferModal.propTypes = {
       PropTypes.shape({
         name: PropTypes.string,
         description: PropTypes.string,
+        address: PropTypes.string, 
+        imageUrl: PropTypes.string, 
       })
     ),
     flightConnections: PropTypes.arrayOf(
@@ -673,7 +996,9 @@ EditOfferModal.propTypes = {
       PropTypes.shape({
         name: PropTypes.string,
         description: PropTypes.string,
+        address: PropTypes.string, // ❗️
         image: PropTypes.any,
+        imageUrl: PropTypes.string, // ❗️
       })
     ),
     flightConnections: PropTypes.arrayOf(

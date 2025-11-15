@@ -407,7 +407,9 @@ router.post(
           ? req.files["placeImages"][index]
           : null;
         return {
-          ...place,
+          name: place.name,
+          description: place.description,
+          address: place.address, 
           imageUrl: placeImageFile
             ? `/images/${placeImageFile.filename}`
             : null,
@@ -572,19 +574,31 @@ router.put(
         ? parseInt(mainImageIndex)
         : offer.mainImageIndex;
 
-      const placesWithNewImages = parsedPlaces.map((place, index) => {
-        const placeImageFile = req.files["placeImages"]
-          ? req.files["placeImages"][index]
-          : null;
-        if (placeImageFile) {
-          place.imageUrl = `/images/${placeImageFile.filename}`;
-        }
-        return place;
-      });
-      offer.placesToVisit =
-        placesWithNewImages.length > 0
-          ? placesWithNewImages
-          : offer.placesToVisit;
+if (parsedPlaces && parsedPlaces.length > 0) {
+        
+        let newPlaceImages = req.files["placeImages"] || [];
+        let newImageIndex = 0;
+
+        const updatedPlacesToVisit = parsedPlaces.map((place) => {
+          
+          let newImageUrl = place.imageUrl; 
+
+
+          if (place.imageUrl === null && newPlaceImages[newImageIndex]) {
+            newImageUrl = `/images/${newPlaceImages[newImageIndex].filename}`;
+            newImageIndex++;
+          }
+          
+          return {
+            name: place.name,
+            description: place.description,
+            address: place.address, 
+            imageUrl: newImageUrl
+          };
+        });
+
+        offer.placesToVisit = updatedPlacesToVisit;
+      }
 
       offer.title = title || offer.title;
       offer.description = description || offer.description;

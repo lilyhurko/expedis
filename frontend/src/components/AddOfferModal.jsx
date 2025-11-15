@@ -7,6 +7,7 @@ import AirportSelect from "./AirportSelect.js";
 import styles from '../assets/styles/Modals.module.css';
 import '../assets/styles/Offerts.css';
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
 const AddOfferModal = ({
   newOfferData,
@@ -26,9 +27,11 @@ const AddOfferModal = ({
   });
   const [previewImages, setPreviewImages] = useState([]);
   const [mainImageIndex, setMainImageIndex] = useState(null);
+  
   const [placesToVisit, setPlacesToVisit] = useState([
-    { name: "", description: "", image: null },
+    { name: "", description: "", address: "", image: null },
   ]);
+  
   const [flightConnections, setFlightConnections] = useState([
     {
       departureAirportIATA: "",
@@ -134,7 +137,7 @@ const AddOfferModal = ({
         setPlacesToVisit(newPlaces);
         setNewOfferData(prev => ({ ...prev, placesToVisit: newPlaces }));
       },
-      addPlace: () => setPlacesToVisit([...placesToVisit, { name: "", description: "", image: null }]),
+      addPlace: () => setPlacesToVisit([...placesToVisit, { name: "", description: "", address: "", image: null }]),
       removePlace: (index) => {
         if (placesToVisit.length === 1) { setError("At least one place to visit is required."); return; }
         const newPlaces = placesToVisit.filter((_, i) => i !== index);
@@ -207,7 +210,15 @@ const AddOfferModal = ({
         formData.append("departureAirportIATA", newOfferData.departureAirportIATA);
         formData.append("categories", JSON.stringify(newOfferData.categories || []));
         formData.append("availableDates", JSON.stringify(newOfferData.availableDates || []));
-        formData.append("placesToVisit", JSON.stringify(placesToVisit.map(({ name, description }) => ({ name, description }))));
+        
+        formData.append("placesToVisit", JSON.stringify(
+          placesToVisit.map(({ name, description, address }) => ({ 
+            name: name || "", 
+            description: description || "", 
+            address: address || "" 
+          }))
+        ));
+        
         formData.append("flightConnections", JSON.stringify(newOfferData.flightConnections || []));
         (newOfferData.images || []).forEach((image) => formData.append("images", image));
         placesToVisit.forEach((place) => { if (place.image) formData.append("placeImages", place.image); });
@@ -249,7 +260,7 @@ const AddOfferModal = ({
 
   return (
 <div className={`${styles.modalOverlay} ${styles.offerModalWrapper}`}>
-      <div className={styles.modal}>
+      <div className={`${styles.modal} ${styles.modalAdd}`}> {/* ❗️ ВИПРАВЛЕНО: Додано .modalAdd для узгодженості */}
         <div className={styles.modalHeader}>
           <h3 className={styles.modalTitle}>Add New Offer</h3>
           <button
@@ -272,11 +283,83 @@ const AddOfferModal = ({
           <form id="offer-form" onSubmit={onSubmit}>
             
             <div className="form-group"><label className="form-label">Title:</label><input className="form-input" type="text" name="title" value={newOfferData.title || ""} onChange={handleNewOfferChange} required placeholder="Enter title" /></div>
-            <div className="form-group"><label className="form-label">Description:</label><textarea className="form-input" name="description" value={newOfferData.description || ""} onChange={handleNewOfferChange} required placeholder="Enter description" /></div>
+            <div className="form-group"><label className="form-label">Description:</label><textarea className="form-input form-textarea" name="description" value={newOfferData.description || ""} onChange={handleNewOfferChange} required placeholder="Enter description" /></div>
             <div className="form-group"><label className="form-label">Categories (select 1 to 5):</label><div className="category-list">{ALL_CATEGORIES.map((category) => (<button key={category} type="button" className={`category-chip ${ newOfferData.categories?.includes(category) ? "selected" : "" }`} onClick={() => handleCategoryToggle(category)}>{category}</button>))}</div></div>
             <div className="form-group"><label className="form-label">Pick Location:</label><LocationPicker setCityCountry={setLocation} /></div>
             <div className="form-group"><label className="form-label">Flight Connections:</label>{flightConnections.map((fc, index) => (<div key={index} className="flight-connection form-group"><h4>{index === 0 ? "Outbound Flight" : "Return Flight"}</h4><label>Departure Airport {index === 0 ? "(Poland)" : `(from ${newOfferData.city})`}:</label><AirportSelect {...(index === 0 ? { country: "PL" } : { city: newOfferData.city, country: newOfferData.country })} value={flightConnections[index].departureAirportIATA} onChange={(iata) => handleFlightChange(index, "departureAirportIATA", iata)} isDeparture={true} /><label>Arrival Airport {index === 0 ? `(to ${newOfferData.city})` : "(Poland)"}:</label><AirportSelect {...(index === 0 ? { city: newOfferData.city, country: newOfferData.country } : { country: "PL" })} value={flightConnections[index].arrivalAirportIATA} onChange={(iata) => handleFlightChange(index, "arrivalAirportIATA", iata)} {...(index === 1 ? { isDeparture: true } : {})} /><label>Departure Time:</label><input type="time" value={flightConnections[index].departureTime || ""} onChange={(e) => handleFlightChange(index, "departureTime", e.target.value)} className="form-input" required /><label>Arrival Time:</label><input type="time" value={flightConnections[index].arrivalTime || ""} onChange={(e) => handleFlightChange(index, "arrivalTime", e.target.value)} className="form-input" required /></div>))}</div>
-            <div className="form-group"><label className="form-label">Places to Visit:</label>{placesToVisit.map((place, index) => (<div key={`${place.name}-${index}`} className="form-group place-group"><input type="text" value={place.name || ""} onChange={(e) => handlePlaceChange(index, "name", e.target.value)} placeholder="Place Name" required className="form-input" /><textarea value={place.description || ""} onChange={(e) => handlePlaceChange(index, "description", e.target.value)} placeholder="Place Description" className="form-input" /><input type="file" accept="image/*" onChange={(e) => handlePlaceImageChange(index, e.target.files[0])} className="form-input" />{placesToVisit.length > 1 && (<button type="button" className="btn btn-secondary" onClick={() => removePlace(index)} aria-label={`Remove place ${index + 1}`}>Remove Place</button>)}</div>))}<button type="button" className="btn btn-icon-only" onClick={addPlace} aria-label="Add new place to visit"><img src={plusIcon} alt="" aria-hidden="true" style={{ width: "35px", height: "35px" }} /></button></div>
+            
+            <div className="form-group">
+              <label className="form-label">Places to Visit:</label>
+              {placesToVisit.map((place, index) => (
+                <div key={`${place.name}-${index}`} className="form-group place-group">
+                  <input 
+                    type="text" 
+                    value={place.name || ""} 
+                    onChange={(e) => handlePlaceChange(index, "name", e.target.value)} 
+                    placeholder="Place Name" 
+                    required 
+                    className="form-input" 
+                  />
+                  <textarea 
+                    value={place.description || ""} 
+                    onChange={(e) => handlePlaceChange(index, "description", e.target.value)} 
+                    placeholder="Place Description" 
+                    className="form-input form-textarea" 
+                  />
+                  
+                  <input
+                    type="text"
+                    value={place.address || ""}
+                    onChange={(e) => handlePlaceChange(index, "address", e.target.value)}
+                    placeholder="Place Address (e.g., 123 Main St, Rome)"
+                    className="form-input"
+                  />
+                  
+                  <div className="place-image-preview">
+                    {place.image && ( 
+                      <img src={URL.createObjectURL(place.image)} alt="New preview" />
+                    )}
+                    {!place.image && (
+                      <div className="no-image-placeholder">No Image</div>
+                    )}
+                  </div>
+                  
+                  <label className="form-label-file">
+                    <span className="btn-file-dummy">Select file</span>
+                    <span className="file-name-display">
+                      {place.image
+                        ? place.image.name
+                        : "No file selected"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handlePlaceImageChange(index, e.target.files[0])}
+                      className="form-input-hidden"
+                    />
+                  </label>
+
+                  {placesToVisit.length > 1 && (
+                    <button 
+                      type="button" 
+                      className={`btn ${styles.btnSecondary} ${styles.removePlaceBtn}`} // ❗️ ВИПРАВЛЕНО: Стилізована кнопка
+                      onClick={() => removePlace(index)} 
+                      aria-label={`Remove place ${index + 1}`}
+                    >
+                      Remove Place
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button 
+                type="button" 
+                className="btn btn-icon-only" 
+                onClick={addPlace} 
+                aria-label="Add new place to visit"
+              >
+                <img src={plusIcon} alt="" aria-hidden="true" style={{ width: "35px", height: "35px" }} />
+              </button>
+            </div>
 
 
             <div className="form-group">
@@ -425,6 +508,7 @@ const AddOfferModal = ({
     </div>
   );
 };
+
 AddOfferModal.propTypes = {
   newOfferData: PropTypes.shape({
     title: PropTypes.string,
@@ -444,6 +528,7 @@ AddOfferModal.propTypes = {
       PropTypes.shape({
         name: PropTypes.string,
         description: PropTypes.string,
+        address: PropTypes.string, 
         image: PropTypes.instanceOf(File),
       })
     ),

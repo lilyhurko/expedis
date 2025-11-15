@@ -19,6 +19,7 @@ const offerSchema = new mongoose.Schema({
     {
       name: { type: String, required: true },
       description: { type: String },
+      address: { type: String },
       imageUrl: { type: String },
     },
   ],
@@ -27,7 +28,7 @@ const offerSchema = new mongoose.Schema({
   flightConnections: [{ type: mongoose.Schema.Types.ObjectId, ref: "FlightConnection" }],
 }, {
   strictPopulate: false,
-  imestamps: true
+  timestamps: true
 });
 
 module.exports = mongoose.model("Offer", offerSchema);
