@@ -413,35 +413,34 @@ const TripDetails = () => {
   }, [tripReviews]);
 
   const monthLabels = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
-const monthNames = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   const sortedWeather = useMemo(
     () =>
@@ -944,103 +943,103 @@ const monthNames = [
       </div>
 
       <div className="mb-8" ref={weatherRef}>
-  <h2 className="section-heading">Average Monthly Weather</h2>
-  {monthlyWeather && monthlyWeather.length > 0 ? (
-    <div className={styles.weatherChartContainer}>
-      <div className={styles.weatherSwitch}>
-        <span>
-          {viewMode === "year"
-            ? "Yearly Weather Overview"
-            : `${monthNames[selectedMonth - 1]} Overview`}
-        </span>
-        <span
-          className={styles.link}
-          onClick={() =>
-            setViewMode(viewMode === "year" ? "month" : "year")
-          }
-        >
-          {viewMode === "year" ? "View Month" : "View Full Year"}
-        </span>
+        <h2 className="section-heading">Average Monthly Weather</h2>
+        {monthlyWeather && monthlyWeather.length > 0 ? (
+          <div className={styles.weatherChartContainer}>
+            <div className={styles.weatherSwitch}>
+              <span>
+                {viewMode === "year"
+                  ? "Yearly Weather Overview"
+                  : `${monthNames[selectedMonth - 1]} Overview`}
+              </span>
+              <span
+                className={styles.link}
+                onClick={() =>
+                  setViewMode(viewMode === "year" ? "month" : "year")
+                }
+              >
+                {viewMode === "year" ? "View Month" : "View Full Year"}
+              </span>
+            </div>
+
+            {viewMode === "year" ? (
+              <>
+                <div className={styles.chartWrapper}>
+                  <Line options={chartOptions} data={chartData} />
+                </div>
+
+                <div className={styles.monthLabels}>
+                  <span></span>
+                  {monthLabels.map((label, i) => (
+                    <span key={i}>{label}</span>
+                  ))}
+                </div>
+
+                <div className={styles.weatherTable}>
+                  <div className={styles.weatherRow}>
+                    <div className={styles.weatherRowHeader}>
+                      <FaSun className={styles.weatherIcon} />
+                      <span>Avg Day Temperature</span>
+                    </div>
+                    <div className={styles.weatherRowValues}>
+                      {sortedWeather.map((m) => (
+                        <span key={`temp-${m.month}`}>{m.avg_temp}°C</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={styles.weatherRow}>
+                    <div className={styles.weatherRowHeader}>
+                      <FaTint className={styles.weatherIcon} />
+                      <span>Monthly Precipitation</span>
+                    </div>
+                    <div className={styles.weatherRowValues}>
+                      {sortedWeather.map((m) => (
+                        <span key={`precip-${m.month}`}>
+                          {m.precipitation}mm
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className={styles.monthlyWeather}>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                >
+                  {monthNames.map((name, i) => (
+                    <option key={i} value={i + 1}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+
+                <div className={styles.weatherItems}>
+                  <div>
+                    <FaSun className={styles.icon} />
+                    Avg Temperature:{" "}
+                    {sortedWeather[selectedMonth - 1]?.avg_temp}°C
+                  </div>
+
+                  <div>
+                    <FaTint className={styles.icon} />
+                    Precipitation:{" "}
+                    {sortedWeather[selectedMonth - 1]?.precipitation ||
+                      "N/A"}{" "}
+                    mm
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="section-content">
+            <p className="empty-section-text">Weather data unavailable.</p>
+          </div>
+        )}
       </div>
-
-      {viewMode === "year" ? (
-        <>
-          <div className={styles.chartWrapper}>
-            <Line options={chartOptions} data={chartData} />
-          </div>
-
-          <div className={styles.monthLabels}>
-            <span></span>
-            {monthLabels.map((label, i) => (
-              <span key={i}>{label}</span>
-            ))}
-          </div>
-
-          <div className={styles.weatherTable}>
-            <div className={styles.weatherRow}>
-              <div className={styles.weatherRowHeader}>
-                <FaSun className={styles.weatherIcon} />
-                <span>Avg Day Temperature</span>
-              </div>
-              <div className={styles.weatherRowValues}>
-                {sortedWeather.map((m) => (
-                  <span key={`temp-${m.month}`}>{m.avg_temp}°C</span>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.weatherRow}>
-              <div className={styles.weatherRowHeader}>
-                <FaTint className={styles.weatherIcon} />
-                <span>Monthly Precipitation</span>
-              </div>
-              <div className={styles.weatherRowValues}>
-                {sortedWeather.map((m) => (
-                  <span key={`precip-${m.month}`}>
-                    {m.precipitation}mm
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className={styles.monthlyWeather}>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-          >
-            {monthNames.map((name, i) => (
-              <option key={i} value={i + 1}>
-                {name}
-              </option>
-            ))}
-          </select>
-
-          <div className={styles.weatherItems}>
-            <div>
-              <FaSun className={styles.icon} />
-              Avg Temperature:{" "}
-              {sortedWeather[selectedMonth - 1]?.avg_temp}°C
-            </div>
-
-            <div>
-              <FaTint className={styles.icon} />
-              Precipitation:{" "}
-              {sortedWeather[selectedMonth - 1]?.precipitation || "N/A"} mm
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  ) : (
-    <div className="section-content">
-      <p className="empty-section-text">
-        Weather data unavailable.
-      </p>
-    </div>
-  )}
-</div>
 
       <div className="mb-8" ref={placesRef}>
         <h2 className="section-heading">Places to Visit</h2>
@@ -1096,7 +1095,7 @@ const monthNames = [
           <div className="section-content">
             <form onSubmit={handleReviewSubmit} className={styles.reviewForm}>
               <div>
-                <label className="block detail-text mb-1">Rating:</label>
+                <label className={styles.reviewLabel}>Rating:</label>
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
                     <FaStar
@@ -1112,12 +1111,12 @@ const monthNames = [
                 </div>
               </div>
               <div>
-                <label className="block detail-text mb-1">Comment:</label>
+                <label className={styles.reviewLabel}>Comment:</label>
                 <textarea
                   name="comment"
                   value={newReviewInput.comment}
                   onChange={handleReviewInputChange}
-                  className="w-full p-2 border rounded-lg"
+                  className={styles.reviewTextarea} 
                   rows="4"
                   placeholder="Write your review..."
                 />

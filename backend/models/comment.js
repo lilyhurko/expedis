@@ -13,6 +13,13 @@ const commentSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    rating: {
+        type: Number,
+        required: [true, 'Please provide a rating'],
+        min: 0,
+        max: 5,
+        default: 0,
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
