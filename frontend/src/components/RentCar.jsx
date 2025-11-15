@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from "react";
+import DatePicker from "react-multi-date-picker"; 
 import UserNavbar from "../components/UserNavbar.jsx";
 import Navbar from "../components/Navbar.jsx";
 import Footer2 from "../components/Footer2.jsx";
 import CarrentCard from "../components/CarrentCard.jsx"; 
 import CarrentBookingModal from "../components/CarrentBookingModal.jsx"; 
+import EditCarModal from "../components/EditCarModal.jsx"; 
 import ForcedLogout from "../components/ForcedLogout.js";
 import "../assets/styles/Offerts.css"; 
+
+const carCategories = [
+    "Sedan (Compact)", 
+    "SUV/Crossover", 
+    "Sedan", 
+    "Sedan (Grand Turismo)", 
+    "SUV/Crossover (Coupe)", 
+    "Hatchback", 
+    "Sedan (Luxury)", 
+    "Sedan (Executive)"
+];
 
 const RentCar = () => {
     const [cars, setCars] = useState([]);
@@ -16,13 +29,16 @@ const RentCar = () => {
     const [error, setError] = useState(null);
     const [searchParams, setSearchParams] = useState({
         city: "",
+        category: "", 
+        maxPrice: "",
         pickupDate: "",
         returnDate: "",
-        minPrice: "",
-        maxPrice: "",
     });
+    const [dateRange, setDateRange] = useState([]);
     const [selectedCar, setSelectedCar] = useState(null); 
-
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [carToEdit, setCarToEdit] = useState(null);
+    
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001'; 
 
     useEffect(() => {
@@ -43,31 +59,48 @@ const RentCar = () => {
         }
     }, []);
 
+
     const handleSearchChange = (e) => {
         const { name, value } = e.target;
         setSearchParams(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleDateChange = (dates) => {
+        setDateRange(dates); 
+        if (dates.length === 2) {
+            setSearchParams(prev => ({
+                ...prev,
+                pickupDate: dates[0].format("YYYY-MM-DD"),
+                returnDate: dates[1].format("YYYY-MM-DD")
+            }));
+        } else {
+            setSearchParams(prev => ({ ...prev, pickupDate: "", returnDate: "" }));
+        }
+    };
+    
     const handleSearch = async (e) => {
         if (e) e.preventDefault();
         setLoading(true);
         setError(null);
         setCars([]);
         
-        const { city, pickupDate, returnDate, minPrice, maxPrice } = searchParams;
-        if (!city) {
+        const { city, pickupDate, returnDate, maxPrice, category } = searchParams;
+        
+        if (!city) { 
             setError("Please enter a city.");
             setLoading(false);
             return;
         }
 
-        const query = new URLSearchParams({ 
-            city: city, 
-            pickupDate: pickupDate, 
-            returnDate: returnDate,
-            minPrice: minPrice,  
-            maxPrice: maxPrice  
-        }).toString();
+        const queryParams = new URLSearchParams();
+        queryParams.append('city', city);
+        
+        if (pickupDate) queryParams.append('pickupDate', pickupDate);
+        if (returnDate) queryParams.append('returnDate', returnDate);
+        if (maxPrice) queryParams.append('maxPrice', maxPrice); 
+        if (category) queryParams.append('category', category); 
+
+        const query = queryParams.toString();
 
         try {
             const response = await fetch(`${apiUrl}/api/cars?${query}`);
@@ -85,74 +118,169 @@ const RentCar = () => {
             setLoading(false);
         }
     };
-
+    
     const handleBookNow = (carId) => {
         if (!isAuthenticated) {
-            alert("Please log in to book a car.");
+            alert("Please log in to book a car."); 
         } else {
             const carToBook = cars.find(car => car._id === carId);
             setSelectedCar(carToBook);
         }
     };
 
+
+    const handleEditCar = (carId) => {
+        const car = cars.find(c => c._id === carId);
+        if (car) {
+            setCarToEdit(car);
+            setShowEditModal(true);
+        }
+    };
+
+    const handleDeleteCar = async (carId) => {
+        if (!window.confirm("Are you sure you want to delete this car?")) {
+            return;
+        }
+
+        const token = localStorage.getItem("token");
+        if (!token) return alert("Authentication error.");
+
+        try {
+            const response = await fetch(`${apiUrl}/api/cars/${carId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.message || 'Failed to delete');
+            }
+            
+            setCars(prevCars => prevCars.filter(car => car._id !== carId));
+            alert("Car deleted successfully");
+
+        } catch (err) {
+            console.error("Error deleting car:", err);
+            setError(err.message);
+        }
+    };
+
+    const handleEditSubmit = async (formData, carId) => {
+        const token = localStorage.getItem("token");
+        if (!token) return alert("Authentication error.");
+        
+        setLoading(true); 
+
+        try {
+            const response = await fetch(`${apiUrl}/api/cars/${carId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData 
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.message || 'Failed to update');
+            }
+
+            const updatedCar = await response.json();
+            
+            setCars(prevCars => prevCars.map(car => 
+                car._id === updatedCar._id ? updatedCar : car
+            ));
+            
+            setShowEditModal(false);
+            setCarToEdit(null);
+            alert("Car updated successfully");
+
+        } catch (err) {
+            console.error("Error updating car:", err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
     const closeModal = () => {
-        setSelectedCar(null);
+        setSelectedCar(null); 
+        setShowEditModal(false); 
+        setCarToEdit(null);
     };
 
     return (
         <>
             {isAuthenticated ? <UserNavbar /> : <Navbar />}
+            
             <div className="offers-container"> 
+                
                 <div className="offers-header">
-                    <h2 className="offers-title">Available Cars</h2>
+                    <h2 className="offers-title">Rent Car</h2>
                 </div>
                 
-                <form onSubmit={handleSearch} className="offers-header" style={{ marginBottom: '20px', gap: '10px' }}>
+                <form 
+                    onSubmit={handleSearch} 
+                    className="offers-header" 
+                    style={{ 
+                        justifyContent: 'center', 
+                        flexWrap: 'wrap', 
+                        gap: '10px', 
+                        padding: '10px',
+                        background: '#f8f9fa', 
+                        borderRadius: '8px',
+                        marginTop: '20px' 
+                    }}
+                >
                     <input 
                         type="text" 
                         name="city"
-                        placeholder="City (e.g., Lublin)" 
+                        placeholder="City" 
                         value={searchParams.city}
                         onChange={handleSearchChange}
                         required
-                        className="p-2 border rounded" 
+                        className="form-input" 
+                        style={{ width: 'auto', minWidth: '150px' }} 
                     />
-                    <input 
-                        type="text" 
-                        name="minPrice"
-                        value={searchParams.minPrice}
+
+                    <select
+                        name="category"
+                        value={searchParams.category}
                         onChange={handleSearchChange}
-                        required
-                        className="p-2 border rounded"
-                    />
+                        className="form-input"
+                        style={{ width: 'auto', minWidth: '150px' }}
+                    >
+                        <option value="">All Categories</option>
+                        {carCategories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                    </select>
+                    
                     <input 
                         type="text" 
                         name="maxPrice"
+                        placeholder="Max Price (PLN)"
                         value={searchParams.maxPrice}
                         onChange={handleSearchChange}
-                        required
-                        className="p-2 border rounded"
+                        className="form-input"
+                        style={{ width: 'auto', minWidth: '150px' }}
                     />
-                    <input 
-                        type="date" 
-                        name="pickupDate"
-                        value={searchParams.pickupDate}
-                        onChange={handleSearchChange}
-                        required
-                        className="p-2 border rounded"
-                    />
-                    <input 
-                        type="date" 
-                        name="returnDate"
-                        value={searchParams.returnDate}
-                        onChange={handleSearchChange}
-                        required
-                        className="p-2 border rounded"
-                    />
+                    
+
+                    <div className="date-picker-container" style={{ width: 'auto', minWidth: '200px' }}>
+                        <DatePicker
+                            value={dateRange}
+                            onChange={handleDateChange}
+                            range
+                            numberOfMonths={2}
+                            format="YYYY-MM-DD"
+                            placeholder="Pick-up & Return Dates"
+                        />
+                    </div>
+                    
+
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="add-offer-button navbar-login-button"
+                        className="add-offer-button navbar-login-button" 
                     >
                         {loading ? 'Searching...' : 'Find Cars'}
                     </button>
@@ -172,6 +300,8 @@ const RentCar = () => {
                                 car={car}
                                 userRole={userRole} 
                                 handleBookNow={handleBookNow}
+                                handleEditCar={handleEditCar}
+                                handleDeleteCar={handleDeleteCar}
                                 searchDates={{ pickupDate: searchParams.pickupDate, returnDate: searchParams.returnDate }} 
                             />
                         ))}
@@ -183,12 +313,22 @@ const RentCar = () => {
                 )}
 
 
-                {selectedCar && (
+                {selectedCar && userRole !== "admin" && (
                     <div className="offer-modal-wrapper">
                         <CarrentBookingModal 
                             car={selectedCar}
                             userData={userData}
                             searchDates={{ pickupDate: searchParams.pickupDate, returnDate: searchParams.returnDate }}
+                            closeModal={closeModal}
+                        />
+                    </div>
+                )}
+
+                {showEditModal && userRole === "admin" && (
+                    <div className="offer-modal-wrapper"> 
+                        <EditCarModal
+                            carToEdit={carToEdit}
+                            handleEditSubmit={handleEditSubmit}
                             closeModal={closeModal}
                         />
                     </div>

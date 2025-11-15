@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import ForcedLogout from './ForcedLogout'; 
 
 
@@ -52,6 +53,7 @@ const CarrentBookingModal = ({ car, userData, searchDates, closeModal }) => {
             }
 
             alert(`Booking of ${car.make} successful! ${totalPrice.toFixed(2)} PLN debited. Awaiting administrator confirmation.`);
+            
             closeModal();
             
         } catch (error) {
@@ -62,42 +64,85 @@ const CarrentBookingModal = ({ car, userData, searchDates, closeModal }) => {
         }
     };
 
+    if (diffDays <= 0 || isNaN(totalPrice) || !pickupDate || !returnDate) {
+        return (
+            <div className="modal-overlay">
+                <div className="modal modal-booking">
+                    <div className="modal-header">
+                        <h3 className="modal-title">Error</h3>
+                        <button className="modal-close" onClick={closeModal}>×</button>
+                    </div>
+                    <div className="modal-body">
+                        <p>Invalid date range selected. Please ensure you select two valid dates.</p>
+                    </div>
+                    <div className="modal-footer">
+                        <button className="btn btn-secondary" onClick={closeModal}>Close</button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
 
     return (
-        <div className="modal-backdrop"> 
-            <div className="modal-content"> 
-                <h3 className="offer-title">Confirm Rental: {car.make} {car.model}</h3> 
-                
-                <div className="offer-content" style={{ padding: '15px 0' }}> 
-                    <p><strong>City:</strong> {car.city}</p>
-                    <p><strong>Rental Dates:</strong> {pickupDate} to {returnDate} ({diffDays} days)</p>
-                    <p><strong>Price per day:</strong> {car.pricePerDay.toFixed(2)} PLN</p>
-                    <hr style={{ margin: '10px 0' }}/>
-                    <p><strong>Total Cost:</strong> <span className="offer-price">{totalPrice.toFixed(2)} PLN</span></p> 
-                    <p><strong>Your Current Balance:</strong> {userData.balance ? userData.balance.toFixed(2) : '---'} PLN</p>
+        <div className="modal-overlay"> 
+            <div className="modal modal-booking"> 
+                <div className="modal-header">
+                    <h3 className="modal-title">Confirm Rental: {car.make} {car.model}</h3> 
+                    <button className="modal-close" onClick={closeModal}>×</button>
                 </div>
 
-                {bookingError && <p style={{ color: 'red', marginTop: '10px' }}>{bookingError}</p>}
+                <div className="modal-body">
+                    <div className="form-group">
+                        <label className="form-label">Rental Summary:</label>
+                        <div className="booking-details-summary" style={{ padding: '15px', border: '1px solid #eee', borderRadius: '8px' }}>
+                            <p><strong>City:</strong> {car.city}</p>
+                            <p><strong>Period:</strong> {pickupDate} to {returnDate}</p>
+                            <p><strong>Duration:</strong> {diffDays} days</p>
+                            <p><strong>Daily Rate:</strong> {car.pricePerDay.toFixed(2)} PLN</p>
+                            <hr style={{ margin: '10px 0' }}/>
+                            <p><strong>Your Current Balance:</strong> {userData.balance ? userData.balance.toFixed(2) : '---'} PLN</p>
+                        </div>
+                    </div>
+                    
+                    {bookingError && <p style={{ color: 'red', margin: '15px 0' }}>{bookingError}</p>}
+                </div>
                 
-                <div className="offer-actions" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}> 
-                    <button 
-                        className="book-now-button navbar-login-button" 
-                        onClick={handleConfirmBooking}
-                        disabled={bookingLoading || userData.balance < totalPrice}
-                    >
-                        {bookingLoading ? 'Processing...' : 'Confirm & Pay'}
-                    </button>
-                    <button 
-                        className="delete-icon-button" 
-                        onClick={closeModal}
-                        disabled={bookingLoading}
-                    >
-                        Cancel
-                    </button>
+                <div className="modal-footer"> 
+                    <div className="total-price" style={{ marginRight: 'auto', fontWeight: 'bold', fontSize: '1.1em', paddingTop: '8px' }}>
+                        Total Price: {totalPrice.toFixed(2)} PLN
+                    </div>
+
+                    <div className="buttons-group">
+                        <button 
+                            className="btn btn-secondary" 
+                            onClick={closeModal}
+                            disabled={bookingLoading}
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            className="btn btn-primary" 
+                            onClick={handleConfirmBooking}
+                            disabled={bookingLoading || userData.balance < totalPrice}
+                        >
+                            {bookingLoading ? 'Processing...' : 'Confirm & Pay'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     );
+};
+
+CarrentBookingModal.propTypes = {
+    car: PropTypes.object.isRequired,
+    userData: PropTypes.object.isRequired,
+    searchDates: PropTypes.shape({
+        pickupDate: PropTypes.string,
+        returnDate: PropTypes.string,
+    }).isRequired,
+    closeModal: PropTypes.func.isRequired,
 };
 
 export default CarrentBookingModal;

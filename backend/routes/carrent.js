@@ -68,7 +68,7 @@ router.post('/', authMiddleware, authAdminMiddleware, upload.single('image'), as
 
 router.get('/', async (req, res) => {
     try {
-        const { city, pickupDate, returnDate, minPrice, maxPrice } = req.query;
+        const { city, pickupDate, returnDate, maxPrice, category } = req.query;
 
         if (!city) {
             return res.status(400).json({ message: "City parameter is required." });
@@ -76,10 +76,12 @@ router.get('/', async (req, res) => {
 
         const carQuery = { city: new RegExp(city, 'i') };
 
-        if (minPrice || maxPrice) {
-            carQuery.pricePerDay = {};
-            if (minPrice) carQuery.pricePerDay.$gte = Number(minPrice);
-            if (maxPrice) carQuery.pricePerDay.$lte = Number(maxPrice);
+        if (maxPrice) {
+            carQuery.pricePerDay = { $lte: Number(maxPrice) };
+        }
+
+        if (category) {
+            carQuery.options = category;
         }
 
         if (!pickupDate || !returnDate) {
@@ -96,8 +98,8 @@ router.get('/', async (req, res) => {
         const unavailableCarIds = overlappingBookings.map(b => b.car);
 
         const availableCars = await Car.find({
-            ...carQuery,
-            _id: { $nin: unavailableCarIds }
+            ...carQuery, 
+            _id: { $nin: unavailableCarIds } 
         });
 
         res.json(availableCars);
@@ -156,6 +158,58 @@ router.post('/book', authMiddleware, async (req, res) => {
 
     } catch (error) {
         console.error('Error during car booking:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+
+router.put('/:id', authMiddleware, authAdminMiddleware, upload.single('image'), async (req, res) => {
+    try {
+        const { make, model, year, city, country, pricePerDay, options, description } = req.body;
+        const car = await Car.findById(req.params.id);
+
+        if (!car) {
+            return res.status(404).json({ message: 'Car not found' });
+        }
+
+        car.make = make || car.make;
+        car.model = model || car.model;
+        car.year = year ? Number(year) : car.year;
+        car.city = city || car.city;
+        car.country = country || car.country;
+        car.pricePerDay = pricePerDay ? Number(pricePerDay) : car.pricePerDay;
+        car.description = description || car.description;
+        
+        if (options) {
+            car.options = JSON.parse(options);
+        }
+
+        if (req.file) {
+            car.imageUrl = `/images/cars/${req.file.filename}`;
+        }
+
+        const updatedCar = await car.save();
+        res.json(updatedCar);
+
+    } catch (error) {
+        console.error('Error updating car:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+
+router.delete('/:id', authMiddleware, authAdminMiddleware, async (req, res) => {
+    try {
+        const car = await Car.findByIdAndDelete(req.params.id);
+
+        if (!car) {
+            return res.status(404).json({ message: 'Car not found' });
+        }
+
+
+        res.json({ message: 'Car deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting car:', error);
         res.status(500).json({ message: error.message });
     }
 });

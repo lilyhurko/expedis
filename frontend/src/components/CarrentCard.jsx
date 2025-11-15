@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaCar, FaCity, FaCalendarAlt, FaEdit, FaTrash } from 'react-icons/fa'; 
+import { FaCar, FaCity, FaCalendarAlt, FaEdit, FaTrash } from 'react-icons/fa';
 
 const buildImageUrl = (filename) => {
     if (!filename || filename === "") return null;
@@ -8,8 +8,14 @@ const buildImageUrl = (filename) => {
     return `${apiUrl}${filename.startsWith('/') ? '' : '/'}${filename}`;
 };
 
-
-const CarrentCard = ({ car, userRole, handleBookNow, searchDates }) => {
+const CarrentCard = ({ 
+    car, 
+    userRole, 
+    handleBookNow, 
+    handleEditCar,
+    handleDeleteCar,
+    searchDates 
+}) => {
     
     let totalPriceDisplay = null;
     let diffDays = 0;
@@ -39,14 +45,14 @@ const CarrentCard = ({ car, userRole, handleBookNow, searchDates }) => {
                 <div className="admin-actions">
                     <button 
                         className="edit-icon-button" 
-                        onClick={(e) => handleActionClick(e, () => console.log('Edit car'))}
+                        onClick={(e) => handleActionClick(e, () => handleEditCar(car._id))}
                         aria-label="Edit car"
                     >
                         <FaEdit className="edit-icon" /> 
                     </button>
                     <button 
                         className="delete-icon-button" 
-                        onClick={(e) => handleActionClick(e, () => console.log('Delete car'))}
+                        onClick={(e) => handleActionClick(e, () => handleDeleteCar(car._id))}
                         aria-label="Delete car"
                     >
                         <FaTrash className="delete-icon" /> 
