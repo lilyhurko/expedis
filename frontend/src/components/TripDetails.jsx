@@ -413,33 +413,35 @@ const TripDetails = () => {
   }, [tripReviews]);
 
   const monthLabels = [
-    "Sty",
-    "Lut",
-    "Mar",
-    "Kwi",
-    "Maj",
-    "Cze",
-    "Lip",
-    "Sie",
-    "Wrz",
-    "Paź",
-    "Lis",
-    "Gru",
-  ];
-  const monthNames = [
-    "Styczeń",
-    "Luty",
-    "Marzec",
-    "Kwiecień",
-    "Maj",
-    "Czerwiec",
-    "Lipiec",
-    "Sierpień",
-    "Wrzesień",
-    "Październik",
-    "Listopad",
-    "Grudzień",
-  ];
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 
   const sortedWeather = useMemo(
     () =>
@@ -942,101 +944,103 @@ const TripDetails = () => {
       </div>
 
       <div className="mb-8" ref={weatherRef}>
-        <h2 className="section-heading">Average Monthly Weather</h2>
-        {monthlyWeather && monthlyWeather.length > 0 ? (
-          <div className={styles.weatherChartContainer}>
-            <div className={styles.weatherSwitch}>
-              <span>
-                {viewMode === "year"
-                  ? "Średnia pogoda w ciągu roku"
-                  : monthNames[selectedMonth - 1]}
-              </span>
-              <span
-                className={styles.link}
-                onClick={() =>
-                  setViewMode(viewMode === "year" ? "month" : "year")
-                }
-              >
-                {viewMode === "year" ? "Zobaczyć miesiąc" : "Zobaczyć cały rok"}
-              </span>
+  <h2 className="section-heading">Average Monthly Weather</h2>
+  {monthlyWeather && monthlyWeather.length > 0 ? (
+    <div className={styles.weatherChartContainer}>
+      <div className={styles.weatherSwitch}>
+        <span>
+          {viewMode === "year"
+            ? "Yearly Weather Overview"
+            : `${monthNames[selectedMonth - 1]} Overview`}
+        </span>
+        <span
+          className={styles.link}
+          onClick={() =>
+            setViewMode(viewMode === "year" ? "month" : "year")
+          }
+        >
+          {viewMode === "year" ? "View Month" : "View Full Year"}
+        </span>
+      </div>
+
+      {viewMode === "year" ? (
+        <>
+          <div className={styles.chartWrapper}>
+            <Line options={chartOptions} data={chartData} />
+          </div>
+
+          <div className={styles.monthLabels}>
+            <span></span>
+            {monthLabels.map((label, i) => (
+              <span key={i}>{label}</span>
+            ))}
+          </div>
+
+          <div className={styles.weatherTable}>
+            <div className={styles.weatherRow}>
+              <div className={styles.weatherRowHeader}>
+                <FaSun className={styles.weatherIcon} />
+                <span>Avg Day Temperature</span>
+              </div>
+              <div className={styles.weatherRowValues}>
+                {sortedWeather.map((m) => (
+                  <span key={`temp-${m.month}`}>{m.avg_temp}°C</span>
+                ))}
+              </div>
             </div>
 
-            {viewMode === "year" ? (
-              <>
-                <div className={styles.chartWrapper}>
-                  <Line options={chartOptions} data={chartData} />
-                </div>
-                <div className={styles.monthLabels}>
-                  <span></span>
-                  {monthLabels.map((label, i) => (
-                    <span key={i}>{label}</span>
-                  ))}
-                </div>
-                <div className={styles.weatherTable}>
-                  <div className={styles.weatherRow}>
-                    <div className={styles.weatherRowHeader}>
-                      <FaSun className={styles.weatherIcon} />
-                      <span>Temperatura powietrza w ciągu dnia</span>
-                    </div>
-                    <div className={styles.weatherRowValues}>
-                      {sortedWeather.map((m) => (
-                        <span key={`temp-${m.month}`}>{m.avg_temp}°C</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className={styles.weatherRow}>
-                    <div className={styles.weatherRowHeader}>
-                      <FaTint className={styles.weatherIcon} />
-                      <span>Precipitation</span>
-                    </div>
-                    <div className={styles.weatherRowValues}>
-                      {sortedWeather.map((m) => (
-                        <span key={`precip-${m.month}`}>
-                          {m.precipitation}mm
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className={styles.monthlyWeather}>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                >
-                  {monthNames.map((name, i) => (
-                    <option key={i} value={i + 1}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-                <div className={styles.weatherItems}>
-                  <div>
-                    <FaSun className={styles.icon} />
-                    Temperature on the day:{" "}
-                    {sortedWeather[selectedMonth - 1]?.avg_temp}°C
-                  </div>
-
-                  <div>
-                    <FaTint className={styles.icon} />
-                    Precipitation:{" "}
-                    {sortedWeather[selectedMonth - 1]?.precipitation ||
-                      "N/A"}{" "}
-                    mm
-                  </div>
-                </div>
+            <div className={styles.weatherRow}>
+              <div className={styles.weatherRowHeader}>
+                <FaTint className={styles.weatherIcon} />
+                <span>Monthly Precipitation</span>
               </div>
-            )}
+              <div className={styles.weatherRowValues}>
+                {sortedWeather.map((m) => (
+                  <span key={`precip-${m.month}`}>
+                    {m.precipitation}mm
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="section-content">
-            <p className="empty-section-text">
-              Average monthly weather data unavailable.
-            </p>
+        </>
+      ) : (
+        <div className={styles.monthlyWeather}>
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+          >
+            {monthNames.map((name, i) => (
+              <option key={i} value={i + 1}>
+                {name}
+              </option>
+            ))}
+          </select>
+
+          <div className={styles.weatherItems}>
+            <div>
+              <FaSun className={styles.icon} />
+              Avg Temperature:{" "}
+              {sortedWeather[selectedMonth - 1]?.avg_temp}°C
+            </div>
+
+            <div>
+              <FaTint className={styles.icon} />
+              Precipitation:{" "}
+              {sortedWeather[selectedMonth - 1]?.precipitation || "N/A"} mm
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
+  ) : (
+    <div className="section-content">
+      <p className="empty-section-text">
+        Weather data unavailable.
+      </p>
+    </div>
+  )}
+</div>
 
       <div className="mb-8" ref={placesRef}>
         <h2 className="section-heading">Places to Visit</h2>
