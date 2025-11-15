@@ -1,7 +1,9 @@
 import React from "react";
 import Slider from "react-slick";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import styles from "../assets/styles/PlacesToVisit.module.css";
+
+import styles from "../assets/styles/PlacesToVisit.module.css"; // Унікальні стилі
+import carouselStyles from "../assets/styles/Carousel.module.css"; // Загальні стилі
 
 const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001";
 const buildImageUrl = (filename) => {
@@ -16,7 +18,7 @@ const buildImageUrl = (filename) => {
 
 const NextArrow = ({ onClick }) => (
   <button
-    className={`${styles.slickArrow} ${styles.slickArrowNext}`}
+    className={`${carouselStyles.slickArrow} ${carouselStyles.slickArrowNext}`}
     onClick={onClick}
   >
     <FaChevronRight />
@@ -25,7 +27,7 @@ const NextArrow = ({ onClick }) => (
 
 const PrevArrow = ({ onClick }) => (
   <button
-    className={`${styles.slickArrow} ${styles.slickArrowPrev}`}
+    className={`${carouselStyles.slickArrow} ${carouselStyles.slickArrowPrev}`}
     onClick={onClick}
   >
     <FaChevronLeft />
@@ -45,7 +47,7 @@ const PlacesToVisit = ({ places }) => {
     slidesToScroll: 1,
     nextArrow: <NextArrow />,
     prevArrow: <PrevArrow />,
-    className: styles.placesSlider,
+    className: carouselStyles.carouselSlider,
     responsive: [
       {
         breakpoint: 1024,
@@ -65,21 +67,21 @@ const PlacesToVisit = ({ places }) => {
   };
 
   return (
-    <div className={styles.placesCarouselContainer}>
+    <div className={carouselStyles.carouselContainer}>
       <Slider {...settings}>
         {places.map((place, index) => (
-          <div key={place._id || index} className={styles.placeSlide}>
-            <div className={styles.placeCard}>
+          <div key={place._id || index} className={carouselStyles.carouselSlide}>
+            <div className={carouselStyles.card}>
               <img
                 src={buildImageUrl(place.imageUrl)}
                 alt={place.name}
-                className={styles.placeImage}
+                className={carouselStyles.cardImage}
                 onError={(e) => {
                   e.target.src =
                     "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==";
                 }}
               />
-              <div className={styles.placeInfo}>
+              <div className={carouselStyles.cardInfo}>
                 <h4 className={styles.placeName}>{place.name}</h4>
 
                 {place.address && (

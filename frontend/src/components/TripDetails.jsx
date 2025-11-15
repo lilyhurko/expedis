@@ -17,7 +17,7 @@ import {
   FaTint,
   FaWater,
 } from "react-icons/fa";
-import PlacesToVisit from "./PlacesToVisit.jsx"; 
+import PlacesToVisit from "./PlacesToVisit.jsx";
 import UserNavbar from "./UserNavbar.jsx";
 import Navbar from "./Navbar.jsx";
 import styles from "../assets/styles/TripDetails.module.css";
@@ -93,7 +93,7 @@ const TripDetails = () => {
       });
     }
   };
-  
+
   const getFullFlightDate = (baseDate, timeString) => {
     if (!baseDate || !timeString) return null;
     const [hours, minutes] = timeString.split(":").map(Number);
@@ -120,7 +120,7 @@ const TripDetails = () => {
     const minutes = totalMinutes % 60;
     return `${hours}h ${minutes}min`;
   };
-  
+
   const formatFlightArcDate = (date) => {
     if (!date || isNaN(date.getTime())) return "Select Date";
     return date.toLocaleDateString("en-US", {
@@ -413,10 +413,32 @@ const TripDetails = () => {
   }, [tripReviews]);
 
   const monthLabels = [
-    "Sty", "Lut", "Mar", "Kwi", "Maj", "Cze", "Lip", "Sie", "Wrz", "Paź", "Lis", "Gru",
+    "Sty",
+    "Lut",
+    "Mar",
+    "Kwi",
+    "Maj",
+    "Cze",
+    "Lip",
+    "Sie",
+    "Wrz",
+    "Paź",
+    "Lis",
+    "Gru",
   ];
   const monthNames = [
-    "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień",
+    "Styczeń",
+    "Luty",
+    "Marzec",
+    "Kwiecień",
+    "Maj",
+    "Czerwiec",
+    "Lipiec",
+    "Sierpień",
+    "Wrzesień",
+    "Październik",
+    "Listopad",
+    "Grudzień",
   ];
 
   const sortedWeather = useMemo(
@@ -466,8 +488,8 @@ const TripDetails = () => {
       scales: {
         y_temp: {
           display: false,
-          min: Math.min(...sortedWeather.map(m => m.avg_temp)) - 5,
-          max: Math.max(...sortedWeather.map(m => m.avg_temp)) + 5,
+          min: Math.min(...sortedWeather.map((m) => m.avg_temp)) - 5,
+          max: Math.max(...sortedWeather.map((m) => m.avg_temp)) + 5,
         },
         x: {
           display: true,
@@ -486,7 +508,7 @@ const TripDetails = () => {
       elements: {
         line: {
           tension: 0.4,
-          borderWidth: 3
+          borderWidth: 3,
         },
         point: {
           radius: 4,
@@ -558,7 +580,7 @@ const TripDetails = () => {
     if (filename.startsWith("http")) return filename;
     return `${apiUrl}${filename}`;
   };
-  
+
   const FullScreenModal = () => (
     <div
       className={`${styles.fullscreenModal} ${
@@ -599,9 +621,9 @@ const TripDetails = () => {
       </div>
     </div>
   );
-  
+
   const sampleTripDescription = `Embark on an unforgettable journey to ${tripDetails.city}, ${tripDetails.country}, where ancient history blends seamlessly with vibrant modern life. Over ${tripDetails.duration} days, you'll explore iconic landmarks like the historic old town and stunning coastal views. Indulge in authentic local cuisine, from fresh seafood to traditional pastries, and unwind in charming accommodations. This carefully curated trip includes guided tours, insider tips, and plenty of free time to discover hidden gems at your own pace. Whether you're a culture enthusiast or a nature lover, this adventure promises memories that last a lifetime.`;
-  
+
   return (
     <>
       {isUserAuthenticated ? <UserNavbar /> : <Navbar />}
@@ -945,7 +967,7 @@ const TripDetails = () => {
                   <Line options={chartOptions} data={chartData} />
                 </div>
                 <div className={styles.monthLabels}>
-                  <span></span> {/* Пустий кут */}
+                  <span></span>
                   {monthLabels.map((label, i) => (
                     <span key={i}>{label}</span>
                   ))}
@@ -1027,9 +1049,7 @@ const TripDetails = () => {
         </div>
       </div>
       <RecommendedHotels city={tripDetails.city} />
-      <button className="book-button" onClick={handleBookNowClick}>
-        Book Now
-      </button>
+
       <div className="mb-8" ref={reviewsRef}>
         <h2 className="section-heading">Reviews & Ratings</h2>
         <div className="section-content">

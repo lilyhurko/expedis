@@ -3,11 +3,13 @@
   margin: 0 auto;
   padding: 80px 20px;
 }
-
 .tripHeader {
   margin-bottom: 20px;
 }
-
+.trip-details-container {
+  padding-left: 40px;
+  padding-right: 40px;
+}
 .tripTitle {
   font-size: 24px;
   font-weight: bold;
@@ -16,31 +18,26 @@
   font-family: "Playfair Display", serif;
   color: #1b3a4b;
 }
-
 .tripRating {
   display: inline-flex;
   gap: 4px;
   vertical-align: middle;
 }
-
 .tripLocation {
   font-size: 14px;
   color: #555;
 }
-
 .tripGrid {
   display: flex;
   gap: 20px;
   align-items: stretch;
 }
-
 .tripMain {
   flex: 3;
   background: #fff;
   display: flex;
   flex-direction: column;
 }
-
 .tripTabs ul {
   display: flex;
   justify-content: space-between;
@@ -48,13 +45,11 @@
   margin-top: 15px;
   padding-top: 5px;
 }
-
 .tripTabs li {
   font-size: 14px;
   cursor: pointer;
   color: #222;
 }
-
 .bookingCard {
   flex: 1;
   max-width: 350px;
@@ -70,12 +65,10 @@
   justify-content: space-between;
   gap: 1rem;
 }
-
 .bookingCard input.arrivalAirport,
 .airportSelection {
   display: none;
 }
-
 .bookingCard .price {
   font-family: "Playfair Display", serif;
   font-size: 2rem;
@@ -85,13 +78,11 @@
   margin: 15px 0;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
-
 .cardInfoSection {
   padding: 20px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
-
 .cardInfoTitle {
   font-family: "Playfair Display", serif;
   font-weight: 600;
@@ -100,14 +91,12 @@
   margin: 0 0 15px 0;
   text-align: center;
 }
-
 .cardCategoryChips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
 }
-
 .cardCategoryChip {
   display: inline-flex;
   align-items: center;
@@ -120,7 +109,6 @@
   padding: 5px 12px;
   border-radius: 20px;
 }
-
 .bookingCard .bookButton {
   width: 100%;
   padding: 12px 30px;
@@ -141,18 +129,15 @@
     inset 0 0 8px rgba(255, 255, 255, 0.15);
   transition: all 0.3s ease;
 }
-
 .bookingCard .bookButton:hover {
   background: rgba(240, 234, 218, 1);
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 4px 60px rgba(0, 0, 0, 0.1);
 }
-
 .bookingCard .bookButton:active {
   transform: translateY(0) scale(0.96);
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
 }
-
 .bookingCard .bookButton::before {
   content: "";
   position: absolute;
@@ -169,11 +154,9 @@
   transform: skewX(-25deg);
   transition: all 0.6s ease;
 }
-
 .bookingCard .bookButton:hover::before {
   left: 125%;
 }
-
 .travelerButton,
 .bookingCard select.dateDropdown {
   width: 100%;
@@ -192,17 +175,14 @@
   text-align: left;
   margin-bottom: 10px;
 }
-
 .bookingCard select.dateDropdown {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23555" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
   background-repeat: no-repeat;
   background-position: right 20px center;
 }
-
 .airportSelection {
   margin-bottom: 15px;
 }
-
 .airportLabel {
   display: block;
   margin-bottom: 6px;
@@ -212,13 +192,11 @@
   font-size: 0.9rem;
   text-align: left;
 }
-
 .photoGallery {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-
 .mainPhoto img {
   width: 100%;
   height: auto;
@@ -231,14 +209,12 @@
 .mainPhoto img:hover {
   transform: scale(1.02);
 }
-
 .thumbnails {
   display: flex;
   gap: 10px;
   overflow-x: auto;
   margin-top: 10px;
 }
-
 .thumbnail {
   flex: 0 0 80px;
   height: 60px;
@@ -256,17 +232,14 @@
   height: 100%;
   object-fit: cover;
 }
-
 .starSelected {
   color: #e2d4bb;
   font-size: 1.2rem;
 }
-
 .starUnselected {
   color: #ccc;
   font-size: 1.2rem;
 }
-
 .modalContent {
   background: white;
   padding: 20px;
@@ -275,26 +248,22 @@
   width: 100%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-
 .modalContent h3 {
   margin-bottom: 20px;
   font-size: 1.5rem;
   font-weight: bold;
 }
-
 .travelerGroup {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
 }
-
 .travelerControls {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-
 .travelerControls button {
   background: #1b3a4b;
   color: white;
@@ -304,28 +273,23 @@
   cursor: pointer;
   font-size: 1rem;
 }
-
 .travelerControls button:disabled {
   background: #cccccc;
   cursor: not-allowed;
 }
-
 .childBirthDate {
   margin-bottom: 15px;
 }
-
 .childBirthDate label {
   display: block;
   margin-bottom: 5px;
 }
-
 .childBirthDate input {
   width: 100%;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
-
 .modalCloseButton {
   background: #e2d4bb;
   color: #1b3a4b;
@@ -337,7 +301,6 @@
   width: 100%;
   font-weight: 600;
 }
-
 .fullscreenModal {
   display: none;
   position: fixed;
@@ -350,23 +313,19 @@
   justify-content: center;
   z-index: 2000;
 }
-
 .fullscreenModal.open {
   display: flex;
 }
-
 .fullscreenContent {
   position: relative;
   max-width: 90vw;
   max-height: 90vh;
 }
-
 .fullscreenImage {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }
-
 .closeFullscreen {
   position: absolute;
   top: -40px;
@@ -377,7 +336,6 @@
   color: white;
   cursor: pointer;
 }
-
 .navArrow {
   position: absolute;
   top: 50%;
@@ -396,19 +354,15 @@
 .navArrow.right {
   right: -50px;
 }
-
-
 .clickableStar {
   cursor: pointer;
 }
-
 .hotelsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   margin-top: 20px;
 }
-
 .hotelCard {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -418,33 +372,28 @@
   display: flex;
   flex-direction: column;
 }
-
 .hotelImage {
   width: 100%;
   height: 200px;
   object-fit: cover;
 }
-
 .hotelInfo {
   padding: 15px;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
 }
-
 .hotelInfo h4 {
   font-size: 1.15rem;
   font-weight: 600;
   margin-bottom: 10px;
   min-height: 2.5em;
 }
-
 .hotelRating {
   margin-bottom: 15px;
   display: flex;
   align-items: center;
 }
-
 .hotelLink {
   display: inline-block;
   padding: 10px 15px;
@@ -457,30 +406,25 @@
   margin-top: auto;
   transition: background-color 0.2s;
 }
-
 .hotelLink:hover {
   background-color: #0056b3;
 }
-
 .reviewCard {
   border: 1px solid #eee;
   padding: 15px;
   border-radius: 8px;
 }
-
 .reviewUsername {
   font-style: italic;
   font-size: 0.9rem;
   color: #555;
   margin-top: 10px;
 }
-
 .reviewForm {
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
-
 .submitReviewButton {
   background-color: #1b3a4b;
   color: white;
@@ -492,7 +436,6 @@
   font-weight: 500;
   align-self: flex-start;
 }
-
 .section-heading {
   display: inline-flex !important;
   align-items: center;
@@ -506,7 +449,6 @@
   position: relative;
   margin-bottom: 1.5rem;
 }
-
 .section-heading::before {
   content: "";
   position: absolute;
@@ -517,14 +459,12 @@
   height: 2px;
   background-color: #1b3a4b;
 }
-
 .sectionContent {
   padding: 0 80px 1.5rem 80px !important;
   margin-bottom: 3rem;
   width: 100%;
   box-sizing: border-box;
 }
-
 .detail-text {
   font-family: "Poppins", sans-serif !important;
   line-height: 1.7;
@@ -538,38 +478,33 @@
   white-space: pre-wrap;
   width: 100%;
 }
-
 .section-content {
-  padding-left: 80px; 
-  margin-bottom: 1.5rem; 
+  padding-left: 80px;
+  margin-bottom: 1.5rem;
 }
-
 .empty-section-text {
   font-family: "Poppins", sans-serif;
   color: #777;
   padding-left: 80px;
-
 }
-
 .flightDetailsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
 }
-
 .flightSegment {
   background: rgba(27, 58, 75, 0.05);
   backdrop-filter: blur(15px) saturate(180%);
   -webkit-backdrop-filter: blur(15px) saturate(180%);
-  border: 1px solid rgba(27, 58, 75, 0.1); 
+  border: 1px solid rgba(27, 58, 75, 0.1);
   border-radius: 16px;
   padding: 1.5rem;
   font-family: "Poppins", sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; 
-  margin-left: 80px; 
+  gap: 1.5rem;
+  margin-left: 80px;
   max-width: 600px;
   margin-bottom: 2rem;
 }
@@ -580,14 +515,12 @@
   border-bottom: 1px solid #eee;
   padding-bottom: 1.5rem;
 }
-
 .arcIata {
   font-family: "Playfair Display", serif;
   font-size: 2.5rem;
   font-weight: 600;
   color: #1b3a4b;
 }
-
 .arcDate {
   display: flex;
   flex-direction: column;
@@ -605,25 +538,20 @@
   margin: 0 1rem;
   text-align: center;
 }
-
-
 .flightTimeline {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
-
 .timelinePoint {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
-
 .timelineIcon {
   font-size: 1.5rem;
   color: #1b3a4b;
 }
-
 .timelineInfo p {
   margin: 0;
   font-size: 0.9rem;
@@ -634,7 +562,6 @@
   color: #1b3a4b;
   font-weight: 600;
 }
-
 .timelineConnector {
   height: 40px;
   border-left: 2px dotted #ccc;
@@ -646,19 +573,16 @@
   color: #555;
   font-style: italic;
 }
-
 .flight-details-section{
   max-width: 900px;
   margin: 0 auto;
-  margin-bottom: 3rem; 
+  margin-bottom: 3rem;
 }
-
-
 .weatherChartContainer {
-  max-width: 100%; 
+  max-width: 100%;
   margin: 0 0 3rem 0;
-  background: #f9f9f9; 
-  border-radius: 12px; 
+  background: #f9f9f9;
+  border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   padding: 1.5rem 2rem;
   font-family: "Poppins", sans-serif;
@@ -666,7 +590,6 @@
   margin-left: 80px;
   margin-right: 80px;
 }
-
 .weatherSwitch {
   display: flex;
   justify-content: space-between;
@@ -674,33 +597,28 @@
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #eee;
 }
-
 .weatherSwitch span:first-child {
   font-size: 1.5rem;
   font-weight: 600;
   color: #1b3a4b;
-  font-family: "Poppins", sans-serif; 
+  font-family: "Poppins", sans-serif;
 }
-
 .weatherSwitch .link {
   color: #007bff;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
 }
-
 .chartWrapper {
-  height: 250px; 
+  height: 250px;
   margin-top: 1.5rem;
   position: relative;
 }
-
 .weatherTable {
   width: 100%;
   margin-top: 1.5rem;
-  border-collapse: collapse; 
+  border-collapse: collapse;
 }
-
 .weatherRow {
   display: flex;
   border-bottom: 1px solid #eee;
@@ -708,9 +626,8 @@
 .weatherRow:last-child {
   border-bottom: none;
 }
-
 .weatherRowHeader {
-  flex: 0 0 250px; 
+  flex: 0 0 250px;
   padding: 1rem 0.5rem;
   display: flex;
   align-items: center;
@@ -719,20 +636,17 @@
   color: #1b3a4b;
   font-size: 0.9rem;
 }
-
 .weatherIcon {
   font-size: 1.2rem;
   color: #1b3a4b;
   opacity: 0.7;
 }
-
 .weatherRowValues {
   display: flex;
   flex-grow: 1;
 }
-
 .weatherRowValues span {
-  flex: 1; 
+  flex: 1;
   text-align: center;
   padding: 1rem 0.5rem;
   font-size: 0.9rem;
@@ -740,13 +654,10 @@
   font-weight: 500;
   border-left: 1px solid #eee;
 }
-
 .monthLabels {
   display: flex;
-
-  padding-left: 250px; 
+  padding-left: 250px;
 }
-
 .monthLabels span {
   flex: 1;
   text-align: center;
@@ -756,17 +667,13 @@
   color: #555;
   border-bottom: 2px solid #ddd;
 }
-
-
 .sunnyHours,
 .sunnyValues {
-  display: none; 
+  display: none;
 }
-
 .monthlyWeather {
   padding: 1rem 0;
 }
-
 .monthlyWeather select {
   width: 100%;
   margin-bottom: 1.5rem;
@@ -777,7 +684,6 @@
   font-size: 1rem;
   background: #f9f9f9;
 }
-
 .weatherItems {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -785,123 +691,100 @@
   color: #1b3a4b;
   font-size: 1rem;
 }
-
 .weatherItems div {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   font-weight: 500;
 }
-
 .weatherItems .icon {
   color: #1b3a4b;
   font-size: 1.2rem;
   opacity: 0.8;
 }
-
-
 @media (max-width: 900px) {
   .tripGrid {
     flex-direction: column;
     align-items: stretch;
   }
-
   .tripMain {
     flex: 1 1 auto;
   }
-
   .bookingCard {
     flex: 1 1 auto;
     max-width: 100%;
     margin-top: 2rem;
     justify-content: flex-start;
   }
-
   .mainPhoto img {
     aspect-ratio: 4 / 3;
   }
-
   .section-heading,
   .sectionContent {
     padding-left: 40px !important;
     padding-right: 15px !important;
   }
-
   .section-heading::before {
     width: 40px;
   }
   .flightDetailsGrid {
     grid-template-columns: 1fr;
   }
-
   .weatherChartContainer {
     margin-left: 0;
     margin-right: 0;
     padding: 1rem 1.5rem;
   }
   .weatherRowHeader {
-    flex: 0 0 150px; 
+    flex: 0 0 150px;
     font-size: 0.8rem;
     gap: 0.5rem;
   }
   .monthLabels {
-    padding-left: 150px; 
+    padding-left: 150px;
   }
-
 }
-
 @media (max-width: 480px) {
   .tripDetailsPage {
     padding: 40px 15px;
   }
-
   .tripGrid {
     gap: 1.5rem;
   }
-
   .tripTitle {
     font-size: 20px;
   }
-
   .bookingCard {
     padding: 15px;
   }
-
   .bookingCard .price {
     font-size: 1.75rem;
   }
-
   .travelerButton,
   .bookingCard select.dateDropdown {
     padding: 10px 15px;
     font-size: 0.9rem;
   }
-
   .bookingCard .bookButton {
     padding: 10px 20px;
     font-size: 0.9rem;
   }
-
   .tripTabs ul {
     flex-direction: column;
     gap: 10px;
     align-items: center;
   }
-
   .section-heading,
   .sectionContent {
     padding-left: 20px !important;
     padding-right: 10px !important;
   }
-
   .section-heading {
     font-size: 2rem;
   }
-
   .section-heading::before {
     width: 20px;
   }
-
   .flightDetailsGrid {
     grid-template-columns: 1fr;
   }
@@ -912,7 +795,7 @@
     padding: 1rem;
   }
   .weatherRowHeader {
-    flex: 0 0 100px; 
+    flex: 0 0 100px;
     font-size: 0.7rem;
     gap: 0.25rem;
   }
@@ -920,7 +803,7 @@
      white-space: normal;
   }
   .monthLabels {
-    padding-left: 100px; 
+    padding-left: 100px;
   }
   .weatherRowValues span, .monthLabels span {
     font-size: 0.7rem;

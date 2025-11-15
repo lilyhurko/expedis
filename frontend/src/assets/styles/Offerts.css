@@ -9,7 +9,48 @@ grid-template-columns: repeat(4, 1fr);
   gap: 2rem;
   margin-top: 2rem;
 }
+.section-heading {
+  display: inline-flex !important;
+  align-items: center;
+  font-family: "Playfair Display", serif;
+  font-weight: 600;
+  color: #1b3a4b;
+  font-size: 2.5rem;
+  margin: 0; 
+  padding-left: 80px; 
+  position: relative;
+  margin-bottom: 1.5rem; 
+}
 
+.section-heading::before {
+  content: "";
+  position: absolute;
+  left: 0; 
+  top: 50%;
+  transform: translateY(-50%);
+  width: 65px;
+  height: 2px;
+  background-color: #1b3a4b;
+}
+
+.section-content {
+  padding-left: 80px; 
+  margin-bottom: 1.5rem; 
+}
+
+.detail-text {
+  font-family: "Poppins", sans-serif !important;
+  line-height: 1.7; 
+  color: #333 !important;
+  font-size: 1rem;
+  text-align: justify; 
+  margin: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  white-space: pre-wrap;
+  width: 100%;
+}
 
 
 
@@ -192,7 +233,6 @@ width: 100%;
   margin-top: 0.5rem;
 }
 
-/* New Styles for Image Upload */
 .image-upload-group {
   margin-bottom: 2rem;
 }
@@ -466,14 +506,13 @@ width: 100%;
   align-items: center;
   z-index: 1000;
 }
-/* === Додайте це в кінець файлу src/assets/styles/Offerts.css === */
 
 .place-group {
   border: 1px solid #e0e0e0;
   padding: 15px;
   border-radius: 8px;
   background: #fafafa;
-  margin-bottom: 15px; /* Додано відступ між групами */
+  margin-bottom: 15px; 
 }
 
 .place-group .form-input,
@@ -481,7 +520,6 @@ width: 100%;
   margin-bottom: 10px;
 }
 
-/* --- Прев'ю для фото 'Place to Visit' --- */
 .place-image-preview {
   width: 100%;
   height: 150px;

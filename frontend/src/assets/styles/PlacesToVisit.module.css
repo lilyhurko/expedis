@@ -1,50 +1,3 @@
-.placesCarouselContainer {
-  position: relative;
-  padding: 0 15px;
-}
-
-.placesSlider {
-  margin: 0 -10px;
-}
-
-.placeSlide {
-padding: 1.5rem 80px 1.5rem 80px !important;
-    box-sizing: border-box;
-}
-
-.placeCard {
-  background: rgba(27, 58, 75, 0.05);
-  backdrop-filter: blur(15px) saturate(180%);
-  -webkit-backdrop-filter: blur(15px) saturate(180%);
-  border: 1px solid rgba(27, 58, 75, 0.1); 
-  border-radius: 16px;
-  padding: 1.5rem;
-  font-family: "Poppins", sans-serif;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  display: flex;
-  flex-direction: column;
-}
-
-.placeCard:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.placeImage {
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-  border-bottom: 1px solid #eee;
-}
-
-.placeInfo {
-  padding: 1.25rem;
-  font-family: "Poppins", sans-serif;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
 .placeName {
   font-family: "Playfair Display", serif;
   font-size: 1.3rem;
@@ -54,6 +7,24 @@ padding: 1.5rem 80px 1.5rem 80px !important;
   min-height: 2.6rem;
 }
 
+.placeAddress {
+  font-family: "Poppins", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+  margin: -5px 0 10px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.placeAddress::before {
+  content: "📍 ";
+  margin-right: 4px;
+}
+
 .placeDescription {
   font-size: 0.9rem;
   color: #555;
@@ -61,69 +32,7 @@ padding: 1.5rem 80px 1.5rem 80px !important;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3; 
   -webkit-box-orient: vertical;
-}
-
-.slickArrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  background: rgba(27, 58, 75, 0.9);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  cursor: pointer;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.slickArrow:hover {
-  background: #1b3a4b;
-
-  transform: translateY(-50%) scale(1.1);
-}
-
-.slickArrowPrev {
-  left: 0px;
-}
-
-.slickArrowNext {
-  right: 0px;
-}
-
-.placesSlider :global(.slick-dots) {
-  bottom: -30px;
-}
-
-.placesSlider :global(.slick-dots li button:before) {
-  font-size: 12px;
-  color: #cccccc;
-  opacity: 1;
-}
-
-.placesSlider :global(.slick-dots li.slick-active button:before) {
-  color: #1b3a4b;
-}
-
-@media (max-width: 768px) {
-  .slickArrow {
-    width: 38px;
-    height: 38px;
-  }
-  .slickArrowPrev {
-    left: -5px;
-  }
-  .slickArrowNext {
-    right: -5px;
-  }
-  .placeCard {
-    height: 380px;
-  }
+  margin-top: auto; 
 }
