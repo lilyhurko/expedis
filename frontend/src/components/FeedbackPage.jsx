@@ -201,7 +201,6 @@ const FeedbackPage = () => {
               <div key={comment._id} className="comment card mb-3">
                 <div className="card-body position-relative">
                   
-                  {/* Admin actions positioned in top-right corner */}
                   {user && (user.role === 'admin' || user.id === comment.userId || user._id === comment.userId) && (
                     <div className="admin-actions">
                       {(user.id === comment.userId || user._id === comment.userId) && (

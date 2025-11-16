@@ -1,143 +1,321 @@
-.formContainer {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #fff;
+
+.profilePageContainer {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 2rem auto;
+  background-color: #ffffff; 
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-top: 80px; /* Added to avoid overlap with navbar */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Poppins', sans-serif; 
 }
 
-.loading {
+.pageTitle {
   text-align: center;
+  font-family: 'Playfair Display', serif;
+  color: #1B3A4B;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 1rem;
+}
+
+.profileLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr; 
+  gap: 2.5rem;
+}
+
+@media (max-width: 992px) {
+  .profileLayout {
+    grid-template-columns: 1fr; 
+    gap: 2rem;
+  }
+}
+
+.profileSection,
+.walletSection {
+  background-color: #f8faff; 
+  border-radius: 10px;
+  border: 1px solid #eaf0f6;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  font-family: 'Playfair Display', serif;
+  color: #1B3A4B;
+  font-size: 1.8rem; 
+  margin-bottom: 1.5rem;
+  text-align: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dde3ea;
+}
+
+.subSectionTitle {
   font-family: 'Poppins', sans-serif;
+  color: #1B3A4B;
+  font-size: 1.3rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.profileDetail {
   font-size: 1rem;
-  color: #0D1B2A;
-  padding: 20px;
+  color: #333;
+  line-height: 1.7;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #eaf0f6;
+}
+.profileDetail:last-of-type {
+    border-bottom: none;
+    margin-bottom: 1.5rem;
+}
+.profileDetail strong {
+    color: #1B3A4B;
+    font-weight: 600;
+    margin-right: 0.5rem;
 }
 
 .buttonWrapper {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 1rem;
+  margin-top: auto; 
+  padding-top: 1.5rem;
+  border-top: 1px solid #eaf0f6;
 }
 
 .formButton {
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  background-color: #5a7d9b; 
+  color: white;
+  padding: 0.7rem 1.5rem;
   border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  max-width: 180px; 
+}
+
+.formButton:hover {
+  background-color: #4a6a85;
+  transform: translateY(-2px);
 }
 
 .formButton.primary {
   background-color: #1B3A4B;
-  color: white;
 }
 
 .formButton.primary:hover {
-  background-color: #0D1B2A;
+  background-color: #0d212b;
 }
 
-.formButton:hover:not(.primary) {
-  background-color: #e2d4bb;
-  color: #1B3A4B;
-}
 
-.profileModalWrapper .modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+.avatarContainer {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  z-index: 1000;
-  padding: 20px;
+  margin-bottom: 2rem;
 }
 
-.profileModalWrapper .modalProfile {
-  background: white;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  margin-top: 80px; /* Added to avoid overlap with navbar */
+.avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
 }
 
-.profileModalWrapper .modalHeader {
-  padding: 20px;
-  border-bottom: 1px solid #eee;
-  position: relative;
-  background-color: #f9f9f9;
-}
-
-.profileModalWrapper .modalTitle {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.8rem;
+.changeAvatarButton {
+  background-color: transparent;
   color: #1B3A4B;
-  margin: 0;
-}
-
-.profileModalWrapper .modalClose {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
+  border: 1px solid #1B3A4B;
+  padding: 0.5rem 1.2rem;
+  border-radius: 25px;
   cursor: pointer;
-  color: #666;
-  transition: color 0.2s;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
-.profileModalWrapper .modalClose:hover {
-  color: #1B3A4B;
+.changeAvatarButton:hover {
+  background-color: #1B3A4B;
+  color: white;
+  transform: translateY(-2px);
 }
 
-.profileModalWrapper .modalContent {
-  padding: 20px;
+.avatarMessage {
+  font-size: 0.9rem;
+  margin-top: 0.8rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+
+.walletInfo {
+  display: flex;
+  justify-content: space-around;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap; 
+  gap: 1rem; 
+}
+
+.walletBalance,
+.walletHeld {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  overflow-y: auto;
-  max-height: calc(90vh - 150px); /* Adjusted for header and footer */
-}
-
-.profileModalWrapper .formInput {
-  padding: 12px 15px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  align-items: center;
   font-size: 1rem;
-  width: 100%;
-  transition: border-color 0.2s;
-  font-family: 'Poppins', sans-serif;
-  color: #0D1B2A;
+  color: #555;
+  flex: 1; 
+  min-width: 150px; 
 }
 
-.profileModalWrapper .formInput:focus {
-  outline: none;
-  border-color: #1B3A4B;
-  box-shadow: 0 0 5px rgba(27, 58, 75, 0.3);
+.walletBalance span, .walletHeld span {
+    font-weight: 500;
 }
 
-.profileModalWrapper .modalFooter {
-  padding: 15px 20px;
-  border-top: 1px solid #eee;
+.walletBalance strong {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1a936f; 
+  margin-top: 0.5rem;
+}
+
+.walletHeld strong {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #f59e0b; 
+  margin-top: 0.5rem;
+}
+
+.topUpForm {
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #dde3ea;
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  background-color: #fff;
-  position: sticky;
-  bottom: 0;
-  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+  flex-direction: column;
+  align-items: center;
+}
+
+.topUpDescription {
+  font-size: 0.9rem;
+  color: #666;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+}
+
+.topUpMessage {
+  font-size: 0.95rem;
+  margin-top: 1.2rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+
+.formInput {
+    padding: 0.8rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+.formInput:focus {
+    border-color: #5a7d9b;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(90, 125, 155, 0.2);
+}
+
+.profileModalWrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modalOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.modalProfile {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    max-width: 500px;
+    width: 90%;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.modalTitle {
+    font-size: 1.8rem;
+    color: #1B3A4B;
+    font-family: 'Playfair Display', serif;
+}
+
+.modalClose {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #888;
+}
+
+.modalContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .pageTitle {
+    font-size: 2rem;
+  }
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
+  .walletBalance strong,
+  .walletHeld strong {
+    font-size: 1.8rem;
+  }
 }
