@@ -9,28 +9,30 @@ grid-template-columns: repeat(4, 1fr);
   gap: 2rem;
   margin-top: 2rem;
 }
-.section-heading {
-  display: inline-flex !important;
-  align-items: center;
-  font-family: "Playfair Display", serif;
-  font-weight: 600;
-  color: #1b3a4b;
-  font-size: 2.5rem;
-  margin: 0; 
-  padding-left: 80px; 
-  position: relative;
-  margin-bottom: 1.5rem; 
+
+
+.section-heading-offer {
+    display: inline-flex;
+    align-items: center;
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    color: #1B3A4B;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-left: 150px;
+    margin-top: 3rem;
 }
 
-.section-heading::before {
-  content: "";
-  position: absolute;
-  left: 0; 
-  top: 50%;
-  transform: translateY(-50%);
-  width: 65px;
-  height: 2px;
-  background-color: #1b3a4b;
+.section-heading-offer::before {
+    content: "";
+    position: absolute;
+    left: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 65px;
+    height: 2px;
+    background-color: #1B3A4B;
 }
 
 .section-content {

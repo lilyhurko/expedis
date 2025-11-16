@@ -25,6 +25,7 @@ import "../assets/styles/Offerts.css";
 import modalStyles from "../assets/styles/Modals.module.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import Footer2 from "./Footer2.jsx";
 import RecommendedHotels from "./RecommendedHotels.jsx";
 import { Line } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
@@ -848,7 +849,7 @@ const TripDetails = () => {
         </div>
       </div>
       <div className="mb-8" ref={descriptionRef}>
-        <h2 className="section-heading">Trip Details</h2>
+        <h2 className="section-heading-offer">Trip Details</h2>
         <div className="section-content">
           <p className="detail-text">
             {tripDetails.description || sampleTripDescription}
@@ -857,7 +858,7 @@ const TripDetails = () => {
       </div>
 
       <div className="mb-8">
-        <h2 className="section-heading">Flight Details</h2>
+        <h2 className="section-heading-offer">Flight Details</h2>
         <div className="section-content">
           <div className={styles.flightDetailsGrid}>
             {outboundFlight && (
@@ -943,7 +944,7 @@ const TripDetails = () => {
       </div>
 
       <div className="mb-8" ref={weatherRef}>
-        <h2 className="section-heading">Average Monthly Weather</h2>
+        <h2 className="section-heading-offer">Average Monthly Weather</h2>
         {monthlyWeather && monthlyWeather.length > 0 ? (
           <div className={styles.weatherChartContainer}>
             <div className={styles.weatherSwitch}>
@@ -1042,7 +1043,7 @@ const TripDetails = () => {
       </div>
 
       <div className="mb-8" ref={placesRef}>
-        <h2 className="section-heading">Places to Visit</h2>
+        <h2 className="section-heading-offer">Places to Visit</h2>
         <div className="section-content">
           {tripDetails.placesToVisit && tripDetails.placesToVisit.length > 0 ? (
             <PlacesToVisit places={tripDetails.placesToVisit} />
@@ -1052,46 +1053,9 @@ const TripDetails = () => {
         </div>
       </div>
       <RecommendedHotels city={tripDetails.city} />
-
-      <div className="mb-8" ref={reviewsRef}>
-        <h2 className="section-heading">Reviews & Ratings</h2>
-        <div className="section-content">
-          {tripReviews.length > 0 ? (
-            <div className="space-y-4">
-              {tripReviews.map((review) => (
-                <div
-                  key={review._id || review.id}
-                  className={styles.reviewCard}
-                >
-                  <div className="flex items-center mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <FaStar
-                        key={i}
-                        className={
-                          i < review.rating
-                            ? styles.starSelected
-                            : styles.starUnselected
-                        }
-                      />
-                    ))}
-                  </div>
-                  <p className="detail-text">
-                    {review.message || review.comment}
-                  </p>
-                  <p className={styles.reviewUsername}>
-                    By {review.username || review.user?.username || "Anonymous"}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="empty-section-text">No reviews yet.</p>
-          )}
-        </div>
-      </div>
-      {isUserAuthenticated && (
+{isUserAuthenticated && (
         <div className="mb-8">
-          <h2 className="section-heading">Submit a Review</h2>
+          <h2 className="section-heading-offer">Submit a Review</h2>
           <div className="section-content">
             <form onSubmit={handleReviewSubmit} className={styles.reviewForm}>
               <div>
@@ -1128,7 +1092,46 @@ const TripDetails = () => {
           </div>
         </div>
       )}
+      <div className="mb-8" ref={reviewsRef}>
+        <h2 className="section-heading-offer">Reviews & Ratings</h2>
+        <div className="section-content">
+          {tripReviews.length > 0 ? (
+            <div className="space-y-4">
+              {tripReviews.map((review) => (
+                <div
+                  key={review._id || review.id}
+                  className={styles.reviewCard}
+                >
+                  <div className="flex items-center mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <FaStar
+                        key={i}
+                        className={
+                          i < review.rating
+                            ? styles.starSelected
+                            : styles.starUnselected
+                        }
+                      />
+                    ))}
+                  </div>
+                  <p className="detail-text">
+                    {review.message || review.comment}
+                  </p>
+                  <p className={styles.reviewUsername}>
+                    By {review.username || review.user?.username || "Anonymous"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-section-text">No reviews yet.</p>
+          )}
+        </div>
+      </div>
+      
       <FullScreenModal />
+            <Footer2 />
+
     </>
   );
 };
