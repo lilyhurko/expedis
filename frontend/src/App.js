@@ -15,7 +15,7 @@ import Register from './components/Register.jsx';
 import Profile from './components/Profile.jsx';
 import FeedbackPage from './components/FeedbackPage.jsx';
 import TripDetails from './components/TripDetails.jsx';
-
+import MyBookings from './components/MyBookings.jsx';
 
 function AppWrapper() {
   return (
@@ -42,6 +42,7 @@ function AppWrapper() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/trips" element={<Trips />} />
+        <Route path="/my-bookings" element={<MyBookings />} />
       </Route>
     </Routes>
   );

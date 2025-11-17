@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'; // <--- ВИПРАВЛЕННЯ 1
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import styles from '../assets/styles/Profile.module.css';
 import ForcedLogout from './ForcedLogout.js';
@@ -240,7 +240,7 @@ function Profile() {
               value={topUpAmount}
               onChange={(e) => setTopUpAmount(e.target.value)}
               placeholder="Amount in PLN (e.g., 1000)"
-              min="1"
+              min="0"
               step="100"
               style={{ marginBottom: '1rem', width: '100%', maxWidth: '400px' }}
             />

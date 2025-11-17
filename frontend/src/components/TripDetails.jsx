@@ -22,7 +22,8 @@ import UserNavbar from "./UserNavbar.jsx";
 import Navbar from "./Navbar.jsx";
 import styles from "../assets/styles/TripDetails.module.css";
 import "../assets/styles/Offerts.css";
-import modalStyles from "../assets/styles/Modals.module.css";
+// Імпортуємо нові стилі для модалок
+import modalStyles from "../assets/styles/Modals.module.css"; 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Footer2 from "./Footer2.jsx";
@@ -257,9 +258,67 @@ const TripDetails = () => {
     }
   }, [selectedDepartureAirport, tripDetails]);
 
-  const handleBookNowClick = () => {
-    navigate("/top-up-balance");
+  const handleBookNowClick = async () => {
+    if (!isUserAuthenticated) {
+      alert('Please log in to book a trip.');
+      navigate('/login');
+      return;
+    }
+
+    if (!selectedDate) {
+      alert('Please select a date before booking.');
+      return;
+    }
+
+    const hasErrors = errors.some((error) => error !== "");
+    if (hasErrors) {
+      alert('Please fix errors in travelers (child age) before booking.');
+      setIsModalOpen(true); 
+      return;
+    }
+
+    const bookingData = {
+      offerId: offerId,
+      amount: parseFloat(calculateTotalPrice()),
+      selectedDate: selectedDate,
+      travelers: travelers, 
+    };
+
+    if (bookingData.amount <= 0) {
+      alert('Cannot book with zero total price.');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/bookings/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 402) { 
+          alert(data.message);
+          navigate('/profile'); 
+        } else {
+          throw new Error(data.message || 'Booking failed');
+        }
+      } else {
+        alert(data.message);
+        navigate('/my-bookings'); 
+      }
+    } catch (error) {
+      console.error('Booking error:', error);
+      alert(`An error occurred: ${error.message}`);
+    }
   };
+
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!isUserAuthenticated) {
@@ -401,8 +460,11 @@ const TripDetails = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
     const hasErrors = errors.some((error) => error !== "");
-    if (!hasErrors) setIsModalOpen(false);
-    else alert("Please fix all errors before saving.");
+    if (!hasErrors) {
+      setIsModalOpen(false);
+    } else {
+      alert("Please fix all errors before saving.");
+    }
   };
   const averageRating = useMemo(() => {
     if (!tripReviews || tripReviews.length === 0) return 0;
@@ -413,34 +475,14 @@ const TripDetails = () => {
     return Math.round(total / tripReviews.length);
   }, [tripReviews]);
 
-  const monthLabels = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  const monthLabels = useMemo(() => [ // useMemo here to fix the warning
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ], []);
 
   const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
   ];
 
   const sortedWeather = useMemo(
@@ -472,7 +514,7 @@ const TripDetails = () => {
         },
       ],
     }),
-    [sortedWeather, monthLabels]
+    [sortedWeather, monthLabels] 
   );
 
   const chartOptions = useMemo(
@@ -585,33 +627,33 @@ const TripDetails = () => {
 
   const FullScreenModal = () => (
     <div
-      className={`${styles.fullscreenModal} ${
-        isFullScreenOpen ? styles.open : ""
+      className={`${modalStyles.fullscreenModal} ${
+        isFullScreenOpen ? modalStyles.open : ""
       }`}
       onClick={closeFullScreen}
     >
       <div
-        className={styles.fullscreenContent}
+        className={modalStyles.fullscreenContent}
         onClick={(e) => e.stopPropagation()}
       >
-        <button className={styles.closeFullscreen} onClick={closeFullScreen}>
+        <button className={modalStyles.closeFullscreen} onClick={closeFullScreen}>
           ×
         </button>
         {tripDetails?.imageUrls && tripDetails.imageUrls[currentSlide] && (
           <img
             src={buildImageUrl(tripDetails.imageUrls[currentSlide])}
             alt="Fullscreen"
-            className={styles.fullscreenImage}
+            className={modalStyles.fullscreenImage}
           />
         )}
         <button
-          className={`${styles.navArrow} ${styles.left}`}
+          className={`${modalStyles.navArrow} ${modalStyles.left}`}
           onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}
         >
           ‹
         </button>
         <button
-          className={`${styles.navArrow} ${styles.right}`}
+          className={`${modalStyles.navArrow} ${modalStyles.right}`}
           onClick={() =>
             setCurrentSlide((prev) =>
               Math.min(tripDetails?.imageUrls?.length - 1 || 0, prev + 1)
@@ -773,71 +815,96 @@ const TripDetails = () => {
             )}
           </div>
         )}
+
+        {/* ===============================================================
+        ОНОВЛЕНИЙ БЛОК МОДАЛЬНОГО ВІКНА
+        =============================================================== */}
         {isModalOpen && (
-          <div className={modalStyles.modalOverlay}>
-            <div className={styles.modalContent}>
-              <h3>Select Travelers</h3>
-              <div className={styles.travelerGroup}>
-                <label>Adults (12+ years):</label>
-                <div className={styles.travelerControls}>
-                  <button
-                    onClick={() => handleTravelerChange("adults", -1)}
-                    disabled={travelers.adults <= 1}
-                  >
-                    -
-                  </button>
-                  <span>{travelers.adults}</span>
-                  <button onClick={() => handleTravelerChange("adults", 1)}>
-                    +
-                  </button>
-                </div>
+          <div className={modalStyles.modalOverlay} onClick={closeModal}>
+            <div className={modalStyles.modal} onClick={(e) => e.stopPropagation()}>
+              
+              <div className={modalStyles.modalHeader}>
+                <h3 className={modalStyles.modalTitle}>Select Travelers</h3>
+                <button className={modalStyles.modalClose} onClick={closeModal}>×</button>
               </div>
-              <div className={styles.travelerGroup}>
-                <label>Children (0–11 years):</label>
-                <div className={styles.travelerControls}>
-                  <button
-                    onClick={() => handleTravelerChange("children", -1)}
-                    disabled={travelers.children.length === 0}
-                  >
-                    -
-                  </button>
-                  <span>{travelers.children.length}</span>
-                  <button onClick={() => handleTravelerChange("children", 1)}>
-                    +
-                  </button>
+
+              <div className={modalStyles.modalBody}>
+                <div className={modalStyles.travelerGroup}>
+                  <label>Adults (12+ years):</label>
+                  <div className={modalStyles.travelerControls}>
+                    <button
+                      onClick={() => handleTravelerChange("adults", -1)}
+                      disabled={travelers.adults <= 1}
+                    >
+                      -
+                    </button>
+                    <span>{travelers.adults}</span>
+                    <button onClick={() => handleTravelerChange("adults", 1)}>
+                      +
+                    </button>
+                  </div>
                 </div>
+
+                <div className={modalStyles.travelerGroup}>
+                  <label>Children (0–11 years):</label>
+                  <div className={modalStyles.travelerControls}>
+                    <button
+                      onClick={() => handleTravelerChange("children", -1)}
+                      disabled={travelers.children.length === 0}
+                    >
+                      -
+                    </button>
+                    <span>{travelers.children.length}</span>
+                    <button onClick={() => handleTravelerChange("children", 1)}>
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {travelers.children.map((child, index) => (
+                  <div key={index} className={modalStyles.childBirthDate}>
+                    <label>Child {index + 1} Date of Birth:</label>
+                    <input
+                      type="date"
+                      value={child.birthDate}
+                      onChange={(e) =>
+                        handleChildBirthDateChange(index, e.target.value)
+                      }
+                      max={new Date().toISOString().split("T")[0]}
+                    />
+                    {child.birthDate && (
+                      <p>
+                        Age: {calculateAge(child.birthDate, selectedDate)} years
+                      </p>
+                    )}
+                    {errors[index] && (
+                      <p className={modalStyles.errorText}>{errors[index]}</p>
+                    )}
+                  </div>
+                ))}
               </div>
-              {travelers.children.map((child, index) => (
-                <div key={index} className={styles.childBirthDate}>
-                  <label>Child {index + 1} Date of Birth:</label>
-                  <input
-                    type="date"
-                    value={child.birthDate}
-                    onChange={(e) =>
-                      handleChildBirthDateChange(index, e.target.value)
-                    }
-                    max={new Date().toISOString().split("T")[0]}
-                  />
-                  {child.birthDate && (
-                    <p>
-                      Age: {calculateAge(child.birthDate, selectedDate)} years
-                    </p>
-                  )}
-                  {errors[index] && (
-                    <p className="error-text">{errors[index]}</p>
-                  )}
-                </div>
-              ))}
-              <button
-                onClick={closeModal}
-                className={styles.modalCloseButton}
-                disabled={errors.some((error) => error !== "")}
-              >
-                Save
-              </button>
+
+              <div className={modalStyles.modalFooter}>
+                <button
+                  onClick={closeModal}
+                  className={modalStyles.btnSecondary} 
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={closeModal}
+                  className={modalStyles.btnPrimary} 
+                  disabled={errors.some((error) => error !== "")}
+                >
+                  Save
+                </button>
+              </div>
+
             </div>
           </div>
         )}
+        {/* =============================================================== */}
+
         <div className={styles.tripTabs}>
           <ul>
             <li onClick={() => handleScrollTo(photosRef)}>Photos</li>
