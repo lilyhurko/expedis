@@ -12,15 +12,18 @@ import RentCar from './components/RentCar.jsx';
 import About from './components/About.jsx';
 import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
-import Profile from './components/Profile.jsx';
 import FeedbackPage from './components/FeedbackPage.jsx';
 import TripDetails from './components/TripDetails.jsx';
+
+import Profile from './components/Profile.jsx';        
+import ProfileDetails from './components/ProfileDetails.jsx'; 
+import Wallet from './components/Wallet.jsx'; 
 import MyBookings from './components/MyBookings.jsx';
+import Wishlist from './components/Wishlist.jsx'; 
 
 function AppWrapper() {
   return (
     <Routes>
-      {/* Public pages in GuestLayout */}
       <Route element={<GuestLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/trips" element={<Trips />} />
@@ -31,7 +34,6 @@ function AppWrapper() {
         <Route path="/register" element={<Register />} />
       </Route>
       
-      {/* Protected pages in UserLayout */}
       <Route
         element={
           <ProtectedRoute>
@@ -39,10 +41,18 @@ function AppWrapper() {
           </ProtectedRoute>
         }
       >
-        <Route path="/profile" element={<Profile />} />
         <Route path="/feedback" element={<FeedbackPage />} />
-        <Route path="/trips" element={<Trips />} />
-        <Route path="/my-bookings" element={<MyBookings />} />
+
+        <Route path="/profile" element={<Profile />}>
+          <Route index element={<ProfileDetails />} />
+          
+          <Route path="wallet" element={<Wallet />} />
+          
+          <Route path="my-bookings" element={<MyBookings />} />
+          
+          <Route path="wishlist" element={<Wishlist />} />
+        </Route>
+
       </Route>
     </Routes>
   );
