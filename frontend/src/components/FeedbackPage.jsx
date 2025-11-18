@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import '../assets/styles/Feedback.css';
+import '../assets/styles/Feedback.css'; 
 import ForcedLogout from './ForcedLogout';
 import { FaTrash, FaEdit } from 'react-icons/fa';
+
+const API_URL = 'http://localhost:5001';
 
 const FeedbackPage = () => {
   const [comments, setComments] = useState([]);
@@ -16,7 +18,7 @@ const FeedbackPage = () => {
     const fetchComments = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch('http://localhost:5001/api/comments');
+        const res = await fetch(`${API_URL}/api/comments`);
         if (!res.ok) throw new Error('Failed to fetch comments');
         const data = await res.json();
         setComments(data);
@@ -27,14 +29,12 @@ const FeedbackPage = () => {
         setIsLoading(false);
       }
     };
-
     fetchComments();
   }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUserString = localStorage.getItem('user');
-
     if (token && storedUserString) {
       try {
         const storedUser = JSON.parse(storedUserString);
@@ -42,7 +42,6 @@ const FeedbackPage = () => {
           setUser(storedUser);
         }
       } catch (error) {
-        console.error('Error parsing user data:', error);
         localStorage.removeItem('user');
       }
     }
@@ -55,7 +54,7 @@ const FeedbackPage = () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5001/api/comments', {
+      const res = await fetch(`${API_URL}/api/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,14 +65,12 @@ const FeedbackPage = () => {
 
       if (!res.ok) throw new Error('Failed to add comment');
 
-      const newComment = await res.json();
-      newComment.createdAt = new Date().toISOString();
-      setComments([newComment, ...comments]);
-
+      const updatedCommentsRes = await fetch(`${API_URL}/api/comments`);
+      const updatedComments = await updatedCommentsRes.json();
+      setComments(updatedComments);
       setMessage('');
       setError('');
     } catch (error) {
-      console.error('Error submitting comment:', error);
       setError('Failed to submit comment');
       ForcedLogout();
     } finally {
@@ -83,23 +80,16 @@ const FeedbackPage = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this comment?')) return;
-
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/comments/${id}`, {
+      const res = await fetch(`${API_URL}/api/comments/${id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) throw new Error('Failed to delete comment');
-
       setComments(comments.filter(comment => comment._id !== id));
-      setError('');
     } catch (err) {
-      console.error('Error deleting comment:', err);
       setError('Failed to delete comment');
       ForcedLogout();
     } finally {
@@ -119,11 +109,10 @@ const FeedbackPage = () => {
 
   const handleUpdate = async () => {
     if (!editingMessage.trim()) return;
-
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/comments/${editingId}`, {
+      const res = await fetch(`${API_URL}/api/comments/${editingId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -141,9 +130,7 @@ const FeedbackPage = () => {
       ));
       setEditingId(null);
       setEditingMessage('');
-      setError('');
     } catch (err) {
-      console.error('Error updating comment:', err);
       setError('Failed to update comment');
       ForcedLogout();
     } finally {
@@ -151,20 +138,25 @@ const FeedbackPage = () => {
     }
   };
 
+  const getAvatarUrl = (userData) => {
+    if (userData && userData.avatar) {
+      if (userData.avatar.startsWith('http')) return userData.avatar;
+      return `${API_URL}${userData.avatar}`;
+    }
+    return 'https://via.placeholder.com/50?text=U';
+  };
+
   return (
     <div className="feedback-page">
       <div className="feedback-container">
         <h2>Leave Feedback</h2>
-
         {error && <div className="alert alert-danger">{error}</div>}
 
         {user ? (
           user.role !== 'admin' ? (
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label htmlFor="commentTextarea" className="form-label">
-                  Your Comment
-                </label>
+                <label htmlFor="commentTextarea" className="form-label">Your Comment</label>
                 <textarea
                   id="commentTextarea"
                   className="form-control"
@@ -175,98 +167,90 @@ const FeedbackPage = () => {
                   disabled={isLoading}
                 />
               </div>
-              <button 
-                type="submit" 
-                className="btn btn-primary"
-                disabled={isLoading || !message.trim()}
-              >
+              <button type="submit" className="btn btn-primary" disabled={isLoading || !message.trim()}>
                 {isLoading ? 'Submitting...' : 'Submit'}
               </button>
             </form>
-          ) : (
-            <p className="text-muted">Admins cannot submit comments.</p>
-          )
-        ) : (
-          <p className="text-muted">Please log in to leave a comment.</p>
-        )}
+          ) : <p className="text-muted">Admins cannot submit comments.</p>
+        ) : <p className="text-muted">Please log in to leave a comment.</p>}
 
         <hr />
-
         <h4>All Comments</h4>
         {isLoading && comments.length === 0 ? (
           <div className="text-center">Loading comments...</div>
         ) : comments.length > 0 ? (
           <div className="comments-container">
-            {comments.map((comment) => (
-              <div key={comment._id} className="comment card mb-3">
-                <div className="card-body position-relative">
-                  
-                  {user && (user.role === 'admin' || user.id === comment.userId || user._id === comment.userId) && (
-                    <div className="admin-actions">
-                      {(user.id === comment.userId || user._id === comment.userId) && (
-                        <button
-                          className="edit-icon-button"
-                          onClick={() => handleEdit(comment)}
-                          disabled={isLoading}
-                          title="Edit"
-                        >
-                          <FaEdit className="edit-icon" />
-                        </button>
-                      )}
-                      <button
-                        className="delete-icon-button"
-                        onClick={() => handleDelete(comment._id)}
-                        disabled={isLoading}
-                        title="Delete"
-                      >
-                        <FaTrash className="delete-icon" />
-                      </button>
-                    </div>
-                  )}
+            {comments.map((comment) => {
+              const commentUser = comment.userId || {};
+              const isOwner = user && (user.id === commentUser._id || user._id === commentUser._id);
+              const isAdmin = user && user.role === 'admin';
+              const showActions = isAdmin || isOwner;
 
-                  <div className="d-flex justify-content-between align-items-start">
-                    <h5 className="card-title">{comment.username}</h5>
-                    <small className="comment-date text-muted">
-                      {new Date(comment.createdAt).toLocaleDateString()}
-                    </small>
-                  </div>
-
-                  {editingId === comment._id ? (
-                    <>
-                      <textarea
-                        className="form-control mt-2 mb-2"
-                        rows="3"
-                        value={editingMessage}
-                        onChange={(e) => setEditingMessage(e.target.value)}
-                        disabled={isLoading}
-                      />
-                      <div className="d-flex gap-2">
-                        <button
-                          className="btn btn-sm btn-success"
-                          onClick={handleUpdate}
-                          disabled={isLoading || !editingMessage.trim()}
-                        >
-                          {isLoading ? 'Saving...' : 'Save'}
-                        </button>
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={handleCancelEdit}
-                          disabled={isLoading}
-                        >
-                          Cancel
+              return (
+                <div key={comment._id} className="comment card mb-3">
+                  <div className="card-body position-relative">
+                    
+                    {showActions && (
+                      <div className="admin-actions">
+                        {isOwner && (
+                          <button className="edit-icon-button" onClick={() => handleEdit(comment)} disabled={isLoading} title="Edit">
+                            <FaEdit className="edit-icon" />
+                          </button>
+                        )}
+                        <button className="delete-icon-button" onClick={() => handleDelete(comment._id)} disabled={isLoading} title="Delete">
+                          <FaTrash className="delete-icon" />
                         </button>
                       </div>
-                    </>
-                  ) : (
-                    <p className="card-text">{comment.message}</p>
-                  )}
+                    )}
+
+                    <div className="d-flex">
+                      <div className="flex-shrink-0 me-3">
+                        <img 
+                          src={getAvatarUrl(commentUser)} 
+                          alt={commentUser.username || 'User'} 
+                          className="comment-avatar"
+                        />
+                      </div>
+
+                      <div className="comment-content">
+                        <div className={`comment-header ${showActions ? 'has-admin-actions' : ''}`}>
+                          <h5 className="card-title mb-1">
+                            {commentUser.username || comment.username || 'Anonymous'}
+                          </h5>
+                        </div>
+                        <small className="comment-date">
+                            {new Date(comment.createdAt).toLocaleDateString()}
+                        </small>
+
+                        {editingId === comment._id ? (
+                          <div className="mt-2">
+                            <textarea
+                              className="form-control mb-2"
+                              rows="3"
+                              value={editingMessage}
+                              onChange={(e) => setEditingMessage(e.target.value)}
+                              disabled={isLoading}
+                            />
+                            <div className="d-flex gap-2">
+                              <button className="btn btn-sm btn-success" onClick={handleUpdate} disabled={isLoading || !editingMessage.trim()}>
+                                {isLoading ? 'Saving...' : 'Save'}
+                              </button>
+                              <button className="btn btn-sm btn-secondary" onClick={handleCancelEdit} disabled={isLoading}>
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="card-text text-break">{comment.message}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        ) : (
-          <p className="text-muted">No comments yet. Be the first to share your thoughts!</p>
-        )}
+        ) : <p className="text-muted">No comments yet.</p>}
       </div>
     </div>
   );

@@ -816,9 +816,7 @@ const TripDetails = () => {
           </div>
         )}
 
-        {/* ===============================================================
-        ОНОВЛЕНИЙ БЛОК МОДАЛЬНОГО ВІКНА
-        =============================================================== */}
+        
         {isModalOpen && (
           <div className={modalStyles.modalOverlay} onClick={closeModal}>
             <div className={modalStyles.modal} onClick={(e) => e.stopPropagation()}>
@@ -903,7 +901,6 @@ const TripDetails = () => {
             </div>
           </div>
         )}
-        {/* =============================================================== */}
 
         <div className={styles.tripTabs}>
           <ul>
