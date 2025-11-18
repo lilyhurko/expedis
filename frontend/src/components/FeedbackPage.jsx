@@ -72,7 +72,6 @@ const FeedbackPage = () => {
       setError('');
     } catch (error) {
       setError('Failed to submit comment');
-      ForcedLogout();
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +90,6 @@ const FeedbackPage = () => {
       setComments(comments.filter(comment => comment._id !== id));
     } catch (err) {
       setError('Failed to delete comment');
-      ForcedLogout();
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +130,6 @@ const FeedbackPage = () => {
       setEditingMessage('');
     } catch (err) {
       setError('Failed to update comment');
-      ForcedLogout();
     } finally {
       setIsLoading(false);
     }
