@@ -22,8 +22,7 @@ import UserNavbar from "./UserNavbar.jsx";
 import Navbar from "./Navbar.jsx";
 import styles from "../assets/styles/TripDetails.module.css";
 import "../assets/styles/Offerts.css";
-// Імпортуємо нові стилі для модалок
-import modalStyles from "../assets/styles/Modals.module.css"; 
+import modalStyles from "../assets/styles/Modals.module.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Footer2 from "./Footer2.jsx";
@@ -260,20 +259,20 @@ const TripDetails = () => {
 
   const handleBookNowClick = async () => {
     if (!isUserAuthenticated) {
-      alert('Please log in to book a trip.');
-      navigate('/login');
+      alert("Please log in to book a trip.");
+      navigate("/login");
       return;
     }
 
     if (!selectedDate) {
-      alert('Please select a date before booking.');
+      alert("Please select a date before booking.");
       return;
     }
 
     const hasErrors = errors.some((error) => error !== "");
     if (hasErrors) {
-      alert('Please fix errors in travelers (child age) before booking.');
-      setIsModalOpen(true); 
+      alert("Please fix errors in travelers (child age) before booking.");
+      setIsModalOpen(true);
       return;
     }
 
@@ -281,21 +280,21 @@ const TripDetails = () => {
       offerId: offerId,
       amount: parseFloat(calculateTotalPrice()),
       selectedDate: selectedDate,
-      travelers: travelers, 
+      travelers: travelers,
     };
 
     if (bookingData.amount <= 0) {
-      alert('Cannot book with zero total price.');
+      alert("Cannot book with zero total price.");
       return;
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await fetch(`${apiUrl}/api/bookings/create`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(bookingData),
       });
@@ -303,18 +302,18 @@ const TripDetails = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 402) { 
+        if (response.status === 402) {
           alert(data.message);
-          navigate('/profile'); 
+          navigate("/profile");
         } else {
-          throw new Error(data.message || 'Booking failed');
+          throw new Error(data.message || "Booking failed");
         }
       } else {
         alert(data.message);
-        navigate('/my-bookings'); 
+        navigate("/my-bookings");
       }
     } catch (error) {
-      console.error('Booking error:', error);
+      console.error("Booking error:", error);
       alert(`An error occurred: ${error.message}`);
     }
   };
@@ -475,14 +474,38 @@ const TripDetails = () => {
     return Math.round(total / tripReviews.length);
   }, [tripReviews]);
 
-  const monthLabels = useMemo(() => [ // useMemo here to fix the warning
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  ], []);
+  const monthLabels = useMemo(
+    () => [
+      // useMemo here to fix the warning
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
+    []
+  );
 
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const sortedWeather = useMemo(
@@ -514,7 +537,7 @@ const TripDetails = () => {
         },
       ],
     }),
-    [sortedWeather, monthLabels] 
+    [sortedWeather, monthLabels]
   );
 
   const chartOptions = useMemo(
@@ -636,7 +659,10 @@ const TripDetails = () => {
         className={modalStyles.fullscreenContent}
         onClick={(e) => e.stopPropagation()}
       >
-        <button className={modalStyles.closeFullscreen} onClick={closeFullScreen}>
+        <button
+          className={modalStyles.closeFullscreen}
+          onClick={closeFullScreen}
+        >
           ×
         </button>
         {tripDetails?.imageUrls && tripDetails.imageUrls[currentSlide] && (
@@ -665,6 +691,13 @@ const TripDetails = () => {
       </div>
     </div>
   );
+
+  const getAvatarUrl = (avatarPath) => {
+    if (!avatarPath)
+      return "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    if (avatarPath.startsWith("http")) return avatarPath;
+    return `${apiUrl}${avatarPath}`;
+  };
 
   const sampleTripDescription = `Embark on an unforgettable journey to ${tripDetails.city}, ${tripDetails.country}, where ancient history blends seamlessly with vibrant modern life. Over ${tripDetails.duration} days, you'll explore iconic landmarks like the historic old town and stunning coastal views. Indulge in authentic local cuisine, from fresh seafood to traditional pastries, and unwind in charming accommodations. This carefully curated trip includes guided tours, insider tips, and plenty of free time to discover hidden gems at your own pace. Whether you're a culture enthusiast or a nature lover, this adventure promises memories that last a lifetime.`;
 
@@ -816,14 +849,17 @@ const TripDetails = () => {
           </div>
         )}
 
-        
         {isModalOpen && (
           <div className={modalStyles.modalOverlay} onClick={closeModal}>
-            <div className={modalStyles.modal} onClick={(e) => e.stopPropagation()}>
-              
+            <div
+              className={modalStyles.modal}
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className={modalStyles.modalHeader}>
                 <h3 className={modalStyles.modalTitle}>Select Travelers</h3>
-                <button className={modalStyles.modalClose} onClick={closeModal}>×</button>
+                <button className={modalStyles.modalClose} onClick={closeModal}>
+                  ×
+                </button>
               </div>
 
               <div className={modalStyles.modalBody}>
@@ -885,19 +921,18 @@ const TripDetails = () => {
               <div className={modalStyles.modalFooter}>
                 <button
                   onClick={closeModal}
-                  className={modalStyles.btnSecondary} 
+                  className={modalStyles.btnSecondary}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={closeModal}
-                  className={modalStyles.btnPrimary} 
+                  className={modalStyles.btnPrimary}
                   disabled={errors.some((error) => error !== "")}
                 >
                   Save
                 </button>
               </div>
-
             </div>
           </div>
         )}
@@ -1117,7 +1152,8 @@ const TripDetails = () => {
         </div>
       </div>
       <RecommendedHotels city={tripDetails.city} />
-{isUserAuthenticated && (
+
+      {isUserAuthenticated && (
         <div className="mb-8">
           <h2 className="section-heading-offer">Submit a Review</h2>
           <div className="section-content">
@@ -1144,7 +1180,7 @@ const TripDetails = () => {
                   name="comment"
                   value={newReviewInput.comment}
                   onChange={handleReviewInputChange}
-                  className={styles.reviewTextarea} 
+                  className={styles.reviewTextarea}
                   rows="4"
                   placeholder="Write your review..."
                 />
@@ -1156,46 +1192,73 @@ const TripDetails = () => {
           </div>
         </div>
       )}
+
       <div className="mb-8" ref={reviewsRef}>
         <h2 className="section-heading-offer">Reviews & Ratings</h2>
         <div className="section-content">
           {tripReviews.length > 0 ? (
             <div className="space-y-4">
-              {tripReviews.map((review) => (
-                <div
-                  key={review._id || review.id}
-                  className={styles.reviewCard}
-                >
-                  <div className="flex items-center mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <FaStar
-                        key={i}
-                        className={
-                          i < review.rating
-                            ? styles.starSelected
-                            : styles.starUnselected
-                        }
+              {tripReviews.map((review) => {
+                const userObj =
+                  typeof review.userId === "object" && review.userId !== null
+                    ? review.userId
+                    : {};
+
+                const avatarSrc = userObj.avatar || null;
+                const displayUsername =
+                  userObj.username || review.username || "Anonymous";
+
+                return (
+                  <div
+                    key={review._id || review.id}
+                    className={styles.reviewCard}
+                  >
+                    {/* Header: Avatar + Name + Stars */}
+                    <div className={styles.reviewHeader}>
+                      <img
+                        src={getAvatarUrl(avatarSrc)}
+                        alt="User avatar"
+                        className={styles.reviewAvatar}
+                        onError={(e) => {
+                          e.target.src =
+                            "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                        }}
                       />
-                    ))}
+
+                      <div>
+                        <p className={styles.reviewUsername}>
+                          {displayUsername}
+                        </p>
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <FaStar
+                              key={i}
+                              className={`${
+                                i < review.rating
+                                  ? styles.starSelected
+                                  : styles.starUnselected
+                              } ${styles.reviewStar}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className={`detail-text ${styles.reviewMessage}`}>
+                      {review.message || review.comment}
+                    </p>
                   </div>
-                  <p className="detail-text">
-                    {review.message || review.comment}
-                  </p>
-                  <p className={styles.reviewUsername}>
-                    By {review.username || review.user?.username || "Anonymous"}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="empty-section-text">No reviews yet.</p>
           )}
         </div>
       </div>
-      
-      <FullScreenModal />
-            <Footer2 />
 
+      <FullScreenModal />
+      <Footer2 />
     </>
   );
 };

@@ -25,7 +25,7 @@ router.post("/:offerId/comments", auth, async (req, res) => {
     });
 
     await newComment.save();
-
+    await newComment.populate("userId", "username avatar");
     offer.comments.push(newComment._id);
     await offer.save();
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import '../assets/styles/Feedback.css'; 
 import ForcedLogout from './ForcedLogout';
 import { FaTrash, FaEdit } from 'react-icons/fa';
+import Footer2 from "./Footer2.jsx";
+
 
 const API_URL = 'http://localhost:5001';
 
@@ -144,6 +146,7 @@ const FeedbackPage = () => {
   };
 
   return (
+    <>
     <div className="feedback-page">
       <div className="feedback-container">
         <h2>Leave Feedback</h2>
@@ -249,8 +252,12 @@ const FeedbackPage = () => {
           </div>
         ) : <p className="text-muted">No comments yet.</p>}
       </div>
+
     </div>
+          <Footer2 />
+          </>
   );
+  
 };
 
 export default FeedbackPage;
