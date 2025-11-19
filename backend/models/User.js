@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Offer" }],
   createdAt: {
     type: Date,
     default: Date.now,

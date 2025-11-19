@@ -3,9 +3,9 @@ import PropTypes from "prop-types";
 import Slider from "react-slick";
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-import styles from "../assets/styles/RecommendedHotels.module.css"; // Унікальні стилі
+import styles from "../assets/styles/RecommendedHotels.module.css"; 
 import "../assets/styles/Offerts.css";
-import carouselStyles from "../assets/styles/Carousel.module.css"; // Загальні стилі
+import carouselStyles from "../assets/styles/Carousel.module.css"; 
 
 const NextArrow = ({ onClick }) => (
   <button

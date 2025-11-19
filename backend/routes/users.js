@@ -121,4 +121,45 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
   }
 });
 
+router.get("/wishlist", authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).populate("wishlist");
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user.wishlist);
+  } catch (err) {
+    console.error("Error fetching wishlist:", err);
+    res.status(500).json({ message: "Server error fetching wishlist" });
+  }
+});
+
+router.post("/wishlist/:offerId", authenticate, async (req, res) => {
+  try {
+    const { offerId } = req.params;
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const index = user.wishlist.indexOf(offerId);
+
+    if (index === -1) {
+      user.wishlist.push(offerId);
+      await user.save();
+      return res.json({ message: "Added to wishlist", wishlist: user.wishlist, isAdded: true });
+    } else {
+      user.wishlist.pull(offerId);
+      await user.save();
+      return res.json({ message: "Removed from wishlist", wishlist: user.wishlist, isAdded: false });
+    }
+  } catch (err) {
+    console.error("Error toggling wishlist:", err);
+    res.status(500).json({ message: "Server error updating wishlist" });
+  }
+});
+
 module.exports = router;

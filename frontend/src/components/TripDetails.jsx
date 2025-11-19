@@ -8,6 +8,7 @@ import React, {
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FaStar,
+  FaHeart,
   FaTag,
   FaPlane,
   FaPlaneDeparture,
@@ -15,7 +16,6 @@ import {
   FaSun,
   FaMoon,
   FaTint,
-  FaWater,
 } from "react-icons/fa";
 import PlacesToVisit from "./PlacesToVisit.jsx";
 import UserNavbar from "./UserNavbar.jsx";
@@ -76,6 +76,7 @@ const TripDetails = () => {
     adults: 2,
     children: [],
   });
+  const [isInWishlist, setIsInWishlist] = useState(false);
   const [errors, setErrors] = useState([]);
   const [viewMode, setViewMode] = useState("year");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -256,6 +257,52 @@ const TripDetails = () => {
       }
     }
   }, [selectedDepartureAirport, tripDetails]);
+
+  useEffect(() => {
+    const checkWishlist = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${apiUrl}/api/users/wishlist`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const wishlist = await response.json();
+          const exists = wishlist.some((item) => item._id === offerId);
+          setIsInWishlist(exists);
+        }
+      } catch (error) {
+        console.error("Error checking wishlist:", error);
+      }
+    };
+
+    if (isUserAuthenticated) {
+      checkWishlist();
+    }
+  }, [isUserAuthenticated, offerId, apiUrl]);
+
+  const toggleWishlist = async () => {
+    if (!isUserAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${apiUrl}/api/users/wishlist/${offerId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsInWishlist(data.isAdded);
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+    }
+  };
 
   const handleBookNowClick = async () => {
     if (!isUserAuthenticated) {
@@ -476,7 +523,6 @@ const TripDetails = () => {
 
   const monthLabels = useMemo(
     () => [
-      // useMemo here to fix the warning
       "Jan",
       "Feb",
       "Mar",
@@ -706,8 +752,9 @@ const TripDetails = () => {
       {isUserAuthenticated ? <UserNavbar /> : <Navbar />}
       <div className={styles.tripDetailsPage}>
         <div className={styles.tripHeader}>
-          <h2 className={styles.tripTitle}>{tripDetails.title}</h2>
-          <div className={styles.tripRating}>
+          <div className={styles.titleWrapper}>
+            <h2 className={styles.tripTitle}>{tripDetails.title}</h2>
+            <div className={styles.tripRating}>
             {[...Array(5)].map((_, i) => (
               <FaStar
                 key={i}
@@ -719,10 +766,12 @@ const TripDetails = () => {
               />
             ))}
           </div>
+          </div>
           <p className={styles.tripLocation}>
             {tripDetails.city}, {tripDetails.country}
           </p>
         </div>
+
         <div className={styles.tripGrid}>
           <div className={styles.tripMain}>
             <div className={styles.photoGallery} ref={photosRef}>
@@ -947,18 +996,19 @@ const TripDetails = () => {
           </ul>
         </div>
       </div>
-      <div className="mb-8" ref={descriptionRef}>
-        <h2 className="section-heading-offer">Trip Details</h2>
-        <div className="section-content">
-          <p className="detail-text">
+
+      <div className={styles.sectionWrapper} ref={descriptionRef}>
+        <h2 className={styles.sectionHeading}>Trip Details</h2>
+        <div className={styles.sectionContent}>
+          <p className={styles.detailText}>
             {tripDetails.description || sampleTripDescription}
           </p>
         </div>
       </div>
 
-      <div className="mb-8">
-        <h2 className="section-heading-offer">Flight Details</h2>
-        <div className="section-content">
+      <div className={styles.sectionWrapper}>
+        <h2 className={styles.sectionHeading}>Flight Details</h2>
+        <div className={styles.sectionContent}>
           <div className={styles.flightDetailsGrid}>
             {outboundFlight && (
               <div className={styles.flightSegment}>
@@ -1042,8 +1092,8 @@ const TripDetails = () => {
         </div>
       </div>
 
-      <div className="mb-8" ref={weatherRef}>
-        <h2 className="section-heading-offer">Average Monthly Weather</h2>
+      <div className={styles.sectionWrapper} ref={weatherRef}>
+        <h2 className={styles.sectionHeading}>Average Monthly Weather</h2>
         {monthlyWeather && monthlyWeather.length > 0 ? (
           <div className={styles.weatherChartContainer}>
             <div className={styles.weatherSwitch}>
@@ -1135,19 +1185,19 @@ const TripDetails = () => {
             )}
           </div>
         ) : (
-          <div className="section-content">
-            <p className="empty-section-text">Weather data unavailable.</p>
+          <div className={styles.sectionContent}>
+            <p className={styles.emptySectionText}>Weather data unavailable.</p>
           </div>
         )}
       </div>
 
       <div className="mb-8" ref={placesRef}>
-        <h2 className="section-heading-offer">Places to Visit</h2>
-        <div className="section-content">
+        <h2 className={styles.sectionHeading}>Places to Visit</h2>
+        <div className={styles.sectionContent}>
           {tripDetails.placesToVisit && tripDetails.placesToVisit.length > 0 ? (
             <PlacesToVisit places={tripDetails.placesToVisit} />
           ) : (
-            <p className="empty-section-text">No places listed.</p>
+            <p className={styles.emptySectionText}>No places listed.</p>
           )}
         </div>
       </div>
@@ -1155,8 +1205,8 @@ const TripDetails = () => {
 
       {isUserAuthenticated && (
         <div className="mb-8">
-          <h2 className="section-heading-offer">Submit a Review</h2>
-          <div className="section-content">
+          <h2 className={styles.sectionHeading}>Submit a Review</h2>
+          <div className={styles.sectionContent}>
             <form onSubmit={handleReviewSubmit} className={styles.reviewForm}>
               <div>
                 <label className={styles.reviewLabel}>Rating:</label>
@@ -1194,8 +1244,8 @@ const TripDetails = () => {
       )}
 
       <div className="mb-8" ref={reviewsRef}>
-        <h2 className="section-heading-offer">Reviews & Ratings</h2>
-        <div className="section-content">
+        <h2 className={styles.sectionHeading}>Reviews & Ratings</h2>
+        <div className={styles.sectionContent}>
           {tripReviews.length > 0 ? (
             <div className="space-y-4">
               {tripReviews.map((review) => {
@@ -1213,7 +1263,6 @@ const TripDetails = () => {
                     key={review._id || review.id}
                     className={styles.reviewCard}
                   >
-                    {/* Header: Avatar + Name + Stars */}
                     <div className={styles.reviewHeader}>
                       <img
                         src={getAvatarUrl(avatarSrc)}
@@ -1244,7 +1293,9 @@ const TripDetails = () => {
                       </div>
                     </div>
 
-                    <p className={`detail-text ${styles.reviewMessage}`}>
+                    <p
+                      className={`${styles.detailText} ${styles.reviewMessage}`}
+                    >
                       {review.message || review.comment}
                     </p>
                   </div>
@@ -1252,7 +1303,7 @@ const TripDetails = () => {
               })}
             </div>
           ) : (
-            <p className="empty-section-text">No reviews yet.</p>
+            <p className={styles.emptySectionText}>No reviews yet.</p>
           )}
         </div>
       </div>
@@ -1262,4 +1313,5 @@ const TripDetails = () => {
     </>
   );
 };
+
 export default TripDetails;
