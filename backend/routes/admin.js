@@ -9,7 +9,6 @@ const mongoose = require('mongoose');
 const Offer = require('../models/Offer');
 const Comment = require('../models/Comment');
 
-// --- Offers ---
 
 router.post('/offers', authAdminMiddleware, async (req, res) => {
   try {
@@ -33,7 +32,6 @@ router.get('/offers/pending', authAdminMiddleware, async (req, res) => {
     }
 });
 
-// --- Comments ---
 
 router.delete('/comments', authAdminMiddleware, async (req, res) => {
   try {
@@ -44,7 +42,6 @@ router.delete('/comments', authAdminMiddleware, async (req, res) => {
   }
 });
 
-// --- Top-Ups ---
 
 router.get('/top-ups/pending', authAdminMiddleware, async (req, res) => {
   try {
@@ -90,14 +87,10 @@ router.post('/top-ups/:id/confirm', authAdminMiddleware, async (req, res) => {
   }
 });
 
-// --- Bookings (ВІДНОВЛЕНО ПРОПУЩЕНИЙ РОУТ) ---
+// --- Bookings ---
 
-// 👇 ЦЬОГО РОУТУ НЕ ВИСТАЧАЛО!
 router.get('/bookings/pending', authAdminMiddleware, async (req, res) => {
   try {
-    // Шукаємо бронювання зі статусом, який вимагає підтвердження адміна
-    // ВАЖЛИВО: Переконайся, що статус в базі збігається ('pending_admin_confirmation' або 'pending')
-    // Я шукаю обидва варіанти про всяк випадок, або використай той, що ти записуєш при створенні
     const bookings = await Booking.find({ 
         status: { $in: ['pending_admin_confirmation', 'pending'] } 
     })
@@ -118,7 +111,6 @@ router.post('/bookings/:id/confirm', authAdminMiddleware, async (req, res) => {
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
-    // Тут перевірка сувора, тому якщо статус 'pending', треба його додати сюди теж, або змінити логіку створення
     if (!['pending_admin_confirmation', 'pending'].includes(booking.status)) {
       return res.status(400).json({ message: 'Booking already processed' });
     }
@@ -185,6 +177,41 @@ router.post('/bookings/:id/reject', authAdminMiddleware, async (req, res) => {
   } finally {
     session.endSession();
   }
+});
+
+
+router.get('/users', authAdminMiddleware, async (req, res) => {
+    try {
+        const users = await User.find().select('-password').sort({ createdAt: -1 });
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+router.patch('/users/:id/role', authAdminMiddleware, async (req, res) => {
+    try {
+        const { role } = req.body;
+        if (!['user', 'agency', 'admin', 'car_rental'].includes(role)) {
+            return res.status(400).json({ message: 'Invalid role specified.' });
+        }
+
+        const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-password');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        res.json({ message: `User role updated to ${role}`, user });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+router.delete('/users/:id', authAdminMiddleware, async (req, res) => {
+    try {
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ message: 'User permanently deleted.' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 module.exports = router;

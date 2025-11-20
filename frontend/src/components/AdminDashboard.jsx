@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import styles from '../assets/styles/AdminDashboard.module.css';
-import { FaCheckCircle, FaTimesCircle, FaGlobe, FaDollarSign, FaUsers, FaTasks } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaGlobe, FaDollarSign, FaUsers, FaTasks, FaTrash, FaUserTag } from 'react-icons/fa';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
@@ -64,6 +64,8 @@ function AdminDashboard() {
 }
 export default AdminDashboard;
 
+
+// --- 1. Offers Review ---
 const OffersReview = ({ authHeaders }) => {
     const [pendingOffers, setPendingOffers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -71,84 +73,47 @@ const OffersReview = ({ authHeaders }) => {
 
     const fetchPendingOffers = useCallback(async () => {
         setLoading(true);
-        setError(null);
         try {
             const response = await axios.get(`${API_URL}/api/admin/offers/pending`, authHeaders);
             setPendingOffers(response.data);
         } catch (err) {
-            console.error("Error fetching pending offers:", err);
             setError(err.response?.data?.message || "Failed to load offers.");
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false); }
     }, [authHeaders]);
 
     const handleOfferStatusChange = async (offerId, status) => {
-        const isApproved = status === 'active';
-        const confirmMsg = isApproved 
-            ? 'Are you sure you want to approve this offer?' 
-            : 'Are you sure you want to reject this offer?';
-            
-        if (!window.confirm(confirmMsg)) return;
-
+        if (!window.confirm(`Are you sure you want to ${status} this offer?`)) return;
         try {
             await axios.patch(`${API_URL}/api/offers/${offerId}/status`, { status }, authHeaders);
-            setPendingOffers(prev => prev.filter(offer => offer._id !== offerId));
-            alert(`Offer successfully ${isApproved ? 'approved' : 'rejected'}.`);
-        } catch (err) {
-            alert(`Error: ${err.response?.data?.message || 'Failed.'}`);
-        }
+            setPendingOffers(prev => prev.filter(o => o._id !== offerId));
+            alert(`Offer ${status}d.`);
+        } catch (err) { alert(err.message); }
     };
 
-    useEffect(() => {
-        fetchPendingOffers();
-    }, [fetchPendingOffers]);
+    useEffect(() => { fetchPendingOffers(); }, [fetchPendingOffers]);
 
-    if (loading) return <div>Loading offers...</div>;
-    if (error) return <div style={{color: 'red'}} className={styles.emptyState}>Error: {error}</div>;
-    
-    if (pendingOffers.length === 0) {
-        return <div className={styles.emptyState}>No offers currently require review.</div>;
-    }
+    if (loading) return <div>Loading...</div>;
+    if (error) return <div className={styles.errorMessage}>Error: {error}</div>;
+    if (pendingOffers.length === 0) return <div className={styles.emptyState}>No pending offers.</div>;
 
     return (
         <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>Offers for Review ({pendingOffers.length})</h3>
+            <h3 className={styles.sectionTitle}>Offers Review</h3>
             <div className={styles.tableWrapper}>
                 <table className={styles.offerTable}>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Title</th>
-                            <th>Agency</th>
-                            <th>Price / Duration</th>
-                            <th>Created At</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Title</th><th>Agency</th><th>Price</th><th>Actions</th></tr></thead>
                     <tbody>
-                        {pendingOffers.map(offer => (
-                            <tr key={offer._id}>
-                                <td>{offer._id.slice(-6)}</td>
-                                <td>{offer.title}</td>
-                                <td>{offer.creator?.name || 'Unknown'} <br/><small>{offer.creator?.email}</small></td>
-                                <td>{offer.price} PLN / {offer.duration} days</td>
-                                <td>{new Date(offer.createdAt).toLocaleDateString()}</td>
+                        {pendingOffers.map(o => (
+                            <tr key={o._id}>
+                                <td>{o.title}</td>
                                 <td>
-                                    <button 
-                                        onClick={() => handleOfferStatusChange(offer._id, 'active')}
-                                        className={`${styles.actionBtn} ${styles.approveBtn}`}
-                                        title="Approve"
-                                    >
-                                        <FaCheckCircle /> Approve
-                                    </button>
-                                    <button 
-                                        onClick={() => handleOfferStatusChange(offer._id, 'rejected')}
-                                        className={`${styles.actionBtn} ${styles.rejectBtn}`}
-                                        title="Reject"
-                                    >
-                                        <FaTimesCircle /> Reject
-                                    </button>
+                                    {o.creator?.name || 'Unknown'} <br/>
+                                    <span className={styles.smallText}>{o.creator?.email}</span>
+                                </td>
+                                <td>{o.price} PLN</td>
+                                <td>
+                                    <button onClick={() => handleOfferStatusChange(o._id, 'active')} className={`${styles.actionBtn} ${styles.approveBtn}`}><FaCheckCircle/> Approve</button>
+                                    <button onClick={() => handleOfferStatusChange(o._id, 'rejected')} className={`${styles.actionBtn} ${styles.rejectBtn}`}><FaTimesCircle/> Reject</button>
                                 </td>
                             </tr>
                         ))}
@@ -159,69 +124,51 @@ const OffersReview = ({ authHeaders }) => {
     );
 };
 
+// --- 2. Top-Ups ---
 const TopUpsTable = ({ authHeaders }) => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
+    
     const fetchRequests = useCallback(async () => {
         setLoading(true);
-        setError(null);
         try {
             const response = await axios.get(`${API_URL}/api/admin/top-ups/pending`, authHeaders);
             setRequests(response.data);
-        } catch (err) {
-            setError(err.response?.data?.message || "Failed to load top-up requests.");
-        } finally {
-            setLoading(false);
-        }
+        } catch (err) { setError(err.message); } finally { setLoading(false); }
     }, [authHeaders]);
 
-    const handleConfirm = async (requestId) => {
-        if (!window.confirm("Confirm top-up? Funds will be added to user's balance.")) return;
+    const handleConfirm = async (id) => {
+        if(!window.confirm("Confirm top-up?")) return;
         try {
-            await axios.post(`${API_URL}/api/admin/top-ups/${requestId}/confirm`, {}, authHeaders);
-            setRequests(prev => prev.filter(req => req._id !== requestId));
-            alert("Top-up confirmed.");
-        } catch (err) {
-            alert(`Error: ${err.response?.data?.message || 'Failed.'}`);
-        }
+            await axios.post(`${API_URL}/api/admin/top-ups/${id}/confirm`, {}, authHeaders);
+            setRequests(prev => prev.filter(r => r._id !== id));
+            alert("Confirmed.");
+        } catch(e) { alert(e.message); }
     };
-    
-    useEffect(() => {
-        fetchRequests();
-    }, [fetchRequests]);
 
-    if (loading) return <div>Loading top-up requests...</div>;
-    if (error) return <div className={styles.emptyState} style={{color: 'red'}}>Error: {error}</div>;
-    if (requests.length === 0) return <div className={styles.emptyState}>No pending top-up requests.</div>;
+    useEffect(() => { fetchRequests(); }, [fetchRequests]);
+
+    if (loading) return <div>Loading...</div>;
+    if (error) return <div className={styles.errorMessage}>Error: {error}</div>;
+    if (requests.length === 0) return <div className={styles.emptyState}>No pending requests.</div>;
 
     return (
         <section>
-            <h3 className={styles.sectionTitle}>Top-Up Requests ({requests.length})</h3>
+            <h3 className={styles.sectionTitle}>Top-Ups</h3>
             <div className={styles.tableWrapper}>
                 <table className={styles.offerTable}>
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Email</th>
-                            <th>Amount (PLN)</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>User</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead>
                     <tbody>
-                        {requests.map(req => (
-                            <tr key={req._id}>
-                                <td>{req.user?.name} {req.user?.surname}</td>
-                                <td>{req.user?.email}</td>
-                                <td>{req.amount.toFixed(2)}</td>
-                                <td>{new Date(req.createdAt).toLocaleDateString()}</td>
+                        {requests.map(r => (
+                            <tr key={r._id}>
                                 <td>
-                                    <button onClick={() => handleConfirm(req._id)} className={`${styles.actionBtn} ${styles.approveBtn}`}>
-                                        <FaCheckCircle /> Confirm
-                                    </button>
+                                    {r.user?.email} <br/>
+                                    <span className={styles.smallText}>{r.user?.name} {r.user?.surname}</span>
                                 </td>
+                                <td>{r.amount} PLN</td>
+                                <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+                                <td><button onClick={() => handleConfirm(r._id)} className={`${styles.actionBtn} ${styles.approveBtn}`}><FaCheckCircle/> Confirm</button></td>
                             </tr>
                         ))}
                     </tbody>
@@ -231,6 +178,7 @@ const TopUpsTable = ({ authHeaders }) => {
     );
 };
 
+// --- 3. Bookings ---
 const BookingsReview = ({ authHeaders }) => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -238,91 +186,45 @@ const BookingsReview = ({ authHeaders }) => {
 
     const fetchBookings = useCallback(async () => {
         setLoading(true);
-        setError(null);
         try {
             const response = await axios.get(`${API_URL}/api/admin/bookings/pending`, authHeaders);
             setBookings(response.data);
-        } catch (err) {
-            console.error("Error fetching bookings:", err);
-            setError(err.response?.data?.message || "Failed to load pending bookings.");
-        } finally {
-            setLoading(false);
-        }
+        } catch (err) { setError(err.message); } finally { setLoading(false); }
     }, [authHeaders]);
 
-    const handleBookingAction = async (bookingId, action) => {
-        const confirmMsg = action === 'confirm' 
-            ? "Confirm this booking? Funds will be transferred to Agency." 
-            : "Reject this booking? Funds will be returned to User.";
-            
-        if (!window.confirm(confirmMsg)) return;
-
+    const handleAction = async (id, action) => {
+        if(!window.confirm(`${action} booking?`)) return;
         try {
-            await axios.post(`${API_URL}/api/admin/bookings/${bookingId}/${action}`, {}, authHeaders);
-            setBookings(prev => prev.filter(b => b._id !== bookingId));
-            alert(`Booking ${action}ed successfully.`);
-        } catch (err) {
-            const msg = err.response?.data?.message || `Failed to ${action} booking.`;
-            alert(`Error: ${msg}`);
-        }
+            await axios.post(`${API_URL}/api/admin/bookings/${id}/${action}`, {}, authHeaders);
+            setBookings(prev => prev.filter(b => b._id !== id));
+            alert(`Booking ${action}ed.`);
+        } catch(e) { alert(e.message); }
     };
 
-    useEffect(() => {
-        fetchBookings();
-    }, [fetchBookings]);
+    useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
-    if (loading) return <div>Loading pending bookings...</div>;
-    if (error) return <div className={styles.emptyState} style={{color: 'red'}}>Error: {error}</div>;
-    
-    if (bookings.length === 0) {
-        return <div className={styles.emptyState}>No pending bookings found.</div>;
-    }
+    if(loading) return <div>Loading...</div>;
+    if(error) return <div className={styles.errorMessage}>Error: {error}</div>;
+    if(bookings.length === 0) return <div className={styles.emptyState}>No pending bookings.</div>;
 
     return (
-        <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>Pending Bookings ({bookings.length})</h3>
+        <section>
+            <h3 className={styles.sectionTitle}>Pending Bookings</h3>
             <div className={styles.tableWrapper}>
                 <table className={styles.offerTable}>
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Tour</th>
-                            <th>Date</th>
-                            <th>Travelers</th>
-                            <th>Amount</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>User</th><th>Tour</th><th>Amount</th><th>Action</th></tr></thead>
                     <tbody>
-                        {bookings.map(booking => (
-                            <tr key={booking._id}>
+                        {bookings.map(b => (
+                            <tr key={b._id}>
                                 <td>
-                                    {booking.user?.name} {booking.user?.surname} <br/>
-                                    <small>{booking.user?.email}</small>
+                                    {b.user?.email} <br/>
+                                    <span className={styles.smallText}>{b.user?.name} {b.user?.surname}</span>
                                 </td>
-                                <td>{booking.offer?.title || 'Unknown'}</td>
-                                <td>{new Date(booking.selectedDate).toLocaleDateString()}</td>
+                                <td>{b.offer?.title}</td>
+                                <td>{b.amount} PLN</td>
                                 <td>
-                                    {typeof booking.travelers === 'object' 
-                                        ? `${booking.travelers.adults} Ad, ${booking.travelers.children?.length || 0} Ch`
-                                        : booking.travelers}
-                                </td>
-                                <td>{booking.amount} PLN</td>
-                                <td>
-                                    <button 
-                                        onClick={() => handleBookingAction(booking._id, 'confirm')}
-                                        className={`${styles.actionBtn} ${styles.approveBtn}`}
-                                        title="Confirm Booking"
-                                    >
-                                        <FaCheckCircle /> Confirm
-                                    </button>
-                                    <button 
-                                        onClick={() => handleBookingAction(booking._id, 'reject')}
-                                        className={`${styles.actionBtn} ${styles.rejectBtn}`}
-                                        title="Reject Booking"
-                                    >
-                                        <FaTimesCircle /> Reject
-                                    </button>
+                                    <button onClick={() => handleAction(b._id, 'confirm')} className={`${styles.actionBtn} ${styles.approveBtn}`}>Confirm</button>
+                                    <button onClick={() => handleAction(b._id, 'reject')} className={`${styles.actionBtn} ${styles.rejectBtn}`}>Reject</button>
                                 </td>
                             </tr>
                         ))}
@@ -333,4 +235,118 @@ const BookingsReview = ({ authHeaders }) => {
     );
 };
 
-const UserManagement = () => <p className={styles.emptyState}>TODO: Implement User Management Table.</p>;
+
+// --- 4. User Management ---
+const UserManagement = ({ authHeaders }) => {
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchUsers = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get(`${API_URL}/api/admin/users`, authHeaders);
+            setUsers(response.data);
+        } catch (err) {
+            console.error("Error fetching users:", err);
+            setError(err.response?.data?.message || "Failed to load users.");
+        } finally {
+            setLoading(false);
+        }
+    }, [authHeaders]);
+
+    const handleChangeRole = async (userId, currentRole) => {
+        const newRole = prompt("Enter new role (user / agency / admin):", currentRole);
+        if (!newRole || newRole === currentRole) return;
+        
+        if (!['user', 'agency', 'admin'].includes(newRole)) {
+            alert("Invalid role! Use: user, agency, or admin.");
+            return;
+        }
+
+        try {
+            await axios.patch(`${API_URL}/api/admin/users/${userId}/role`, { role: newRole }, authHeaders);
+            setUsers(prev => prev.map(u => u._id === userId ? { ...u, role: newRole } : u));
+            alert(`Role updated to ${newRole}`);
+        } catch (err) {
+            alert(`Error: ${err.response?.data?.message}`);
+        }
+    };
+
+    const handleDeleteUser = async (userId) => {
+        if (!window.confirm("Are you sure you want to PERMANENTLY delete this user?")) return;
+        try {
+            await axios.delete(`${API_URL}/api/admin/users/${userId}`, authHeaders);
+            setUsers(prev => prev.filter(u => u._id !== userId));
+            alert("User deleted.");
+        } catch (err) {
+            alert(`Error: ${err.response?.data?.message}`);
+        }
+    };
+
+    // Helper to get correct badge style
+    const getRoleBadgeClass = (role) => {
+        switch(role) {
+            case 'admin': return `${styles.roleBadge} ${styles.roleAdmin}`;
+            case 'agency': return `${styles.roleBadge} ${styles.roleAgency}`;
+            default: return `${styles.roleBadge} ${styles.roleUser}`;
+        }
+    };
+
+    useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+    if (loading) return <div>Loading users...</div>;
+    if (error) return <div className={styles.errorMessage}>Error: {error}</div>;
+
+    return (
+        <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>All Users ({users.length})</h3>
+            <div className={styles.tableWrapper}>
+                <table className={styles.offerTable}>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Balance</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.map(user => (
+                            <tr key={user._id}>
+                                <td>
+                                    {user.name} {user.surname} <br/> 
+                                    <span className={styles.smallText}>@{user.username}</span>
+                                </td>
+                                <td>{user.email}</td>
+                                <td>
+                                    <span className={getRoleBadgeClass(user.role)}>
+                                        {user.role.toUpperCase()}
+                                    </span>
+                                </td>
+                                <td>{user.balance?.toFixed(2)} PLN</td>
+                                <td>
+                                    <button 
+                                        onClick={() => handleChangeRole(user._id, user.role)}
+                                        className={`${styles.actionBtn} ${styles.warningBtn}`}
+                                        title="Change Role"
+                                    >
+                                        <FaUserTag /> Role
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteUser(user._id)}
+                                        className={`${styles.actionBtn} ${styles.rejectBtn}`}
+                                        title="Delete User"
+                                    >
+                                        <FaTrash /> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    );
+};
