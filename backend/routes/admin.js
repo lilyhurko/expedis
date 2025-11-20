@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authAdmin = require('../middleware/authAdminMiddleware'); // Ваш адмін-middleware
-
-
+const authAdminMiddleware = require('../middleware/authAdminMiddleware');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
 const TopUpRequest = require('../models/TopUpRequest');
@@ -13,7 +11,7 @@ const Comment = require('../models/Comment');
 
 
 
-router.post('/offers', authAdmin, async (req, res) => {
+router.post('/offers', authAdminMiddleware, async (req, res) => {
   try {
     const { title, description, price, duration, imageUrl } = req.body;
     const offer = new Offer({ title, description, price, duration, imageUrl });
@@ -24,7 +22,7 @@ router.post('/offers', authAdmin, async (req, res) => {
   }
 });
 
-router.delete('/comments', authAdmin, async (req, res) => {
+router.delete('/comments', authAdminMiddleware, async (req, res) => {
   try {
     await Comment.deleteMany({});
     res.status(200).json({ message: 'All comments deleted' });
@@ -35,7 +33,7 @@ router.delete('/comments', authAdmin, async (req, res) => {
 
 
 
-router.get('/top-ups/pending', authAdmin, async (req, res) => {
+router.get('/top-ups/pending', authAdminMiddleware, async (req, res) => {
   try {
     const requests = await TopUpRequest.find({ status: 'pending' })
       .populate('user', 'username email name surname');
@@ -46,7 +44,7 @@ router.get('/top-ups/pending', authAdmin, async (req, res) => {
 });
 
 
-router.post('/top-ups/:id/confirm', authAdmin, async (req, res) => {
+router.post('/top-ups/:id/confirm', authAdminMiddleware, async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -80,19 +78,19 @@ router.post('/top-ups/:id/confirm', authAdmin, async (req, res) => {
 });
 
 
-router.get('/bookings/pending', authAdmin, async (req, res) => {
+router.get('/offers/pending', authAdminMiddleware, async (req, res) => {
    try {
-    const bookings = await Booking.find({ status: 'pending_admin_confirmation' })
-      .populate('user', 'username name surname')
-      .populate('offer', 'title');
-    res.json(bookings);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+        const offers = await Offer.find({ status: 'pending' })
+            .populate('creator', 'name surname email') 
+            .select('-description -imageUrls -placesToVisit'); 
+        res.json(offers);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 
-router.post('/bookings/:id/confirm', authAdmin, async (req, res) => {
+router.post('/bookings/:id/confirm', authAdminMiddleware, async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -130,7 +128,7 @@ router.post('/bookings/:id/confirm', authAdmin, async (req, res) => {
 });
 
 
-router.post('/bookings/:id/reject', authAdmin, async (req, res) => {
+router.post('/bookings/:id/reject', authAdminMiddleware, async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
