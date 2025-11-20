@@ -288,7 +288,6 @@ const Trips = () => {
     }
   };
 
-  // Функції для бронювання
   const handleBookingSubmit = async (e) => { e.preventDefault(); setSelectedOffer(null); };
   const closeModal = () => { setSelectedOffer(null); setShowAddModal(false); };
   const handleGuestChange = (index, field, value) => {
@@ -297,9 +296,7 @@ const Trips = () => {
     setGuestData(newGuestData);
   };
 
-  // Визначаємо, чи показувати модалку редагування
   const isEditing = selectedOffer && (userRole === "admin" || userRole === "agency");
-  // Визначаємо, чи показувати модалку бронювання (тільки для звичайних юзерів)
   const isBooking = selectedOffer && !isEditing;
 
   return (
@@ -314,8 +311,7 @@ const Trips = () => {
             {searchParams.toString() ? "Search Results" : "All Offers"}
           </h2>
           
-          {/* ЗМІНА 1: Дозволяємо і admin, і agency бачити кнопку додавання */}
-          {(userRole === "admin" || userRole === "agency") && (
+          { userRole === "agency" && (
             <button
               className="add-offer-button"
               onClick={handleAddNewOfferClick}
@@ -336,7 +332,7 @@ const Trips = () => {
                 key={offer._id || index}
                 offer={offer}
                 userRole={userRole}
-                currentUserId={userData.id} // ЗМІНА 2: Передаємо ID поточного юзера
+                currentUserId={userData.id} 
                 handleBookNow={handleBookNow}
                 handleEditOffer={handleEditOffer}
                 handleDeleteOffer={handleDeleteOffer}

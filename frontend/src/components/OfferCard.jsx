@@ -14,7 +14,9 @@ const OfferCard = ({ offer, userRole, currentUserId, handleBookNow, handleEditOf
   const isOwner = userRole === 'agency' && creatorId && currentUserId && (creatorId.toString() === currentUserId.toString());
   const isAdmin = userRole === 'admin';
   
-  const canEdit = isAdmin || isOwner;
+  const canEditOnlyByOwner = isOwner; 
+  const canDelete = isAdmin || isOwner; 
+
 
   useEffect(() => {
     const checkWishlistStatus = async () => {
@@ -79,7 +81,7 @@ const OfferCard = ({ offer, userRole, currentUserId, handleBookNow, handleEditOf
   return (
     <div className={styles.offerCard} key={offer._id} onClick={handleCardClick} style={{ cursor: 'pointer', position: 'relative' }}>
       
-      {!canEdit && (
+      {!canDelete && (
         <button
           onClick={handleToggleWishlist}
           style={{
@@ -106,15 +108,19 @@ const OfferCard = ({ offer, userRole, currentUserId, handleBookNow, handleEditOf
         </button>
       )}
 
-      {canEdit && (
+{canDelete && (
         <div className={styles.adminActions}>
-          <button 
-            className={styles.editIconButton} 
-            onClick={(e) => handleActionClick(e, () => handleEditOffer(offer._id))}
-            aria-label="Edit offer"
-          >
-            <FaEdit className={styles.editIcon} />
-          </button>
+          
+          {canEditOnlyByOwner && (
+              <button 
+                className={styles.editIconButton} 
+                onClick={(e) => handleActionClick(e, () => handleEditOffer(offer._id))}
+                aria-label="Edit offer"
+              >
+                <FaEdit className={styles.editIcon} />
+              </button>
+          )}
+          
           <button 
             className={styles.deleteIconButton} 
             onClick={(e) => handleActionClick(e, () => handleDeleteOffer(offer._id))}
@@ -154,7 +160,7 @@ const OfferCard = ({ offer, userRole, currentUserId, handleBookNow, handleEditOf
         <div className={styles.offerFooter}>
           <span className={styles.offerPrice}>{offer.price || 0} PLN</span>
           <div className={styles.offerActions}>
-            {!canEdit && (
+            {!canDelete && (
               <button 
                 className="book-now-button" 
                 onClick={(e) => handleActionClick(e, () => handleBookNow(offer._id))}
