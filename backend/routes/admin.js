@@ -9,7 +9,7 @@ const mongoose = require('mongoose');
 const Offer = require('../models/Offer');
 const Comment = require('../models/Comment');
 
-
+// --- Offers ---
 
 router.post('/offers', authAdminMiddleware, async (req, res) => {
   try {
@@ -22,6 +22,19 @@ router.post('/offers', authAdminMiddleware, async (req, res) => {
   }
 });
 
+router.get('/offers/pending', authAdminMiddleware, async (req, res) => {
+   try {
+        const offers = await Offer.find({ status: 'pending' })
+            .populate('creator', 'name surname email') 
+            .select('-description -imageUrls -placesToVisit'); 
+        res.json(offers);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// --- Comments ---
+
 router.delete('/comments', authAdminMiddleware, async (req, res) => {
   try {
     await Comment.deleteMany({});
@@ -31,7 +44,7 @@ router.delete('/comments', authAdminMiddleware, async (req, res) => {
   }
 });
 
-
+// --- Top-Ups ---
 
 router.get('/top-ups/pending', authAdminMiddleware, async (req, res) => {
   try {
@@ -77,18 +90,25 @@ router.post('/top-ups/:id/confirm', authAdminMiddleware, async (req, res) => {
   }
 });
 
+// --- Bookings (ВІДНОВЛЕНО ПРОПУЩЕНИЙ РОУТ) ---
 
-router.get('/offers/pending', authAdminMiddleware, async (req, res) => {
-   try {
-        const offers = await Offer.find({ status: 'pending' })
-            .populate('creator', 'name surname email') 
-            .select('-description -imageUrls -placesToVisit'); 
-        res.json(offers);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
+// 👇 ЦЬОГО РОУТУ НЕ ВИСТАЧАЛО!
+router.get('/bookings/pending', authAdminMiddleware, async (req, res) => {
+  try {
+    // Шукаємо бронювання зі статусом, який вимагає підтвердження адміна
+    // ВАЖЛИВО: Переконайся, що статус в базі збігається ('pending_admin_confirmation' або 'pending')
+    // Я шукаю обидва варіанти про всяк випадок, або використай той, що ти записуєш при створенні
+    const bookings = await Booking.find({ 
+        status: { $in: ['pending_admin_confirmation', 'pending'] } 
+    })
+      .populate('user', 'username name surname email')
+      .populate('offer', 'title price');
+      
+    res.json(bookings);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
-
 
 router.post('/bookings/:id/confirm', authAdminMiddleware, async (req, res) => {
   const session = await mongoose.startSession();
@@ -98,7 +118,8 @@ router.post('/bookings/:id/confirm', authAdminMiddleware, async (req, res) => {
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
-    if (booking.status !== 'pending_admin_confirmation') {
+    // Тут перевірка сувора, тому якщо статус 'pending', треба його додати сюди теж, або змінити логіку створення
+    if (!['pending_admin_confirmation', 'pending'].includes(booking.status)) {
       return res.status(400).json({ message: 'Booking already processed' });
     }
 
@@ -136,7 +157,7 @@ router.post('/bookings/:id/reject', authAdminMiddleware, async (req, res) => {
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
-    if (booking.status !== 'pending_admin_confirmation') {
+    if (!['pending_admin_confirmation', 'pending'].includes(booking.status)) {
       return res.status(400).json({ message: 'Booking already processed' });
     }
 
