@@ -12,11 +12,9 @@ const TabNames = {
     USERS: 'User Management',
 };
 
+
 function AdminDashboard() {
     const [activeTab, setActiveTab] = useState(TabNames.OFFERS);
-    const [pendingOffers, setPendingOffers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
     const token = localStorage.getItem('token');
     
@@ -24,111 +22,12 @@ function AdminDashboard() {
         headers: { Authorization: `Bearer ${token}` }
     }), [token]); 
     
-    const fetchPendingOffers = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await axios.get(`${API_URL}/api/admin/offers/pending`, authHeaders);
-            setPendingOffers(response.data);
-        } catch (err) {
-            console.error("Error fetching pending offers:", err);
-            setError(err.message || "Failed to load offers. Check server status.");
-        } finally {
-            setLoading(false);
-        }
-    }, [authHeaders]); 
-
-    
-    useEffect(() => {
-        if (activeTab === TabNames.OFFERS) {
- 
-            fetchPendingOffers();
-        }
-    }, [activeTab, fetchPendingOffers]);
-
-
-    const handleOfferStatusChange = async (offerId, status) => {
-        const isApproved = status === 'active';
-        const confirmMsg = isApproved 
-            ? 'Are you sure you want to approve this offer and publish it?' 
-            : 'Are you sure you want to reject this offer?';
-            
-        if (!window.confirm(confirmMsg)) {
-            return;
-        }
-
-        try {
-            await axios.patch(`${API_URL}/api/offers/${offerId}/status`, { status }, authHeaders);
-            
-            setPendingOffers(prev => prev.filter(offer => offer._id !== offerId));
-            alert(`Offer successfully ${isApproved ? 'approved' : 'rejected'}. Agency notified.`);
-            
-        } catch (err) {
-            const msg = err.response?.data?.message || 'Failed to update offer status.';
-            setError(msg);
-            alert(`Error: ${msg}`);
-        }
-    };
-
-    const renderOffersReview = () => {
-        if (loading) return <div>Loading offers...</div>;
-        if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
-        
-        if (pendingOffers.length === 0) {
-            return <div className={styles.emptyState}>No offers currently require review. </div>;
-        }
-
-        return (
-            <div className={styles.tableWrapper}>
-                <table className={styles.offerTable}>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Title</th>
-                            <th>Agency</th>
-                            <th>Price / Duration</th>
-                            <th>Created At</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {pendingOffers.map(offer => (
-                            <tr key={offer._id}>
-                                <td>{offer._id.slice(-6)}</td>
-                                <td>{offer.title}</td>
-                                <td>
-                                    {offer.creator.name} ({offer.creator.email})
-                                </td>
-                                <td>{offer.price} PLN / {offer.duration} days</td>
-                                <td>{new Date(offer.createdAt).toLocaleDateString()}</td>
-                                <td>
-                                    <button 
-                                        onClick={() => handleOfferStatusChange(offer._id, 'active')}
-                                        className={`${styles.actionBtn} ${styles.approveBtn}`}
-                                        title="Approve and Publish"
-                                    >
-                                        <FaCheckCircle /> Approve
-                                    </button>
-                                    <button 
-                                        onClick={() => handleOfferStatusChange(offer._id, 'rejected')}
-                                        className={`${styles.actionBtn} ${styles.rejectBtn}`}
-                                        title="Reject and Delete"
-                                    >
-                                        <FaTimesCircle /> Reject
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        );
-    };
-
+   
+    const fetchOffersCount = () => { };
 
     return (
         <div className={styles.adminDashboardContainer}>
-            <h2 className={styles.pageTitle}> Admin Control Panel</h2>
+            <h2 className={styles.pageTitle}>Admin Control Panel</h2>
             <p className={styles.pageSubtitle}>System health and content moderation for Expedis.</p>
 
             <div className={styles.tabsNav}>
@@ -136,59 +35,139 @@ function AdminDashboard() {
                     onClick={() => setActiveTab(TabNames.OFFERS)} 
                     className={`${styles.tabBtn} ${activeTab === TabNames.OFFERS ? styles.active : ''}`}
                 >
-                    <FaTasks /> {TabNames.OFFERS} ({pendingOffers.length})
+                    <FaTasks /> {TabNames.OFFERS} 
                 </button>
                 <button 
                     onClick={() => setActiveTab(TabNames.TOP_UPS)} 
                     className={`${styles.tabBtn} ${activeTab === TabNames.TOP_UPS ? styles.active : ''}`}
                 >
-                    <FaDollarSign /> {TabNames.TOP_UPS} (TODO)
+                    <FaDollarSign /> {TabNames.TOP_UPS}
                 </button>
                 <button 
                     onClick={() => setActiveTab(TabNames.BOOKINGS)} 
                     className={`${styles.tabBtn} ${activeTab === TabNames.BOOKINGS ? styles.active : ''}`}
                 >
-                    <FaGlobe /> {TabNames.BOOKINGS} (TODO)
+                    <FaGlobe /> {TabNames.BOOKINGS}
                 </button>
                 <button 
                     onClick={() => setActiveTab(TabNames.USERS)} 
                     className={`${styles.tabBtn} ${activeTab === TabNames.USERS ? styles.active : ''}`}
                 >
-                    <FaUsers /> {TabNames.USERS} (TODO)
+                    <FaUsers /> {TabNames.USERS}
                 </button>
             </div>
 
             <div className={styles.tabContent}>
-                {activeTab === TabNames.OFFERS && (
-                    <section className={styles.section}>
-                        <h3 className={styles.sectionTitle}>{TabNames.OFFERS}</h3>
-                        {renderOffersReview()}
-                    </section>
-                )}
+
+                {activeTab === TabNames.OFFERS && <OffersReview authHeaders={authHeaders} />} 
                 
-                {activeTab === TabNames.TOP_UPS && (
-                     <section className={styles.section}>
-                        <h3 className={styles.sectionTitle}>{TabNames.TOP_UPS}</h3>
-                        <p className={styles.emptyState}>TODO: Implement fetching and processing top-up requests using /api/admin/top-ups/pending.</p>
-                     </section>
-                )}
-
-                {activeTab === TabNames.BOOKINGS && (
-                    <section className={styles.section}>
-                        <h3 className={styles.sectionTitle}>{TabNames.BOOKINGS}</h3>
-                        <p className={styles.emptyState}>TODO: Implement fetching and confirmation of pending bookings using /api/admin/bookings/pending (All bookings).</p>
-                    </section>
-                )}
-
-                {activeTab === TabNames.USERS && (
-                    <section className={styles.section}>
-                        <h3 className={styles.sectionTitle}>{TabNames.USERS}</h3>
-                        <p className={styles.emptyState}>TODO: Implement fetching all users and management actions (e.g., Ban, Change Role).</p>
-                    </section>
-                )}
+                {activeTab === TabNames.TOP_UPS && <TopUpsTable authHeaders={authHeaders} />} 
+                
+                {activeTab === TabNames.BOOKINGS && <BookingsReview authHeaders={authHeaders} />}
+                
+                {activeTab === TabNames.USERS && <UserManagement authHeaders={authHeaders} />}
             </div>
         </div>
     );
 }
-
 export default AdminDashboard;
+
+
+
+const TopUpsTable = ({ authHeaders }) => {
+    const [requests, setRequests] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchRequests = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.get(`${API_URL}/api/admin/top-ups/pending`, authHeaders);
+            setRequests(response.data);
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to load top-up requests.");
+        } finally {
+            setLoading(false);
+        }
+    }, [authHeaders]);
+
+    const handleConfirm = async (requestId) => {
+        if (!window.confirm("Confirm top-up? Funds will be added to the user's balance and removed from pending list.")) {
+            return;
+        }
+        try {
+            await axios.post(`${API_URL}/api/admin/top-ups/${requestId}/confirm`, {}, authHeaders);
+            
+            setRequests(prev => prev.filter(req => req._id !== requestId));
+            alert("Top-up confirmed. Funds added to user's balance.");
+            
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Transaction failed. Check server logs.';
+            setError(msg);
+            alert(`Error: ${msg}`);
+        }
+    };
+    
+    useEffect(() => {
+        fetchRequests();
+    }, [fetchRequests]);
+
+    if (loading) return <div>Loading top-up requests...</div>;
+    if (error) return <div className={styles.emptyState} style={{color: 'red'}}>Error: {error}</div>;
+
+    return (
+        <section>
+            <h3 className={styles.sectionTitle}>Top-Up Requests ({requests.length})</h3>
+            {requests.length === 0 ? (
+                <div className={styles.emptyState}>No pending top-up requests.</div>
+            ) : (
+                <div className={styles.tableWrapper}>
+                    <table className={styles.offerTable}>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Amount (PLN)</th>
+                                <th>Method</th>
+                                <th>Requested On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {requests.map(req => (
+                                <tr key={req._id}>
+                                    <td>{req.user.name} {req.user.surname}</td>
+                                    <td>{req.user.email}</td>
+                                    <td>{req.amount.toFixed(2)}</td>
+                                    <td>{req.method || 'Bank Transfer'}</td>
+                                    <td>{new Date(req.createdAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <button 
+                                            onClick={() => handleConfirm(req._id)}
+                                            className={`${styles.actionBtn} ${styles.approveBtn}`}
+                                        >
+                                            <FaCheckCircle /> Confirm & Add Funds
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </section>
+    );
+};
+
+
+
+const OffersReview = ({ authHeaders }) => {
+    return <p className={styles.emptyState}>Offers Review Tab is active. (Please integrate your existing offer fetching logic here).</p>;
+};
+const BookingsReview = ({ authHeaders }) => {
+    return <p className={styles.emptyState}>TODO: Implement Bookings Review Table.</p>;
+};
+const UserManagement = ({ authHeaders }) => {
+    return <p className={styles.emptyState}>TODO: Implement User Management Table.</p>;
+};

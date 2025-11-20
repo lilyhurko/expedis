@@ -134,6 +134,68 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/categories", async (req, res) => {
+  try {
+    const categories = await Offer.distinct("categories", { status: 'active' });
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/suggestions", async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.length < 2) return res.json([]);
+
+    const regex = new RegExp(q, "i");
+    const citySuggestions = await Offer.distinct("city", { city: regex, status: 'active' });
+    const countrySuggestions = await Offer.distinct("country", { country: regex, status: 'active' });
+    const suggestions = [...new Set([...citySuggestions, ...countrySuggestions])];
+
+    res.json(suggestions.slice(0, 10));
+  } catch (error) {
+    console.error("Error fetching suggestions:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/alldestinations", async (req, res) => {
+  try {
+    const destinations = await Offer.aggregate([
+      { $match: { status: 'active' } },
+      {
+        $group: {
+          _id: "$country",
+          cities: { $addToSet: "$city" },
+        },
+      },
+      { $unwind: "$cities" },
+      { $sort: { cities: 1 } },
+      {
+        $group: {
+          _id: "$_id",
+          cities: { $push: "$cities" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          country: "$_id",
+          cities: "$cities",
+        },
+      },
+      { $sort: { country: 1 } },
+    ]);
+
+    res.json(destinations);
+  } catch (error) {
+    console.error("Error fetching all destinations:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.id)
@@ -172,6 +234,11 @@ router.post(
   ]),
   async (req, res) => {
     try {
+      // RESTRICT: Only Agency can create offers
+      if (req.user.role !== 'agency') {
+        return res.status(403).json({ message: "Access denied. Only agencies can create offers." });
+      }
+
       const {
         title, description, price, duration, city, country,
         latitude: latStr, longitude: lonStr, departureAirportIATA,
@@ -220,7 +287,8 @@ router.post(
         flightConnectionIds.push(flightConnection._id);
       }
 
-      const initialStatus = req.user.role === 'admin' ? 'active' : 'pending';
+      // Always pending since only Agency can create
+      const initialStatus = 'pending';
 
       const newOffer = new Offer({
         title, description, price: Number(price), duration: Number(duration),
@@ -238,19 +306,18 @@ router.post(
         await FlightConnection.findByIdAndUpdate(fcId, { offerId: newOffer._id });
       }
 
-      if (req.user.role === 'agency') {
-        const emailHtml = `
-          <h3>New Offer Pending Review</h3>
-          <p>Agency <b>${req.user.name} ${req.user.surname}</b> (${req.user.email}) added a new offer.</p>
-          <hr/>
-          <p><b>Title:</b> ${title}</p>
-          <p><b>Price:</b> ${price} PLN</p>
-          <p><b>Location:</b> ${city}, ${country}</p>
-          <br/>
-          <p>Please log in to the admin panel to approve or reject it.</p>
-        `;
-        sendEmail(ADMIN_EMAIL, `APPROVAL NEEDED: ${title}`, emailHtml).catch(console.error);
-      }
+      // Notify Admin
+      const emailHtml = `
+        <h3>New Offer Pending Review</h3>
+        <p>Agency <b>${req.user.name} ${req.user.surname}</b> (${req.user.email}) added a new offer.</p>
+        <hr/>
+        <p><b>Title:</b> ${title}</p>
+        <p><b>Price:</b> ${price} PLN</p>
+        <p><b>Location:</b> ${city}, ${country}</p>
+        <br/>
+        <p>Please log in to the admin panel to approve or reject it.</p>
+      `;
+      sendEmail(ADMIN_EMAIL, `APPROVAL NEEDED: ${title}`, emailHtml).catch(console.error);
 
       const populatedOffer = await Offer.findById(newOffer._id).populate("flightConnections");
       res.status(201).json(populatedOffer);
@@ -269,13 +336,17 @@ router.put(
   ]),
   async (req, res) => {
     try {
+      // RESTRICT: Only Agency can edit offers
+      if (req.user.role !== 'agency') {
+        return res.status(403).json({ message: "Access denied. Only agencies can edit offers." });
+      }
+
       const offer = await Offer.findById(req.params.id);
       if (!offer) return res.status(404).json({ message: "Offer not found" });
 
-      if (req.user.role === 'agency') {
-         if (!offer.creator || offer.creator.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ message: "You can only edit your own offers." });
-         }
+      // Check ownership
+      if (!offer.creator || offer.creator.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: "You can only edit your own offers." });
       }
 
       const {
@@ -357,14 +428,13 @@ router.put(
         }
       }
 
-      if (req.user.role === 'agency') {
-        offer.status = 'pending';
-        sendEmail(ADMIN_EMAIL, `OFFER UPDATED: ${offer.title}`, `
-          <h3>Offer Updated by Agency</h3>
-          <p>The offer "<b>${offer.title}</b>" has been modified.</p>
-          <p>Status reset to <b>Pending</b>. Please review again.</p>
-        `).catch(console.error);
-      }
+      // Reset status to pending upon edit and notify Admin
+      offer.status = 'pending';
+      sendEmail(ADMIN_EMAIL, `OFFER UPDATED: ${offer.title}`, `
+        <h3>Offer Updated by Agency</h3>
+        <p>The offer "<b>${offer.title}</b>" has been modified.</p>
+        <p>Status reset to <b>Pending</b>. Please review again.</p>
+      `).catch(console.error);
 
       await offer.save();
       const populatedOffer = await Offer.findById(offer._id).populate("flightConnections");
@@ -380,6 +450,7 @@ router.delete("/:id", authManager, async (req, res) => {
     const offer = await Offer.findById(req.params.id);
     if (!offer) return res.status(404).json({ message: "Offer not found" });
 
+    // Agency can only delete their own, Admin can delete any
     if (req.user.role === "agency") {
       if (!offer.creator || offer.creator.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: "You can only delete your own offers." });
