@@ -1,19 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
 
-const ProtectedRoute = ({ children }) => {
-  const [tokenExists, setTokenExists] = useState(null);
+const getRole = () => {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return null;
+  try {
+    const user = JSON.parse(userStr);
+    return user.role;
+  } catch (e) {
+    return null;
+  }
+};
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    setTokenExists(!!token);
-  }, []);
 
-  if (tokenExists === null) {
-    return <div>Loading...</div>; 
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const token = localStorage.getItem('token');
+  const userRole = getRole();
+  const isAuthenticated = !!token; 
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
-  return tokenExists ? children : <Navigate to="/login" replace />;
+  if (allowedRoles) {
+    const isAuthorized = allowedRoles.includes(userRole) || userRole === 'admin'; 
+
+    if (!isAuthorized) {
+      return <Navigate to="/profile" replace />;
+    }
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;

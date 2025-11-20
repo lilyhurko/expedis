@@ -25,6 +25,11 @@ const offerSchema = new mongoose.Schema(
       },
     ],
     comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
+    status: {
+      type: String,
+      enum: ['active', 'pending', 'rejected'],
+      default: 'pending' 
+    },
     creator: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
