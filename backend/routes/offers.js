@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 const router = express.Router();
 const axios = require("axios");
 const CityWeather = require("../models/CityWeather");
+const authManager = require("../middleware/authManagerMiddleware");
 
 const RAPIDAPI_KEY = "463251c1a9msh9e573ca6257b1afp1576adjsn6ed05f3609c2";
 const RAPIDAPI_HOST = "meteostat.p.rapidapi.com";
@@ -163,14 +164,8 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
 
 router.get("/", async (req, res) => {
   try {
-    const {
-      destination,
-      maxPrice,
-      duration,
-      category,
-      startDate,
-      endDate,
-    } = req.query;
+    const { destination, maxPrice, duration, category, startDate, endDate } =
+      req.query;
     let filter = {};
 
     if (destination) {
@@ -339,6 +334,7 @@ router.get("/:id", async (req, res) => {
 
 router.post(
   "/",
+  authManager,
   upload.fields([
     { name: "images", maxCount: 15 },
     { name: "placeImages", maxCount: 10 },
@@ -409,7 +405,7 @@ router.post(
         return {
           name: place.name,
           description: place.description,
-          address: place.address, 
+          address: place.address,
           imageUrl: placeImageFile
             ? `/images/${placeImageFile.filename}`
             : null,
@@ -469,6 +465,7 @@ router.post(
         mainImageIndex: parsedMainIndex,
         placesToVisit: placesWithImages,
         flightConnections: flightConnectionIds,
+        creator: req.user._id,
       });
 
       await newOffer.save();
@@ -507,6 +504,7 @@ router.post(
 
 router.put(
   "/:id",
+  authManager,
   upload.fields([
     { name: "images", maxCount: 15 },
     { name: "placeImages", maxCount: 10 },
@@ -516,6 +514,12 @@ router.put(
       const offer = await Offer.findById(req.params.id);
       if (!offer) return res.status(404).json({ message: "Offer not found" });
 
+      if (req.user.role === 'agency') {
+         if (!offer.creator || offer.creator.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: "You can only edit your own offers." });
+         }
+      }
+      
       console.log(`[PUT /:id] Updating offer ${req.params.id}`);
 
       const {
@@ -574,26 +578,23 @@ router.put(
         ? parseInt(mainImageIndex)
         : offer.mainImageIndex;
 
-if (parsedPlaces && parsedPlaces.length > 0) {
-        
+      if (parsedPlaces && parsedPlaces.length > 0) {
         let newPlaceImages = req.files["placeImages"] || [];
         let newImageIndex = 0;
 
         const updatedPlacesToVisit = parsedPlaces.map((place) => {
-          
-          let newImageUrl = place.imageUrl; 
-
+          let newImageUrl = place.imageUrl;
 
           if (place.imageUrl === null && newPlaceImages[newImageIndex]) {
             newImageUrl = `/images/${newPlaceImages[newImageIndex].filename}`;
             newImageIndex++;
           }
-          
+
           return {
             name: place.name,
             description: place.description,
-            address: place.address, 
-            imageUrl: newImageUrl
+            address: place.address,
+            imageUrl: newImageUrl,
           };
         });
 
@@ -669,17 +670,38 @@ if (parsedPlaces && parsedPlaces.length > 0) {
   }
 );
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authManager, async (req, res) => {
   try {
-    console.log(`[DELETE /:id] Deleting offer ${req.params.id}`);
-    const offer = await Offer.findByIdAndDelete(req.params.id);
+    console.log(
+      `[DELETE /:id] Request by user: ${req.user.username} (${req.user.role})`
+    );
+    
+    const offer = await Offer.findById(req.params.id);
+    
     if (!offer) {
       console.warn(`[DELETE /:id] Offer not found: ${req.params.id}`);
       return res.status(404).json({ message: "Offer not found" });
     }
+
+    if (req.user.role === "agency") {
+      if (!offer.creator) {
+        return res
+          .status(403)
+          .json({ message: "Access denied. This offer has no owner recorded." });
+      }
+
+      if (offer.creator.toString() !== req.user._id.toString()) {
+        return res
+          .status(403)
+          .json({ message: "You can only delete your own offers." });
+      }
+    }
+
+    await Offer.findByIdAndDelete(req.params.id);
     await FlightConnection.deleteMany({ offerId: req.params.id });
+    
     console.log(
-      `[DELETE /:id] Successfully deleted offer ${req.params.id} and associated flights.`
+      `[DELETE /:id] Successfully deleted offer ${req.params.id} by ${req.user.role}`
     );
     res.json({ message: "Offer deleted" });
   } catch (error) {

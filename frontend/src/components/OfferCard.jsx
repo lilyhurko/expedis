@@ -3,10 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { FaEdit, FaTrash, FaHeart } from 'react-icons/fa'; 
 import styles from '../assets/styles/OfferCard.module.css';
 
-const OfferCard = ({ offer, userRole, handleBookNow, handleEditOffer, handleDeleteOffer }) => {
+const OfferCard = ({ offer, userRole, currentUserId, handleBookNow, handleEditOffer, handleDeleteOffer }) => {
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
   const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+
+  
+  const creatorId = typeof offer.creator === 'object' ? offer.creator?._id : offer.creator;
+  
+  const isOwner = userRole === 'agency' && creatorId && currentUserId && (creatorId.toString() === currentUserId.toString());
+  const isAdmin = userRole === 'admin';
+  
+  const canEdit = isAdmin || isOwner;
 
   useEffect(() => {
     const checkWishlistStatus = async () => {
@@ -14,7 +22,6 @@ const OfferCard = ({ offer, userRole, handleBookNow, handleEditOffer, handleDele
       if (!token) return;
 
       try {
-        
         const response = await fetch(`${apiUrl}/api/users/wishlist`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -72,7 +79,7 @@ const OfferCard = ({ offer, userRole, handleBookNow, handleEditOffer, handleDele
   return (
     <div className={styles.offerCard} key={offer._id} onClick={handleCardClick} style={{ cursor: 'pointer', position: 'relative' }}>
       
-      {userRole !== 'admin' && (
+      {!canEdit && (
         <button
           onClick={handleToggleWishlist}
           style={{
@@ -99,7 +106,7 @@ const OfferCard = ({ offer, userRole, handleBookNow, handleEditOffer, handleDele
         </button>
       )}
 
-      {userRole === 'admin' && (
+      {canEdit && (
         <div className={styles.adminActions}>
           <button 
             className={styles.editIconButton} 
@@ -147,7 +154,7 @@ const OfferCard = ({ offer, userRole, handleBookNow, handleEditOffer, handleDele
         <div className={styles.offerFooter}>
           <span className={styles.offerPrice}>{offer.price || 0} PLN</span>
           <div className={styles.offerActions}>
-            {userRole !== 'admin' && (
+            {!canEdit && (
               <button 
                 className="book-now-button" 
                 onClick={(e) => handleActionClick(e, () => handleBookNow(offer._id))}

@@ -9,9 +9,10 @@ const userSchema = new mongoose.Schema({
   surname: { type: String, required: true },
   role: {
     type: String,
-    enum: ["user", "admin"],
+    enum: ["user", "admin", "agency"], 
     default: "user",
   },
+  
   balance: { type: Number, default: 0 },
   balance_held: {
     type: Number,

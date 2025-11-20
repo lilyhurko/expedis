@@ -18,9 +18,11 @@ const Trips = () => {
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [userRole, setUserRole] = useState("");
   const [userData, setUserData] = useState({});
+  
   const [isForSelf, setIsForSelf] = useState(true);
   const [numGuests, setNumGuests] = useState(1);
   const [guestData, setGuestData] = useState([{ name: "", surname: "" }]);
+
   const [editFormData, setEditFormData] = useState({
     _id: "",
     title: "",
@@ -36,23 +38,9 @@ const Trips = () => {
     imageUrls: [],
     mainImageIndex: 0,
     placesToVisit: [{ name: "", description: "", image: null }],
-    flightConnections: [
-      {
-        departureAirportIATA: "",
-        arrivalAirportIATA: "",
-        departureTime: "",
-        arrivalTime: "",
-        flightType: "outbound",
-      },
-      {
-        departureAirportIATA: "",
-        arrivalAirportIATA: "",
-        departureTime: "",
-        arrivalTime: "",
-        flightType: "return",
-      },
-    ],
+    flightConnections: [],
   });
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [newOfferData, setNewOfferData] = useState({
     title: "",
@@ -85,7 +73,7 @@ const Trips = () => {
       try {
         const parsedUser = JSON.parse(userDataStr);
         setUserRole(parsedUser.role || "");
-        setUserData(parsedUser);
+        setUserData({ ...parsedUser, id: parsedUser.id || parsedUser._id });
       } catch (error) {
         console.error("Error parsing user data:", error);
         setUserRole("");
@@ -184,16 +172,9 @@ const Trips = () => {
 
   const handleAddOfferSubmit = async (formData) => {
     const token = localStorage.getItem("token");
-    console.log("Token before send:", token ? "Present" : "MISSING");
     if (!token) return ForcedLogout();
 
     try {
-      const formDataEntries = {};
-      for (const [key, value] of formData.entries()) {
-        formDataEntries[key] = value;
-      }
-      console.log("FormData being sent to add:", formDataEntries);
-
       const response = await fetch(`${apiUrl}/api/offers`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -201,16 +182,8 @@ const Trips = () => {
       });
 
       if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          errorData = { message: `Raw error: ${response.statusText}` };
-        }
-        console.log("Server error details:", errorData);
-        throw new Error(
-          errorData.message || `Server error: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server error: ${response.status}`);
       }
 
       const newOffer = await response.json();
@@ -229,13 +202,7 @@ const Trips = () => {
         images: [],
         mainImageIndex: null,
         placesToVisit: [{ name: "", description: "", image: null }],
-        flightConnections: [
-          {
-            departureAirportIATA: "",
-            arrivalAirportIATA: "",
-            departureTime: "",
-          },
-        ],
+        flightConnections: [],
       });
       alert("Offer added successfully!");
     } catch (error) {
@@ -248,7 +215,6 @@ const Trips = () => {
     if (!window.confirm("Are you sure you want to delete this offer?")) {
       return;
     }
-
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Authentication token is missing.");
@@ -258,15 +224,11 @@ const Trips = () => {
 
     fetch(`${apiUrl}/api/offers/${offerId}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then(async (res) => {
         if (!res.ok) {
-          const errorData = await res
-            .json()
-            .catch(() => ({ message: "Server error" }));
+          const errorData = await res.json().catch(() => ({ message: "Server error" }));
           throw new Error(errorData.message || `Server error: ${res.status}`);
         }
         setOffers(offers.filter((offer) => offer._id !== offerId));
@@ -292,50 +254,26 @@ const Trips = () => {
 
   const handleEditSubmit = async (formData) => {
     const id = formData.get("_id") || editFormData._id;
-    if (!id) {
-      console.error("No offer ID found!");
-      alert("No offer ID found!");
-      return;
-    }
     const token = localStorage.getItem("token");
-    console.log("Token:", token);
+    
     if (!token) {
       alert("Authentication token is missing.");
       ForcedLogout();
-      navigate("/login");
       return;
     }
-    try {
-      const formDataEntries = {};
-      for (const [key, value] of formData.entries()) {
-        formDataEntries[key] = value;
-      }
-      console.log("FormData being sent:", formDataEntries);
 
+    try {
       const response = await fetch(`${apiUrl}/api/offers/${id}`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ message: "Server error" }));
-        if (response.status === 401) {
-          alert("Session expired or invalid token. Please log in again.");
-          ForcedLogout();
-          navigate("/login");
-          return;
-        }
-        if (response.status === 404) {
-          throw new Error("Offer not found on the server.");
-        }
-        throw new Error(
-          errorData.message || `Server error: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server error: ${response.status}`);
       }
+
       const updatedOffer = await response.json();
       setOffers((prev) =>
         prev.map((offer) =>
@@ -350,25 +288,19 @@ const Trips = () => {
     }
   };
 
-  const handleBookingSubmit = async (e) => {
-    e.preventDefault();
-    console.log("Form submitted to Formspree");
-    setSelectedOffer(null);
-  };
-
-  const closeModal = () => {
-    setSelectedOffer(null);
-    setShowAddModal(false);
-  };
-
+  // Функції для бронювання
+  const handleBookingSubmit = async (e) => { e.preventDefault(); setSelectedOffer(null); };
+  const closeModal = () => { setSelectedOffer(null); setShowAddModal(false); };
   const handleGuestChange = (index, field, value) => {
     const newGuestData = [...guestData];
-    newGuestData[index] = {
-      ...newGuestData[index],
-      [field]: value,
-    };
+    newGuestData[index] = { ...newGuestData[index], [field]: value };
     setGuestData(newGuestData);
   };
+
+  // Визначаємо, чи показувати модалку редагування
+  const isEditing = selectedOffer && (userRole === "admin" || userRole === "agency");
+  // Визначаємо, чи показувати модалку бронювання (тільки для звичайних юзерів)
+  const isBooking = selectedOffer && !isEditing;
 
   return (
     <>
@@ -376,13 +308,14 @@ const Trips = () => {
       <div className="container-for-filter"> 
         <TripSearchFilter />
       </div>
-<div className="offers-container">
+      <div className="offers-container">
         <div className="offers-header">
-          
           <h2 className="offers-title">
-{searchParams.toString() ? "Search Results" : "All Offers"}
+            {searchParams.toString() ? "Search Results" : "All Offers"}
           </h2>
-          {userRole === "admin" && (
+          
+          {/* ЗМІНА 1: Дозволяємо і admin, і agency бачити кнопку додавання */}
+          {(userRole === "admin" || userRole === "agency") && (
             <button
               className="add-offer-button"
               onClick={handleAddNewOfferClick}
@@ -403,6 +336,7 @@ const Trips = () => {
                 key={offer._id || index}
                 offer={offer}
                 userRole={userRole}
+                currentUserId={userData.id} // ЗМІНА 2: Передаємо ID поточного юзера
                 handleBookNow={handleBookNow}
                 handleEditOffer={handleEditOffer}
                 handleDeleteOffer={handleDeleteOffer}
@@ -423,7 +357,7 @@ const Trips = () => {
           </div>
         )}
 
-        {selectedOffer && userRole === "admin" && (
+        {isEditing && (
           <div className="offer-modal-wrapper">
             <EditOfferModal
               offer={offers.find((o) => o._id === selectedOffer)}
@@ -436,7 +370,7 @@ const Trips = () => {
           </div>
         )}
 
-        {selectedOffer && userRole !== "admin" && (
+        {isBooking && (
           <BookingModal
             offer={offers.find((o) => o._id === selectedOffer)}
             userData={userData}
