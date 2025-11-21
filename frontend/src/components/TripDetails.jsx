@@ -14,8 +14,9 @@ import {
   FaPlaneDeparture,
   FaPlaneArrival,
   FaSun,
-  FaMoon,
   FaTint,
+  FaTrash,
+  FaEdit,
 } from "react-icons/fa";
 import PlacesToVisit from "./PlacesToVisit.jsx";
 import UserNavbar from "./UserNavbar.jsx";
@@ -53,9 +54,25 @@ ChartJS.register(
   ChartDataLabels
 );
 
+const getUserData = () => {
+  const userStr = localStorage.getItem("user");
+  try {
+    return userStr ? JSON.parse(userStr) : null;
+  } catch {
+    return null;
+  }
+};
+
 const TripDetails = () => {
   const { offerId } = useParams();
   const navigate = useNavigate();
+  const currentUser = getUserData();
+  const userRole = currentUser?.role;
+
+  const isUser = userRole === "user";
+  const isAdmin = userRole === "admin";
+  const isAgency = userRole === "agency";
+
   const [tripDetails, setTripDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -81,6 +98,7 @@ const TripDetails = () => {
   const [viewMode, setViewMode] = useState("year");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001";
+
   const photosRef = useRef(null);
   const descriptionRef = useRef(null);
   const reviewsRef = useRef(null);
@@ -304,67 +322,114 @@ const TripDetails = () => {
     }
   };
 
-  const handleBookNowClick = async () => {
-    if (!isUserAuthenticated) {
-      alert("Please log in to book a trip.");
-      navigate("/login");
-      return;
-    }
+  const isOwner = isAgency && tripDetails?.userId === currentUser?._id;
 
-    if (!selectedDate) {
-      alert("Please select a date before booking.");
-      return;
-    }
-
-    const hasErrors = errors.some((error) => error !== "");
-    if (hasErrors) {
-      alert("Please fix errors in travelers (child age) before booking.");
-      setIsModalOpen(true);
-      return;
-    }
-
-    const bookingData = {
-      offerId: offerId,
-      amount: parseFloat(calculateTotalPrice()),
-      selectedDate: selectedDate,
-      travelers: travelers,
-    };
-
-    if (bookingData.amount <= 0) {
-      alert("Cannot book with zero total price.");
+  const handleDeleteTrip = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this trip? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${apiUrl}/api/bookings/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(bookingData),
+      const response = await fetch(`${apiUrl}/api/offers/${offerId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await response.json();
+      if (response.ok) {
+        alert("Trip deleted successfully.");
 
-      if (!response.ok) {
-        if (response.status === 402) {
-          alert(data.message);
-          navigate("/profile");
-        } else {
-          throw new Error(data.message || "Booking failed");
-        }
+        if (isAdmin) navigate("/admin/dashboard");
+        else navigate("/agency/dashboard");
       } else {
-        alert(data.message);
-        navigate("/my-bookings");
+        const data = await response.json();
+        alert(data.message || "Failed to delete trip");
       }
     } catch (error) {
-      console.error("Booking error:", error);
-      alert(`An error occurred: ${error.message}`);
+      console.error("Error deleting trip:", error);
+      alert("An error occurred while deleting the trip.");
     }
   };
 
+  const handleEditTrip = () => {
+    navigate(`/agency/edit-trip/${offerId}`);
+  };
+
+  const handleBookNowClick = async () => {
+    if (!isUser) {
+      alert("Only registered travelers can book trips.");
+      return;
+    }
+    if (!selectedDate) {
+      alert("Please select a date before booking.");
+      return;
+    }
+
+    const handleBookNowClick = async () => {
+      if (!isUserAuthenticated) {
+        alert("Please log in to book a trip.");
+        navigate("/login");
+        return;
+      }
+
+      if (!selectedDate) {
+        alert("Please select a date before booking.");
+        return;
+      }
+
+      const hasErrors = errors.some((error) => error !== "");
+      if (hasErrors) {
+        alert("Please fix errors in travelers (child age) before booking.");
+        setIsModalOpen(true);
+        return;
+      }
+
+      const bookingData = {
+        offerId: offerId,
+        amount: parseFloat(calculateTotalPrice()),
+        selectedDate: selectedDate,
+        travelers: travelers,
+      };
+
+      if (bookingData.amount <= 0) {
+        alert("Cannot book with zero total price.");
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${apiUrl}/api/bookings/create`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(bookingData),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 402) {
+            alert(data.message);
+            navigate("/profile");
+          } else {
+            throw new Error(data.message || "Booking failed");
+          }
+        } else {
+          alert(data.message);
+          navigate("/my-bookings");
+        }
+      } catch (error) {
+        console.error("Booking error:", error);
+        alert(`An error occurred: ${error.message}`);
+      }
+    };
+  };
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!isUserAuthenticated) {
@@ -754,18 +819,37 @@ const TripDetails = () => {
         <div className={styles.tripHeader}>
           <div className={styles.titleWrapper}>
             <h2 className={styles.tripTitle}>{tripDetails.title}</h2>
+            {(isAdmin || isOwner) && (
+              <div className={styles.adminControls}>
+                {isOwner && (
+                  <button
+                    onClick={handleEditTrip}
+                    className={`${styles.actionButton} ${styles.editBtn}`}
+                    title="Edit Trip"
+                  >
+                    <FaEdit /> Edit
+                  </button>
+                )}
+                <button
+                  onClick={handleDeleteTrip}
+                  className={`${styles.actionButton} ${styles.deleteBtn}`}
+                >
+                  <FaTrash /> Delete
+                </button>
+              </div>
+            )}
             <div className={styles.tripRating}>
-            {[...Array(5)].map((_, i) => (
-              <FaStar
-                key={i}
-                className={
-                  i < averageRating
-                    ? styles.starSelected
-                    : styles.starUnselected
-                }
-              />
-            ))}
-          </div>
+              {[...Array(5)].map((_, i) => (
+                <FaStar
+                  key={i}
+                  className={
+                    i < averageRating
+                      ? styles.starSelected
+                      : styles.starUnselected
+                  }
+                />
+              ))}
+            </div>
           </div>
           <p className={styles.tripLocation}>
             {tripDetails.city}, {tripDetails.country}
@@ -801,75 +885,106 @@ const TripDetails = () => {
             </div>
           </div>
           <div className={styles.bookingCard}>
-            <div>
-              <div className={styles.travelerSelection}>
-                <button onClick={openModal} className={styles.travelerButton}>
-                  {travelers.adults} Adult{travelers.adults > 1 ? "s" : ""}{" "}
-                  {travelers.children.length > 0
-                    ? `, ${travelers.children.length} Child${
-                        travelers.children.length > 1 ? "ren" : ""
-                      }`
-                    : ""}
-                </button>
-              </div>
-              <select
-                className={styles.dateDropdown}
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              >
-                <option value="">Select a date</option>
-                {tripDetails.availableDates &&
-                tripDetails.availableDates.length > 0 ? (
-                  tripDetails.availableDates.map((date, index) => {
-                    const d_start = new Date(date);
-                    const startDate = d_start.toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    });
-                    const d_end = new Date(d_start);
-                    d_end.setDate(
-                      d_start.getDate() + (tripDetails.duration - 1)
-                    );
-                    const endDate = d_end.toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    });
-                    const nights = tripDetails.duration - 1;
-                    return (
-                      <option key={index} value={date}>
-                        {`${startDate} - ${endDate} / ${nights} nights`}
-                      </option>
-                    );
-                  })
-                ) : (
-                  <option value="">No dates available</option>
+            {!isUserAuthenticated || isUser ? (
+              <>
+                <div>
+                  <div className={styles.travelerSelection}>
+                    <button
+                      onClick={openModal}
+                      className={styles.travelerButton}
+                    >
+                      {travelers.adults} Adult{travelers.adults > 1 ? "s" : ""}{" "}
+                      {travelers.children.length > 0
+                        ? `, ${travelers.children.length} Child${
+                            travelers.children.length > 1 ? "ren" : ""
+                          }`
+                        : ""}
+                    </button>
+                  </div>
+                  <select
+                    className={styles.dateDropdown}
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                  >
+                    <option value="">Select a date</option>
+                    {tripDetails.availableDates &&
+                    tripDetails.availableDates.length > 0 ? (
+                      tripDetails.availableDates.map((date, index) => {
+                        const d_start = new Date(date);
+                        const startDate = d_start.toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        });
+                        const d_end = new Date(d_start);
+                        d_end.setDate(
+                          d_start.getDate() + (tripDetails.duration - 1)
+                        );
+                        const endDate = d_end.toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        });
+                        const nights = tripDetails.duration - 1;
+                        return (
+                          <option key={index} value={date}>
+                            {`${startDate} - ${endDate} / ${nights} nights`}
+                          </option>
+                        );
+                      })
+                    ) : (
+                      <option value="">No dates available</option>
+                    )}
+                  </select>
+                </div>
+                <div className={styles.cardInfoSection}>
+                  <h4 className={styles.cardInfoTitle}>
+                    {tripDetails.duration} days in {tripDetails.city}
+                  </h4>
+                  <div className={styles.cardCategoryChips}>
+                    {tripDetails.categories &&
+                      tripDetails.categories.map((cat) => (
+                        <span key={cat} className={styles.cardCategoryChip}>
+                          <FaTag /> {cat}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+                <div className={styles.cardFooter}>
+                  <p className={styles.price}>
+                    Total: {calculateTotalPrice()} PLN
+                  </p>
+                  <button
+                    className={styles.bookButton}
+                    onClick={handleBookNowClick}
+                  >
+                    Book for 48h
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className={styles.managementView}>
+                <h4 className={styles.managementTitle}>Management View</h4>
+                <p className={styles.managementSubtitle}>
+                  {isAdmin
+                    ? "You are viewing this as Administrator."
+                    : "You are viewing your offer."}
+                </p>
+                <div className={styles.cardInfoSection}>
+                  <p className={styles.managementPrice}>
+                    {tripDetails.price} PLN
+                  </p>
+                  <p className={styles.managementDetails}>
+                    Duration: {tripDetails.duration} days
+                  </p>
+                </div>
+                {isAdmin && (
+                  <div className={styles.adminWarningBox}>
+                    Booking and reviewing is disabled for administrators.
+                  </div>
                 )}
-              </select>
-            </div>
-            <div className={styles.cardInfoSection}>
-              <h4 className={styles.cardInfoTitle}>
-                {tripDetails.duration} days in {tripDetails.city}
-              </h4>
-              <div className={styles.cardCategoryChips}>
-                {tripDetails.categories &&
-                  tripDetails.categories.map((cat) => (
-                    <span key={cat} className={styles.cardCategoryChip}>
-                      <FaTag /> {cat}
-                    </span>
-                  ))}
               </div>
-            </div>
-            <div className={styles.cardFooter}>
-              <p className={styles.price}>Total: {calculateTotalPrice()} PLN</p>
-              <button
-                className={styles.bookButton}
-                onClick={handleBookNowClick}
-              >
-                Book for 48h
-              </button>
-            </div>
+            )}
           </div>
         </div>
         {tripDetails.imageUrls && tripDetails.imageUrls.length > 0 && (
@@ -1203,7 +1318,7 @@ const TripDetails = () => {
       </div>
       <RecommendedHotels city={tripDetails.city} />
 
-      {isUserAuthenticated && (
+      {isUserAuthenticated && isUser && (
         <div className="mb-8">
           <h2 className={styles.sectionHeading}>Submit a Review</h2>
           <div className={styles.sectionContent}>

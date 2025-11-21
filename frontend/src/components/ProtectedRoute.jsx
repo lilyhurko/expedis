@@ -1,32 +1,37 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 
-const getRole = () => {
+const getUser = () => {
   const userStr = localStorage.getItem('user');
   if (!userStr) return null;
   try {
-    const user = JSON.parse(userStr);
-    return user.role;
+    return JSON.parse(userStr);
   } catch (e) {
     return null;
   }
 };
 
-
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem('token');
-  const userRole = getRole();
-  const isAuthenticated = !!token; 
+  const user = getUser();
+  const userRole = user?.role;
+  const isAuthenticated = !!token;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   if (allowedRoles) {
-    const isAuthorized = allowedRoles.includes(userRole) || userRole === 'admin'; 
+    const isAuthorized = allowedRoles.includes(userRole);
 
     if (!isAuthorized) {
-      return <Navigate to="/profile" replace />;
+      if (userRole === 'admin') {
+        return <Navigate to="/admin/dashboard" replace />;
+      }
+      if (userRole === 'agency') {
+        return <Navigate to="/agency/dashboard" replace />;
+      }
+      return <Navigate to="/" replace />;
     }
   }
 

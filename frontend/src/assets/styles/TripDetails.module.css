@@ -900,6 +900,100 @@ display: flex;
   margin-left: 52px;
 }
 
+.adminControls {
+  display: flex;
+  gap: 10px;
+  margin-left: 20px;
+  align-items: center;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 30px; 
+  font-family: "Poppins", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  color: white;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.editBtn {
+  background-color: #0071c2;
+}
+
+.editBtn:hover {
+  background-color: #005a9c;
+  transform: translateY(-2px);
+}
+
+.deleteBtn {
+  background-color: #c92a2a; 
+}
+
+.deleteBtn:hover {
+  background-color: #a61e1e;
+  transform: translateY(-2px);
+}
+
+
+.managementView {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #fff;
+}
+
+.managementTitle {
+  font-family: "Playfair Display", serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #e2d4bb; 
+  margin-bottom: 5px;
+}
+
+.managementSubtitle {
+  font-family: "Poppins", sans-serif;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 15px;
+}
+
+.managementPrice {
+  font-family: "Playfair Display", serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 10px 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.managementDetails {
+  font-family: "Poppins", sans-serif;
+  font-size: 1rem;
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.adminWarningBox {
+  background: rgba(201, 42, 42, 0.15);
+  border: 1px solid rgba(201, 42, 42, 0.5);
+  color: #ffc9c9; 
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-family: "Poppins", sans-serif;
+  margin-top: 15px;
+  line-height: 1.4;
+}
+
 @media (max-width: 900px) {
   .tripGrid {
     flex-direction: column;
@@ -949,6 +1043,16 @@ display: flex;
 
   .monthLabels {
     padding-left: 150px;
+  }
+  .titleWrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .adminControls {
+    margin-left: 0;
+    margin-top: 5px;
   }
 }
 
