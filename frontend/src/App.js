@@ -38,22 +38,28 @@ function AppWrapper() {
 
       <Route
         element={
-          <ProtectedRoute allowedRoles={["user", "agency"]}>
+          <ProtectedRoute allowedRoles={["user"]}>
+            <UserLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/profile" element={<Profile />}>
+          <Route index element={<ProfileDetails />} />
+          <Route path="wallet" element={<Wallet />} />
+          <Route path="my-bookings" element={<MyBookings />} />
+          <Route path="wishlist" element={<Wishlist />} />
+        </Route>
+      </Route>
+
+      
+      <Route
+        element={
+          <ProtectedRoute allowedRoles={["user", "agency", "admin"]}>
             <UserLayout />
           </ProtectedRoute>
         }
       >
         <Route path="/feedback" element={<FeedbackPage />} />
-
-        <Route path="/profile" element={<Profile />}>
-          <Route index element={<ProfileDetails />} />
-
-          <Route path="wallet" element={<Wallet />} />
-
-          <Route path="my-bookings" element={<MyBookings />} />
-
-          <Route path="wishlist" element={<Wishlist />} />
-        </Route>
       </Route>
 
       <Route

@@ -311,14 +311,6 @@ const Trips = () => {
             {searchParams.toString() ? "Search Results" : "All Offers"}
           </h2>
           
-          { userRole === "agency" && (
-            <button
-              className="add-offer-button"
-              onClick={handleAddNewOfferClick}
-            >
-              Add New Offer
-            </button>
-          )}
         </div>
 
         {loading ? (
@@ -338,18 +330,6 @@ const Trips = () => {
                 handleDeleteOffer={handleDeleteOffer}
               />
             ))}
-          </div>
-        )}
-
-        {showAddModal && (
-          <div className="offer-modal-wrapper">
-            <AddOfferModal
-              newOfferData={newOfferData}
-              setNewOfferData={setNewOfferData}
-              handleNewOfferChange={handleNewOfferChange}
-              handleAddOfferSubmit={handleAddOfferSubmit}
-              closeModal={closeModal}
-            />
           </div>
         )}
 

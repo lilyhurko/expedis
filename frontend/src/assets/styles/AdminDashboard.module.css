@@ -189,6 +189,69 @@
   color: #ffffff;
 }
 
+/* AdminDashboard.module.css */
+
+.glassBtn {
+  padding: 10px 26px;
+  font-size: 1rem;
+  font-family: "Poppins", sans-serif;
+  border-radius: 50px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 4px;
+  
+  /* Flexbox для вирівнювання іконки */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  /* Ефект скла (Glassmorphism) */
+  background: rgba(27, 58, 75, 0.5);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.glassBtn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.4), 
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: all 0.6s ease;
+}
+
+.glassBtn:hover {
+  background: rgba(27, 58, 75, 0.7); 
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.glassBtn:hover::before {
+  left: 125%;
+}
+
+.glassBtn:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
+}
 
 @media (max-width: 1024px) {
   .adminDashboardContainer {

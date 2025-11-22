@@ -148,4 +148,24 @@ router.get("/agency-orders", auth, async (req, res) => {
   }
 });
 
+router.patch("/:id/status", auth, async (req, res) => {
+  try {
+    const { status } = req.body; 
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    if (booking.agency.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    booking.status = status;
+
+    await booking.save();
+    res.json(booking);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

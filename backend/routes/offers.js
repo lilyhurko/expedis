@@ -225,6 +225,16 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+router.get("/agency/my-offers", authManager, async (req, res) => {
+  try {
+    const offers = await Offer.find({ creator: req.user._id })
+      .sort({ createdAt: -1 }); 
+    res.json(offers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.post(
   "/",
   authManager,
@@ -234,7 +244,6 @@ router.post(
   ]),
   async (req, res) => {
     try {
-      // RESTRICT: Only Agency can create offers
       if (req.user.role !== 'agency') {
         return res.status(403).json({ message: "Access denied. Only agencies can create offers." });
       }
@@ -287,7 +296,6 @@ router.post(
         flightConnectionIds.push(flightConnection._id);
       }
 
-      // Always pending since only Agency can create
       const initialStatus = 'pending';
 
       const newOffer = new Offer({
@@ -306,7 +314,6 @@ router.post(
         await FlightConnection.findByIdAndUpdate(fcId, { offerId: newOffer._id });
       }
 
-      // Notify Admin
       const emailHtml = `
         <h3>New Offer Pending Review</h3>
         <p>Agency <b>${req.user.name} ${req.user.surname}</b> (${req.user.email}) added a new offer.</p>
@@ -336,7 +343,6 @@ router.put(
   ]),
   async (req, res) => {
     try {
-      // RESTRICT: Only Agency can edit offers
       if (req.user.role !== 'agency') {
         return res.status(403).json({ message: "Access denied. Only agencies can edit offers." });
       }
@@ -344,7 +350,6 @@ router.put(
       const offer = await Offer.findById(req.params.id);
       if (!offer) return res.status(404).json({ message: "Offer not found" });
 
-      // Check ownership
       if (!offer.creator || offer.creator.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: "You can only edit your own offers." });
       }
@@ -428,7 +433,6 @@ router.put(
         }
       }
 
-      // Reset status to pending upon edit and notify Admin
       offer.status = 'pending';
       sendEmail(ADMIN_EMAIL, `OFFER UPDATED: ${offer.title}`, `
         <h3>Offer Updated by Agency</h3>
@@ -450,7 +454,6 @@ router.delete("/:id", authManager, async (req, res) => {
     const offer = await Offer.findById(req.params.id);
     if (!offer) return res.status(404).json({ message: "Offer not found" });
 
-    // Agency can only delete their own, Admin can delete any
     if (req.user.role === "agency") {
       if (!offer.creator || offer.creator.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: "You can only delete your own offers." });
