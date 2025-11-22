@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import DatePicker from 'react-multi-date-picker';
+// DatePicker більше не потрібен, використовуємо select
+import styles from '../assets/styles/Modals.module.css';
 
 const BookingModal = ({
   offer,
@@ -15,10 +16,13 @@ const BookingModal = ({
   handleBookingSubmit,
   closeModal,
 }) => {
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState("");
+
+  const totalPrice = offer?.price ? offer.price * (isForSelf ? 1 : numGuests) : 0;
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (!isForSelf && numGuests < 1) {
       alert("Number of guests must be at least 1.");
       return;
@@ -32,55 +36,67 @@ const BookingModal = ({
       return;
     }
 
-    const formData = new FormData(e.target);
-    formData.append("selectedDate", selectedDate);
-    if (!isForSelf) {
-      formData.append("guests", JSON.stringify(guestData));
-    }
-    handleBookingSubmit(formData);
+    const bookingPayload = {
+      offerId: offer._id,
+      amount: totalPrice,
+      selectedDate: selectedDate,
+      travelers: isForSelf
+        ? [{ name: userData.name, surname: userData.surname }]
+        : guestData,
+    };
+
+    handleBookingSubmit(bookingPayload);
   };
 
-  const totalPrice = offer?.price ? offer.price * (isForSelf ? 1 : numGuests) : 0;
+  // Форматування дати для відображення у списку (DD.MM.YYYY - DD.MM.YYYY)
+  const formatDateRange = (dateStr, duration) => {
+    if (!dateStr) return "";
+    const startDate = new Date(dateStr);
+    const endDate = new Date(startDate);
+    // Додаємо тривалість туру
+    endDate.setDate(startDate.getDate() + (duration ? duration - 1 : 0));
+
+    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+    const start = startDate.toLocaleDateString('uk-UA', options);
+    const end = endDate.toLocaleDateString('uk-UA', options);
+    
+    return `${start} - ${end} (${duration} days)`;
+  };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal modal-booking">
-        <div className="modal-header">
-          <h3 className="modal-title">
+    <div className={styles.modalOverlay}>
+      <div className={styles.modal}>
+        <div className={styles.modalHeader}>
+          <h3 className={styles.modalTitle}>
             Booking: {offer?.title || 'Selected Offer'}
           </h3>
-          <button className="modal-close" onClick={closeModal}>×</button>
+          <button className={styles.modalClose} onClick={closeModal}>×</button>
         </div>
-        <div className="modal-body">
-          <form
-            action="https://formspree.io/f/mjkwnbvl"
-            method="POST"
-            onSubmit={handleSubmit}
-          >
-            <input type="hidden" name="_subject" value="New Booking Request" />
-            <input type="hidden" name="_replyto" value={isForSelf ? userData.email : ''} />
-            <input type="hidden" name="offerTitle" value={offer?.title || ''} />
-            <input type="hidden" name="offerPrice" value={offer?.price || 0} />
-
+        
+        <div className={styles.modalBody}>
+          <form id="booking-form" onSubmit={handleSubmit}>
+            
             <div className="form-group">
-              <div className="radio-group">
-                <label className="form-label">
+              <div className="radio-group" style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
+                <label className="form-label" style={{ cursor: 'pointer' }}>
                   <input
                     type="radio"
                     name="bookingFor"
                     value="self"
                     checked={isForSelf}
                     onChange={() => setIsForSelf(true)}
+                    style={{ marginRight: '8px' }}
                   />
                   Booking for myself
                 </label>
-                <label className="form-label">
+                <label className="form-label" style={{ cursor: 'pointer' }}>
                   <input
                     type="radio"
                     name="bookingFor"
                     value="others"
                     checked={!isForSelf}
                     onChange={() => setIsForSelf(false)}
+                    style={{ marginRight: '8px' }}
                   />
                   Booking for someone else
                 </label>
@@ -89,62 +105,22 @@ const BookingModal = ({
 
             {isForSelf ? (
               <>
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: '15px' }}>
                   <label className="form-label">Name:</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    name="name"
-                    value={`${userData.name || ''} ${userData.surname || ''}`}
-                    readOnly
-                  />
+                  <input type="text" className="form-input" value={userData.name || ''} readOnly />
                 </div>
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: '15px' }}>
                   <label className="form-label">Email:</label>
-                  <input
-                    type="email"
-                    className="form-input"
-                    name="email"
-                    value={userData.email || ''}
-                    readOnly
-                  />
+                  <input type="email" className="form-input" value={userData.email || ''} readOnly />
                 </div>
               </>
             ) : (
               <>
-                <div className="form-group">
-                  <label className="form-label">Your Name:</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    name="yourName"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Your Surname:</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    name="yourSurname"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Your Email:</label>
-                  <input
-                    type="email"
-                    className="form-input"
-                    name="email"
-                    required
-                  />
-                </div>
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: '15px' }}>
                   <label className="form-label">Number of Guests:</label>
                   <input
                     type="number"
                     className="form-input"
-                    name="numGuests"
                     min="1"
                     value={numGuests}
                     onChange={(e) => {
@@ -156,25 +132,23 @@ const BookingModal = ({
                   />
                 </div>
                 {guestData.map((guest, index) => (
-                  <div key={index} className="guest-group">
-                    <h4 className="form-label">Guest {index + 1}</h4>
-                    <div className="form-group">
-                      <label className="form-label">Name:</label>
+                  <div key={index} className="guest-group" style={{ marginBottom: '10px', padding: '10px', background: '#f9f9f9', borderRadius: '5px' }}>
+                    <h4 className="form-label" style={{ margin: '0 0 10px 0' }}>Guest {index + 1}</h4>
+                    <div className="form-group" style={{ marginBottom: '10px' }}>
                       <input
                         type="text"
                         className="form-input"
-                        name={`guest_${index}_name`}
+                        placeholder="First Name"
                         value={guest.name}
                         onChange={(e) => handleGuestChange(index, 'name', e.target.value)}
                         required
                       />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Surname:</label>
                       <input
                         type="text"
                         className="form-input"
-                        name={`guest_${index}_surname`}
+                        placeholder="Last Name"
                         value={guest.surname}
                         onChange={(e) => handleGuestChange(index, 'surname', e.target.value)}
                         required
@@ -184,49 +158,68 @@ const BookingModal = ({
                 ))}
               </>
             )}
-            <div className="form-group">
-              <label className="form-label">Select Booking Date:</label>
-              <div className="date-picker-container">
-                <DatePicker
-                  value={selectedDate}
-                  onChange={(date) =>
-                    setSelectedDate(date?.toDate ? date.toDate().toISOString().split('T')[0] : date)
-                  }
-                  format="YYYY-MM-DD"
-                  placeholder="Select date"
-                  className="form-input"
-                  calendarPosition="bottom-left"
-                  onlyShowInRangeDates
-                  minDate={new Date()}
-                  range={false}
-                  mapDays={({ date }) => {
-                    const dateStr = date.format('YYYY-MM-DD');
-                    const isAvailable = offer?.availableDates?.includes(dateStr);
-                    return {
-                      disabled: !isAvailable,
-                      style: isAvailable ? { color: '#000' } : { color: '#ccc' },
-                    };
-                  }}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <div
-                className="total-price"
-                style={{ marginRight: 'auto', fontWeight: 'bold', fontSize: '1.1em', paddingTop: '8px' }}
+
+            <div className="form-group" style={{ marginTop: '20px' }}>
+              <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                Select Booking Date:
+              </label>
+              
+              {/* ВИПАДАЮЧИЙ СПИСОК ДАТ */}
+              <select
+                className="form-input"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                required
+                style={{ 
+                  width: "100%", 
+                  height: "45px", 
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  padding: "0 15px",
+                  fontSize: "1rem",
+                  backgroundColor: "white",
+                  cursor: "pointer",
+                  appearance: "none", /* Прибирає стандартну стрілку браузера (для чистоти стилю) */
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8.825L1.175 4 2.238 2.938 6 6.7l3.763-3.763L10.825 4z'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 15px center"
+                }}
               >
-                Total Price: {totalPrice} PLN {isForSelf ? '' : `(${numGuests} guest${numGuests > 1 ? 's' : ''})`}
-              </div>
-              <div className="buttons-group">
-                <button type="button" className="btn btn-secondary" onClick={closeModal}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Confirm Booking
-                </button>
-              </div>
+                <option value="" disabled>-- Choose a date --</option>
+                {offer?.availableDates && offer.availableDates.length > 0 ? (
+                  offer.availableDates.map((date, index) => (
+                    <option key={index} value={date}>
+                      {formatDateRange(date, offer.duration)}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>No available dates</option>
+                )}
+              </select>
             </div>
           </form>
+        </div>
+
+        <div className={styles.modalFooter}>
+          <div className={styles.modalPrice}>
+            Total: {totalPrice.toFixed(2)} PLN
+          </div>
+          <div className={styles.buttonsGroup}>
+            <button 
+              type="button" 
+              className={styles.btnSecondary} 
+              onClick={closeModal}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              form="booking-form" 
+              className={styles.btnPrimary}
+            >
+              Confirm & Pay
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -234,30 +227,17 @@ const BookingModal = ({
 };
 
 BookingModal.propTypes = {
-  offer: PropTypes.shape({
-    title: PropTypes.string,
-    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    availableDates: PropTypes.arrayOf(PropTypes.string),
-  }).isRequired,
-  userData: PropTypes.shape({
-    name: PropTypes.string,
-    surname: PropTypes.string,
-    email: PropTypes.string,
-  }).isRequired,
-  isForSelf: PropTypes.bool.isRequired,
-  setIsForSelf: PropTypes.func.isRequired,
-  numGuests: PropTypes.number.isRequired,
-  setNumGuests: PropTypes.func.isRequired,
-  guestData: PropTypes.arrayOf(
-    PropTypes.shape({
-      name: PropTypes.string,
-      surname: PropTypes.string,
-    })
-  ).isRequired,
-  setGuestData: PropTypes.func.isRequired,
-  handleGuestChange: PropTypes.func.isRequired,
-  handleBookingSubmit: PropTypes.func.isRequired,
-  closeModal: PropTypes.func.isRequired,
+  offer: PropTypes.object,
+  userData: PropTypes.object,
+  isForSelf: PropTypes.bool,
+  setIsForSelf: PropTypes.func,
+  numGuests: PropTypes.number,
+  setNumGuests: PropTypes.func,
+  guestData: PropTypes.array,
+  setGuestData: PropTypes.func,
+  handleGuestChange: PropTypes.func,
+  handleBookingSubmit: PropTypes.func,
+  closeModal: PropTypes.func,
 };
 
 export default BookingModal;
