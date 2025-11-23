@@ -958,7 +958,7 @@ const TripDetails = () => {
                     className={styles.bookButton}
                     onClick={handleBookNowClick}
                   >
-                    Book for 48h
+                    Book Now
                   </button>
                 </div>
               </>

@@ -1,66 +1,135 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-// DatePicker більше не потрібен, використовуємо select
 import styles from '../assets/styles/Modals.module.css';
 
 const BookingModal = ({
   offer,
-  userData,
-  isForSelf,
-  setIsForSelf,
-  numGuests,
-  setNumGuests,
-  guestData,
-  setGuestData,
-  handleGuestChange,
+  userData, // Поточний юзер (якщо booking for self)
   handleBookingSubmit,
   closeModal,
 }) => {
+  // --- States ---
   const [selectedDate, setSelectedDate] = useState("");
+  // Використовуємо ту саму структуру, що і в TripDetails
+  const [travelers, setTravelers] = useState({
+    adults: 1,
+    children: [], // Array of objects { birthDate: "YYYY-MM-DD" }
+  });
+  const [errors, setErrors] = useState([]);
 
-  const totalPrice = offer?.price ? offer.price * (isForSelf ? 1 : numGuests) : 0;
+  // --- Helpers ---
+  const formatDateRange = (dateStr, duration) => {
+    if (!dateStr) return "";
+    const startDate = new Date(dateStr);
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + (duration ? duration - 1 : 0));
+
+    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+    return `${startDate.toLocaleDateString('uk-UA', options)} - ${endDate.toLocaleDateString('uk-UA', options)} (${duration} days)`;
+  };
+
+  const calculateAge = (birthDate, referenceDate) => {
+    const refDate = referenceDate ? new Date(referenceDate) : new Date();
+    const birth = new Date(birthDate);
+    let age = refDate.getFullYear() - birth.getFullYear();
+    const monthDiff = refDate.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && refDate.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const validateBirthDate = (birthDate, index) => {
+    if (!birthDate) return "Please select a birth date.";
+    const referenceDate = selectedDate ? new Date(selectedDate) : new Date();
+    // Приклад валідації (можна змінити правила)
+    if (birthDate > new Date().toISOString().split('T')[0]) {
+      return "Birth date cannot be in the future.";
+    }
+    return "";
+  };
+
+  // --- Handlers ---
+  const handleTravelerChange = (type, delta) => {
+    setTravelers((prev) => {
+      if (type === "adults") {
+        const newAdults = Math.max(1, prev.adults + delta);
+        return { ...prev, adults: newAdults };
+      } else if (type === "children") {
+        const newCount = Math.max(0, prev.children.length + delta);
+        const newChildren = prev.children.slice(0, newCount);
+        
+        // Якщо додали дитину, додаємо порожній об'єкт
+        if (delta > 0 && newCount > prev.children.length) {
+          newChildren.push({ birthDate: "" });
+        }
+        
+        // Оновлюємо помилки
+        const newErrors = newChildren.map((child, i) => validateBirthDate(child.birthDate, i));
+        setErrors(newErrors);
+
+        return { ...prev, children: newChildren };
+      }
+      return prev;
+    });
+  };
+
+  const handleChildBirthDateChange = (index, birthDate) => {
+    setTravelers((prev) => {
+      const newChildren = [...prev.children];
+      newChildren[index] = { ...newChildren[index], birthDate };
+      return { ...prev, children: newChildren };
+    });
+    setErrors((prev) => {
+      const newErrors = [...prev];
+      newErrors[index] = validateBirthDate(birthDate, index);
+      return newErrors;
+    });
+  };
+
+  // --- Price Calculation (Logic from TripDetails) ---
+  const totalPrice = (() => {
+    if (!offer?.price) return 0;
+    let total = travelers.adults * offer.price;
+
+    travelers.children.forEach((child) => {
+      if (!child.birthDate) {
+        // Якщо дата не вибрана, рахуємо як повну або 0 (тут логіка на ваш розсуд, 
+        // поки беремо 0, але валідація не пропустить сабміт)
+        return; 
+      }
+      const age = calculateAge(child.birthDate, selectedDate);
+      if (age <= 2) total += offer.price * 0.1;      // Infant
+      else if (age <= 11) total += offer.price * 0.6; // Child
+      else total += offer.price;                      // Teen/Adult price
+    });
+    return total;
+  })();
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!isForSelf && numGuests < 1) {
-      alert("Number of guests must be at least 1.");
-      return;
-    }
-    if (!isForSelf && guestData.some((guest) => !guest.name.trim() || !guest.surname.trim())) {
-      alert("All guest names and surnames are required.");
-      return;
-    }
     if (!selectedDate) {
       alert("Please select a booking date.");
       return;
     }
 
+    const hasErrors = errors.some((err) => err !== "") || 
+                      travelers.children.some(c => !c.birthDate);
+    
+    if (hasErrors) {
+      alert("Please fill in all children's birth dates correctly.");
+      return;
+    }
+
     const bookingPayload = {
       offerId: offer._id,
-      amount: totalPrice,
+      amount: parseFloat(totalPrice.toFixed(2)),
       selectedDate: selectedDate,
-      travelers: isForSelf
-        ? [{ name: userData.name, surname: userData.surname }]
-        : guestData,
+      travelers: travelers, // Відправляємо структуру {adults, children}
     };
 
     handleBookingSubmit(bookingPayload);
-  };
-
-  // Форматування дати для відображення у списку (DD.MM.YYYY - DD.MM.YYYY)
-  const formatDateRange = (dateStr, duration) => {
-    if (!dateStr) return "";
-    const startDate = new Date(dateStr);
-    const endDate = new Date(startDate);
-    // Додаємо тривалість туру
-    endDate.setDate(startDate.getDate() + (duration ? duration - 1 : 0));
-
-    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-    const start = startDate.toLocaleDateString('uk-UA', options);
-    const end = endDate.toLocaleDateString('uk-UA', options);
-    
-    return `${start} - ${end} (${duration} days)`;
   };
 
   return (
@@ -76,117 +145,20 @@ const BookingModal = ({
         <div className={styles.modalBody}>
           <form id="booking-form" onSubmit={handleSubmit}>
             
-            <div className="form-group">
-              <div className="radio-group" style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
-                <label className="form-label" style={{ cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="bookingFor"
-                    value="self"
-                    checked={isForSelf}
-                    onChange={() => setIsForSelf(true)}
-                    style={{ marginRight: '8px' }}
-                  />
-                  Booking for myself
-                </label>
-                <label className="form-label" style={{ cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="bookingFor"
-                    value="others"
-                    checked={!isForSelf}
-                    onChange={() => setIsForSelf(false)}
-                    style={{ marginRight: '8px' }}
-                  />
-                  Booking for someone else
-                </label>
-              </div>
-            </div>
-
-            {isForSelf ? (
-              <>
-                <div className="form-group" style={{ marginBottom: '15px' }}>
-                  <label className="form-label">Name:</label>
-                  <input type="text" className="form-input" value={userData.name || ''} readOnly />
-                </div>
-                <div className="form-group" style={{ marginBottom: '15px' }}>
-                  <label className="form-label">Email:</label>
-                  <input type="email" className="form-input" value={userData.email || ''} readOnly />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="form-group" style={{ marginBottom: '15px' }}>
-                  <label className="form-label">Number of Guests:</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    min="1"
-                    value={numGuests}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value, 10) || 1;
-                      setNumGuests(value);
-                      setGuestData(Array(value).fill({ name: '', surname: '' }));
-                    }}
-                    required
-                  />
-                </div>
-                {guestData.map((guest, index) => (
-                  <div key={index} className="guest-group" style={{ marginBottom: '10px', padding: '10px', background: '#f9f9f9', borderRadius: '5px' }}>
-                    <h4 className="form-label" style={{ margin: '0 0 10px 0' }}>Guest {index + 1}</h4>
-                    <div className="form-group" style={{ marginBottom: '10px' }}>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="First Name"
-                        value={guest.name}
-                        onChange={(e) => handleGuestChange(index, 'name', e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="Last Name"
-                        value={guest.surname}
-                        onChange={(e) => handleGuestChange(index, 'surname', e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-
-            <div className="form-group" style={{ marginTop: '20px' }}>
-              <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                Select Booking Date:
+            {/* 1. Date Selection */}
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label className="form-label" style={{ fontWeight: 'bold' }}>
+                Select Date:
               </label>
-              
-              {/* ВИПАДАЮЧИЙ СПИСОК ДАТ */}
               <select
                 className="form-input"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 required
-                style={{ 
-                  width: "100%", 
-                  height: "45px", 
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  padding: "0 15px",
-                  fontSize: "1rem",
-                  backgroundColor: "white",
-                  cursor: "pointer",
-                  appearance: "none", /* Прибирає стандартну стрілку браузера (для чистоти стилю) */
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8.825L1.175 4 2.238 2.938 6 6.7l3.763-3.763L10.825 4z'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 15px center"
-                }}
+                style={{ width: "100%", padding: "10px", marginTop: "5px" }}
               >
                 <option value="" disabled>-- Choose a date --</option>
-                {offer?.availableDates && offer.availableDates.length > 0 ? (
+                {offer?.availableDates?.length > 0 ? (
                   offer.availableDates.map((date, index) => (
                     <option key={index} value={date}>
                       {formatDateRange(date, offer.duration)}
@@ -197,12 +169,72 @@ const BookingModal = ({
                 )}
               </select>
             </div>
+
+            {/* 2. Travelers Selection (Matching TripDetails Logic) */}
+            <div className="travelers-section" style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 15px 0', fontSize: '1.1rem' }}>Travelers</h4>
+              
+              {/* Adults */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <label>Adults (12+):</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <button type="button" 
+                    onClick={() => handleTravelerChange("adults", -1)} 
+                    disabled={travelers.adults <= 1}
+                    style={{ width: '30px', height: '30px', cursor: 'pointer' }}>-</button>
+                  <span style={{ minWidth: '20px', textAlign: 'center' }}>{travelers.adults}</span>
+                  <button type="button" 
+                    onClick={() => handleTravelerChange("adults", 1)}
+                    style={{ width: '30px', height: '30px', cursor: 'pointer' }}>+</button>
+                </div>
+              </div>
+
+              {/* Children */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <label>Children (0-11):</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <button type="button" 
+                    onClick={() => handleTravelerChange("children", -1)}
+                    disabled={travelers.children.length === 0}
+                    style={{ width: '30px', height: '30px', cursor: 'pointer' }}>-</button>
+                  <span style={{ minWidth: '20px', textAlign: 'center' }}>{travelers.children.length}</span>
+                  <button type="button" 
+                    onClick={() => handleTravelerChange("children", 1)}
+                    style={{ width: '30px', height: '30px', cursor: 'pointer' }}>+</button>
+                </div>
+              </div>
+
+              {/* Children Birth Dates */}
+              {travelers.children.map((child, index) => (
+                <div key={index} style={{ marginTop: '10px', paddingLeft: '10px', borderLeft: '3px solid #ddd' }}>
+                  <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '5px' }}>
+                    Child {index + 1} Birth Date:
+                  </label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={child.birthDate}
+                    onChange={(e) => handleChildBirthDateChange(index, e.target.value)}
+                    max={new Date().toISOString().split("T")[0]}
+                    required
+                    style={{ width: '100%', padding: '8px' }}
+                  />
+                  {child.birthDate && selectedDate && (
+                    <small style={{ color: '#666' }}>
+                      Age at trip: {calculateAge(child.birthDate, selectedDate)} years
+                    </small>
+                  )}
+                  {errors[index] && <div style={{ color: 'red', fontSize: '0.8rem' }}>{errors[index]}</div>}
+                </div>
+              ))}
+            </div>
+
           </form>
         </div>
 
         <div className={styles.modalFooter}>
           <div className={styles.modalPrice}>
-            Total: {totalPrice.toFixed(2)} PLN
+            Total: <strong>{totalPrice.toFixed(2)} PLN</strong>
           </div>
           <div className={styles.buttonsGroup}>
             <button 
@@ -229,15 +261,8 @@ const BookingModal = ({
 BookingModal.propTypes = {
   offer: PropTypes.object,
   userData: PropTypes.object,
-  isForSelf: PropTypes.bool,
-  setIsForSelf: PropTypes.func,
-  numGuests: PropTypes.number,
-  setNumGuests: PropTypes.func,
-  guestData: PropTypes.array,
-  setGuestData: PropTypes.func,
-  handleGuestChange: PropTypes.func,
-  handleBookingSubmit: PropTypes.func,
-  closeModal: PropTypes.func,
+  handleBookingSubmit: PropTypes.func.isRequired,
+  closeModal: PropTypes.func.isRequired,
 };
 
 export default BookingModal;

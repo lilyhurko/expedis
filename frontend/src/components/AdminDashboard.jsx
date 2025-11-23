@@ -65,7 +65,6 @@ function AdminDashboard() {
 export default AdminDashboard;
 
 
-// --- 1. Offers Review ---
 const OffersReview = ({ authHeaders }) => {
     const [pendingOffers, setPendingOffers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -124,7 +123,6 @@ const OffersReview = ({ authHeaders }) => {
     );
 };
 
-// --- 2. Top-Ups ---
 const TopUpsTable = ({ authHeaders }) => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -178,34 +176,52 @@ const TopUpsTable = ({ authHeaders }) => {
     );
 };
 
-// --- 3. Bookings ---
 const BookingsReview = ({ authHeaders }) => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    
     const fetchBookings = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`${API_URL}/api/admin/bookings/pending`, authHeaders);
+            const response = await axios.get(`${API_URL}/api/bookings/admin/pending`, authHeaders);
+            
             setBookings(response.data);
-        } catch (err) { setError(err.message); } finally { setLoading(false); }
+        } catch (err) { 
+            console.error("Error fetching bookings:", err);
+            
+            setLoading(false);
+        } finally { setLoading(false); }
     }, [authHeaders]);
 
-    const handleAction = async (id, action) => {
-        if(!window.confirm(`${action} booking?`)) return;
+    const handleAction = async (id, actionType) => {
+        const statusToSend = actionType === 'confirm' ? 'confirmed' : 'rejected';
+
+        if(!window.confirm(`Are you sure you want to mark this booking as ${statusToSend}?`)) return;
+
         try {
-            await axios.post(`${API_URL}/api/admin/bookings/${id}/${action}`, {}, authHeaders);
+            console.log(`Sending PATCH to ${API_URL}/api/bookings/${id}/status with status: ${statusToSend}`);
+            
+            await axios.patch(
+                `${API_URL}/api/bookings/${id}/status`, 
+                { status: statusToSend }, 
+                authHeaders
+            );
+
             setBookings(prev => prev.filter(b => b._id !== id));
-            alert(`Booking ${action}ed.`);
-        } catch(e) { alert(e.message); }
+            alert(`Booking marked as ${statusToSend}.`);
+        } catch(e) { 
+            console.error("Booking Update Error:", e);
+            alert(e.response?.data?.message || e.message); 
+        }
     };
 
     useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
     if(loading) return <div>Loading...</div>;
-    if(error) return <div className={styles.errorMessage}>Error: {error}</div>;
-    if(bookings.length === 0) return <div className={styles.emptyState}>No pending bookings.</div>;
+
+    if(!bookings || bookings.length === 0) return <div className={styles.emptyState}>No pending bookings found.</div>;
 
     return (
         <section>
@@ -223,8 +239,8 @@ const BookingsReview = ({ authHeaders }) => {
                                 <td>{b.offer?.title}</td>
                                 <td>{b.amount} PLN</td>
                                 <td>
-                                    <button onClick={() => handleAction(b._id, 'confirm')} className={`${styles.actionBtn} ${styles.approveBtn}`}>Confirm</button>
-                                    <button onClick={() => handleAction(b._id, 'reject')} className={`${styles.actionBtn} ${styles.rejectBtn}`}>Reject</button>
+                                    <button onClick={() => handleAction(b._id, 'confirm')} className={`${styles.actionBtn} ${styles.approveBtn}`}><FaCheckCircle/> Confirm</button>
+                                    <button onClick={() => handleAction(b._id, 'reject')} className={`${styles.actionBtn} ${styles.rejectBtn}`}><FaTimesCircle/> Reject</button>
                                 </td>
                             </tr>
                         ))}
@@ -236,7 +252,6 @@ const BookingsReview = ({ authHeaders }) => {
 };
 
 
-// --- 4. User Management ---
 const UserManagement = ({ authHeaders }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -284,7 +299,6 @@ const UserManagement = ({ authHeaders }) => {
         }
     };
 
-    // Helper to get correct badge style
     const getRoleBadgeClass = (role) => {
         switch(role) {
             case 'admin': return `${styles.roleBadge} ${styles.roleAdmin}`;
