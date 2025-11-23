@@ -51,7 +51,6 @@ function AppWrapper() {
         </Route>
       </Route>
 
-      
       <Route
         element={
           <ProtectedRoute allowedRoles={["user", "agency", "admin"]}>

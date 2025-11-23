@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from '../assets/styles/Profile.module.css';
-import { FaUser, FaWallet, FaBriefcase, FaHeart } from 'react-icons/fa'; // Переконайтесь, що встановлено react-icons
+import { FaUser, FaWallet, FaBriefcase, FaHeart } from 'react-icons/fa';
 
 function Profile() {
   return (
