@@ -17,6 +17,8 @@ import {
   FaTint,
   FaTrash,
   FaEdit,
+  FaUser, 
+  FaChild
 } from "react-icons/fa";
 import PlacesToVisit from "./PlacesToVisit.jsx";
 import UserNavbar from "./UserNavbar.jsx";
@@ -28,6 +30,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Footer2 from "./Footer2.jsx";
 import RecommendedHotels from "./RecommendedHotels.jsx";
+import BookingModal from "./BookingModal.jsx";
 import { Line } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import {
@@ -88,7 +91,9 @@ const TripDetails = () => {
   const [arrivalIATA, setArrivalIATA] = useState("");
   const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+
   const [travelers, setTravelers] = useState({
     adults: 2,
     children: [],
@@ -300,28 +305,6 @@ const TripDetails = () => {
     }
   }, [isUserAuthenticated, offerId, apiUrl]);
 
-  const toggleWishlist = async () => {
-    if (!isUserAuthenticated) {
-      navigate("/login");
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    try {
-      const response = await fetch(`${apiUrl}/api/users/wishlist/${offerId}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setIsInWishlist(data.isAdded);
-      }
-    } catch (error) {
-      console.error("Error toggling wishlist:", error);
-    }
-  };
-
   const isOwner = isAgency && tripDetails?.userId === currentUser?._id;
 
   const handleDeleteTrip = async () => {
@@ -359,77 +342,56 @@ const TripDetails = () => {
     navigate(`/agency/edit-trip/${offerId}`);
   };
 
-  const handleBookNowClick = async () => {
+  const handleBookNowClick = () => {
     if (!isUser) {
       alert("Only registered travelers can book trips.");
       return;
     }
-    if (!selectedDate) {
-      alert("Please select a date before booking.");
+    if (!isUserAuthenticated) {
+      alert("Please log in to book a trip.");
+      navigate("/login");
+      return;
+    }
+    setIsBookingModalOpen(true);
+  };
+
+  const processBooking = async (bookingData) => {
+    if (bookingData.amount <= 0) {
+      alert("Cannot book with zero total price.");
       return;
     }
 
-    const handleBookNowClick = async () => {
-      if (!isUserAuthenticated) {
-        alert("Please log in to book a trip.");
-        navigate("/login");
-        return;
-      }
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${apiUrl}/api/bookings/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(bookingData),
+      });
 
-      if (!selectedDate) {
-        alert("Please select a date before booking.");
-        return;
-      }
+      const data = await response.json();
 
-      const hasErrors = errors.some((error) => error !== "");
-      if (hasErrors) {
-        alert("Please fix errors in travelers (child age) before booking.");
-        setIsModalOpen(true);
-        return;
-      }
-
-      const bookingData = {
-        offerId: offerId,
-        amount: parseFloat(calculateTotalPrice()),
-        selectedDate: selectedDate,
-        travelers: travelers,
-      };
-
-      if (bookingData.amount <= 0) {
-        alert("Cannot book with zero total price.");
-        return;
-      }
-
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${apiUrl}/api/bookings/create`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(bookingData),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          if (response.status === 402) {
-            alert(data.message);
-            navigate("/profile");
-          } else {
-            throw new Error(data.message || "Booking failed");
-          }
-        } else {
+      if (!response.ok) {
+        if (response.status === 402) {
           alert(data.message);
-          navigate("/my-bookings");
+          navigate("/profile");
+        } else {
+          throw new Error(data.message || "Booking failed");
         }
-      } catch (error) {
-        console.error("Booking error:", error);
-        alert(`An error occurred: ${error.message}`);
+      } else {
+        alert(data.message);
+        setIsBookingModalOpen(false);
+        navigate("/my-bookings");
       }
-    };
+    } catch (error) {
+      console.error("Booking error:", error);
+      alert(`An error occurred: ${error.message}`);
+    }
   };
+
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!isUserAuthenticated) {
@@ -497,6 +459,7 @@ const TripDetails = () => {
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFullScreenOpen, closeFullScreen, tripDetails?.imageUrls?.length]);
+
   const calculateAge = (birthDate, referenceDate) => {
     const refDate = referenceDate ? new Date(referenceDate) : new Date();
     const birth = new Date(birthDate);
@@ -536,6 +499,7 @@ const TripDetails = () => {
     });
     return total.toFixed(2);
   };
+
   const handleTravelerChange = (type, delta) => {
     setTravelers((prev) => {
       if (type === "adults") {
@@ -556,6 +520,7 @@ const TripDetails = () => {
       return prev;
     });
   };
+
   const handleChildBirthDateChange = (index, birthDate) => {
     setTravelers((prev) => {
       const newChildren = [...prev.children];
@@ -568,15 +533,18 @@ const TripDetails = () => {
       return newErrors;
     });
   };
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => {
+
+  const [isSimpleModalOpen, setIsSimpleModalOpen] = useState(false);
+  const openSimpleModal = () => setIsSimpleModalOpen(true);
+  const closeSimpleModal = () => {
     const hasErrors = errors.some((error) => error !== "");
     if (!hasErrors) {
-      setIsModalOpen(false);
+      setIsSimpleModalOpen(false);
     } else {
       alert("Please fix all errors before saving.");
     }
   };
+
   const averageRating = useMemo(() => {
     if (!tripReviews || tripReviews.length === 0) return 0;
     const total = tripReviews.reduce(
@@ -890,7 +858,7 @@ const TripDetails = () => {
                 <div>
                   <div className={styles.travelerSelection}>
                     <button
-                      onClick={openModal}
+                      onClick={openSimpleModal}
                       className={styles.travelerButton}
                     >
                       {travelers.adults} Adult{travelers.adults > 1 ? "s" : ""}{" "}
@@ -952,7 +920,7 @@ const TripDetails = () => {
                 </div>
                 <div className={styles.cardFooter}>
                   <p className={styles.price}>
-                    Total: {calculateTotalPrice()} PLN
+                    Approx. Total: {calculateTotalPrice()} PLN
                   </p>
                   <button
                     className={styles.bookButton}
@@ -1013,92 +981,130 @@ const TripDetails = () => {
           </div>
         )}
 
-        {isModalOpen && (
-          <div className={modalStyles.modalOverlay} onClick={closeModal}>
+        {isSimpleModalOpen && (
+          <div className={modalStyles.modalOverlay} onClick={closeSimpleModal}>
             <div
               className={modalStyles.modal}
               onClick={(e) => e.stopPropagation()}
             >
               <div className={modalStyles.modalHeader}>
-                <h3 className={modalStyles.modalTitle}>Select Travelers</h3>
-                <button className={modalStyles.modalClose} onClick={closeModal}>
+                <div>
+                  <h3 className={modalStyles.modalTitle}>Estimate Price</h3>
+                  <p className={modalStyles.modalSubtitle}>Select travelers to see updated price</p>
+                </div>
+                <button className={modalStyles.modalClose} onClick={closeSimpleModal}>
                   ×
                 </button>
               </div>
 
               <div className={modalStyles.modalBody}>
-                <div className={modalStyles.travelerGroup}>
-                  <label>Adults (12+ years):</label>
-                  <div className={modalStyles.travelerControls}>
-                    <button
-                      onClick={() => handleTravelerChange("adults", -1)}
-                      disabled={travelers.adults <= 1}
-                    >
-                      -
-                    </button>
-                    <span>{travelers.adults}</span>
-                    <button onClick={() => handleTravelerChange("adults", 1)}>
-                      +
-                    </button>
+                <div className={modalStyles.section}>
+                  <div className={modalStyles.counterRow}>
+                    <div className={modalStyles.counterLabel}>
+                      <span className={modalStyles.typeTitle}>Adults</span>
+                      <span className={modalStyles.typeDesc}>Age 12+</span>
+                    </div>
+                    <div className={modalStyles.counterControls}>
+                      <button
+                        onClick={() => handleTravelerChange("adults", -1)}
+                        disabled={travelers.adults <= 1}
+                      >
+                        -
+                      </button>
+                      <span>{travelers.adults}</span>
+                      <button onClick={() => handleTravelerChange("adults", 1)}>
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={modalStyles.counterRow}>
+                    <div className={modalStyles.counterLabel}>
+                      <span className={modalStyles.typeTitle}>Children</span>
+                      <span className={modalStyles.typeDesc}>Age 0-11</span>
+                    </div>
+                    <div className={modalStyles.counterControls}>
+                      <button
+                        onClick={() => handleTravelerChange("children", -1)}
+                        disabled={travelers.children.length === 0}
+                      >
+                        -
+                      </button>
+                      <span>{travelers.children.length}</span>
+                      <button onClick={() => handleTravelerChange("children", 1)}>
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className={modalStyles.travelerGroup}>
-                  <label>Children (0–11 years):</label>
-                  <div className={modalStyles.travelerControls}>
-                    <button
-                      onClick={() => handleTravelerChange("children", -1)}
-                      disabled={travelers.children.length === 0}
-                    >
-                      -
-                    </button>
-                    <span>{travelers.children.length}</span>
-                    <button onClick={() => handleTravelerChange("children", 1)}>
-                      +
-                    </button>
+                {travelers.children.length > 0 && (
+                  <div className={modalStyles.travelersDetailsList}>
+                    <p className={modalStyles.listTitle}>Children Ages</p>
+                    
+                    {travelers.children.map((child, index) => (
+                      <div key={index} className={modalStyles.travelerCard}>
+                        <div className={modalStyles.cardHeader}>
+                          <FaChild /> Child {index + 1}
+                        </div>
+                        
+                        <div className={modalStyles.dateInputWrapper}>
+                          <label>Date of Birth:</label>
+                          <input
+                            type="date"
+                            value={child.birthDate}
+                            onChange={(e) =>
+                              handleChildBirthDateChange(index, e.target.value)
+                            }
+                            max={new Date().toISOString().split("T")[0]}
+                          />
+                          
+                          {child.birthDate && !errors[index] && (
+                            <div className={modalStyles.ageInfo}>
+                              Age on trip: <strong>{calculateAge(child.birthDate, selectedDate)} years</strong>
+                            </div>
+                          )}
+                          
+                          {errors[index] && (
+                            <p className={modalStyles.errorText}>{errors[index]}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-
-                {travelers.children.map((child, index) => (
-                  <div key={index} className={modalStyles.childBirthDate}>
-                    <label>Child {index + 1} Date of Birth:</label>
-                    <input
-                      type="date"
-                      value={child.birthDate}
-                      onChange={(e) =>
-                        handleChildBirthDateChange(index, e.target.value)
-                      }
-                      max={new Date().toISOString().split("T")[0]}
-                    />
-                    {child.birthDate && (
-                      <p>
-                        Age: {calculateAge(child.birthDate, selectedDate)} years
-                      </p>
-                    )}
-                    {errors[index] && (
-                      <p className={modalStyles.errorText}>{errors[index]}</p>
-                    )}
-                  </div>
-                ))}
+                )}
               </div>
 
               <div className={modalStyles.modalFooter}>
-                <button
-                  onClick={closeModal}
-                  className={modalStyles.btnSecondary}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={closeModal}
-                  className={modalStyles.btnPrimary}
-                  disabled={errors.some((error) => error !== "")}
-                >
-                  Save
-                </button>
+                <div className={modalStyles.buttonsGroup}>
+                   <button
+                    onClick={closeSimpleModal}
+                    className={modalStyles.btnSecondary}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={closeSimpleModal}
+                    className={modalStyles.btnPrimary}
+                    disabled={errors.some((error) => error !== "")}
+                  >
+                    Save & Update Price
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+        )}
+
+        {isBookingModalOpen && (
+          <BookingModal
+            offer={tripDetails}
+            userData={currentUser}
+            handleBookingSubmit={processBooking}
+            closeModal={() => setIsBookingModalOpen(false)}
+            initialDate={selectedDate}
+            initialTravelers={travelers}
+          />
         )}
 
         <div className={styles.tripTabs}>
