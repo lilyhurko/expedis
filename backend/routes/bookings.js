@@ -38,6 +38,14 @@ router.post("/create", auth, async (req, res) => {
     return res.status(400).json({ message: "Please provide all booking details" });
   }
 
+const bookingDate = new Date(selectedDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); 
+
+  if (bookingDate < today) {
+    return res.status(400).json({ message: "Cannot book a trip for a past date." });
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -215,6 +223,44 @@ router.patch("/:id/status", auth, async (req, res) => {
 
 router.get("/my-bookings", auth, async (req, res) => {
   try {
+    const currentDate = new Date();
+
+   
+    const bookingsToComplete = await Booking.find({
+      user: req.user.id,
+      status: "confirmed",
+      selectedDate: { $lt: currentDate },
+    })
+    .populate("user", "email name")
+    .populate("offer", "title")
+    .populate("agency", "email");
+
+    if (bookingsToComplete.length > 0) {
+      await Booking.updateMany(
+        {
+          user: req.user.id,
+          status: "confirmed",
+          selectedDate: { $lt: currentDate },
+        },
+        { status: "completed" }
+      );
+
+      bookingsToComplete.forEach(booking => {
+        if (booking.user && booking.user.email) {
+          const completedHtml = `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2 style="color: #3498db;">Welcome back! 🌍</h2>
+              <p>We hope you enjoyed your trip to <strong>${booking.offer.title}</strong>.</p>
+              <p>Please log in to your profile to leave a review and share your experience with others!</p>
+              <a href="http://localhost:3000/offer/${booking.offer._id}" style="background: #f1c40f; color: #333; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Leave a Review</a>
+            </div>
+          `;
+          sendEmail(booking.user.email, `How was your trip to ${booking.offer.title}?`, completedHtml)
+            .catch(err => console.error("Failed to send completion email:", err));
+        }
+      });
+    }
+
     const bookings = await Booking.find({ user: req.user.id })
       .populate("offer", "title city country imageUrls")
       .populate("agency", "name email")
@@ -227,6 +273,83 @@ router.get("/my-bookings", auth, async (req, res) => {
   }
 });
 
+
+router.patch("/:id/cancel", auth, async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate('offer', 'title')
+      .populate('agency', 'email')
+      .session(session);
+      
+    const user = await User.findById(req.user.id).session(session);
+
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    if (booking.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (["cancelled", "completed", "rejected"].includes(booking.status)) {
+       throw new Error("Cannot cancel this booking");
+    }
+
+    if (new Date(booking.selectedDate) < new Date()) {
+       throw new Error("Cannot cancel past bookings");
+    }
+
+    user.balance += booking.amount;
+    user.balance_held -= booking.amount;
+    
+    if (user.balance_held < 0) user.balance_held = 0;
+
+    booking.status = "cancelled";
+
+    await user.save({ session });
+    await booking.save({ session });
+
+    await session.commitTransaction();
+
+
+    if (user.email) {
+      const refundHtml = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2 style="color: #e74c3c;">Booking Cancelled ❌</h2>
+          <p>You have successfully cancelled your booking for <strong>${booking.offer.title}</strong>.</p>
+          <p><strong>${booking.amount} PLN</strong> has been returned to your wallet balance.</p>
+        </div>
+      `;
+      sendEmail(user.email, `Booking Cancelled: ${booking.offer.title}`, refundHtml)
+        .catch(err => console.error("Client cancel email failed", err));
+    }
+
+    if (booking.agency && booking.agency.email) {
+      const agencyCancelHtml = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2 style="color: #e74c3c;">Booking Cancelled by User ⚠️</h2>
+          <p>The client <strong>${user.name} ${user.surname}</strong> has cancelled their booking for <strong>${booking.offer.title}</strong>.</p>
+          <p>Date: ${new Date(booking.selectedDate).toLocaleDateString()}</p>
+          <p>The booking slot is now free.</p>
+        </div>
+      `;
+      sendEmail(booking.agency.email, `Cancellation Alert: ${booking.offer.title}`, agencyCancelHtml)
+        .catch(err => console.error("Agency cancel email failed", err));
+    }
+
+    res.json({ message: "Booking cancelled successfully", booking });
+
+  } catch (err) {
+    await session.abortTransaction();
+    console.error("Cancel error:", err);
+    res.status(500).json({ message: err.message });
+  } finally {
+    session.endSession();
+  }
+});
 
 router.get("/agency-orders", auth, async (req, res) => {
   try {
