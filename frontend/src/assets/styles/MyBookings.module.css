@@ -1,0 +1,244 @@
+
+.container {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 1rem 2rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+.pageTitle {
+  text-align: left; 
+  font-family: 'Playfair Display', serif;
+  color: #1B3A4B;
+  font-size: 2.2rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 1rem;
+}
+
+.bookingList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bookingCard {
+  display: flex;
+  background: #ffffff;
+  border: 1px solid #eaf0f6;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.bookingCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+  border-color: #dbe4ef;
+}
+
+.imageWrapper {
+  width: 260px; 
+  min-width: 260px;
+  position: relative;
+  background-color: #eee;
+}
+
+.bookingImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bookingDetails {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.offerTitle {
+  font-size: 1.4rem;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: #1B3A4B;
+  margin: 0 0 0.3rem 0;
+}
+
+.offerTitleDeleted {
+  font-size: 1.4rem;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: #9ca3af;
+  margin: 0 0 0.5rem 0;
+}
+
+.location {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
+}
+
+.infoGrid p {
+  margin: 0;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.infoGrid strong {
+  color: #1B3A4B;
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+.bookingStatusWrapper {
+  width: 200px;
+  min-width: 200px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid #f1f5f9;
+  background: #fcfdfe;
+}
+
+.statusLabel {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.statusBadge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  text-transform: uppercase;
+  text-align: center;
+  width: 100%;
+  letter-spacing: 0.5px;
+}
+
+.pending {
+  background-color: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+}
+
+.confirmed {
+  background-color: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.rejected, .cancelled {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.completed {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.default {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 5rem 2rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 2px dashed #e2e8f0;
+}
+
+.emptyState p {
+  font-size: 1.1rem;
+  color: #64748b;
+  margin: 1.5rem 0;
+}
+
+.findTripButton {
+  padding: 12px 32px;
+  font-size: 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  background-color: #3498db;
+  color: #ffffff;
+  display: inline-block;
+  transition: background-color 0.2s;
+  box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
+}
+
+.findTripButton:hover {
+  background-color: #2980b9;
+  transform: translateY(-1px);
+}
+
+.loadingState, .errorState {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+    color: #64748b;
+}
+
+.errorState {
+    color: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .bookingCard {
+    flex-direction: column;
+  }
+  
+  .imageWrapper {
+    width: 100%;
+    height: 180px; 
+    min-width: auto;
+  }
+  
+  .bookingDetails {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .bookingStatusWrapper {
+    width: 100%;
+    border-left: none;
+    flex-direction: row; 
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: #fff;
+  }
+  
+  .statusLabel {
+      margin-bottom: 0;
+      margin-right: 10px;
+  }
+  
+  .statusBadge {
+      width: auto; 
+  }
+}

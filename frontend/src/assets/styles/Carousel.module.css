@@ -1,0 +1,125 @@
+.carouselContainer {
+  position: relative;
+  padding: 0 80px;
+  margin: 0 40px; 
+}
+
+.carouselSlider {
+  margin: 0 -10px; 
+}
+
+.carouselSlide {
+  padding: 0 10px; 
+  box-sizing: border-box;
+}
+
+.card {
+  background: rgba(27, 58, 75, 0.05);
+  backdrop-filter: blur(15px) saturate(180%);
+  -webkit-backdrop-filter: blur(15px) saturate(180%);
+  border: 1px solid rgba(27, 58, 75, 0.1); 
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex !important; 
+  flex-direction: column;
+  height: 420px; 
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.cardImage {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.cardInfo {
+  padding: 1.25rem;
+  font-family: "Poppins", sans-serif;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.slickArrow {
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(27, 58, 75, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.slickArrow:hover {
+  background: #1b3a4b;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.slickArrowPrev {
+  left: -60px;
+}
+
+.slickArrowNext {
+  right: -60px;
+}
+
+.carouselSlider :global(.slick-dots) {
+  bottom: -30px;
+}
+
+.carouselSlider :global(.slick-dots li button:before) {
+  font-size: 12px;
+  color: #cccccc;
+  opacity: 1;
+}
+
+.carouselSlider :global(.slick-dots li.slick-active button:before) {
+  color: #1b3a4b;
+}
+
+/* === ЗАГАЛЬНІ МЕДІА-ЗАПИТИ === */
+@media (max-width: 900px) {
+  .carouselContainer {
+    padding: 0 40px;
+    margin: 0 30px;
+  }
+  .slickArrowPrev {
+    left: -45px;
+  }
+  .slickArrowNext {
+    right: -45px;
+  }
+}
+
+@media (max-width: 768px) {
+  .carouselContainer {
+    padding: 0 20px;
+    margin: 0 15px;
+  }
+  .slickArrow {
+    width: 38px;
+    height: 38px;
+    top: 35%;
+  }
+  .slickArrowPrev {
+    left: -30px;
+  }
+  .slickArrowNext {
+    right: -30px;
+  }
+}

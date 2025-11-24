@@ -1,0 +1,126 @@
+.sectionHeading {
+    display: inline-flex;
+    align-items: center;
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    color: #1B3A4B;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-left: 150px;
+}
+.sectionHeading::before {
+    content: "";
+    position: absolute;
+    left: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 65px;
+    height: 2px;
+    background-color: #1B3A4B;
+}
+
+.hotelName {
+  font-family: "Playfair Display", serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #1b3a4b;
+  margin: 0 0 10px 0;
+  min-height: 2.6rem; 
+}
+
+.hotelRating {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  min-height: 1.5rem; 
+}
+
+.starSelected {
+  color: #e2d4bb; 
+  font-size: 1.2rem;
+}
+
+.starUnselected {
+  color: #ccc;
+  font-size: 1.2rem;
+}
+
+.hotelLink {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+  margin-top: auto; 
+  padding: 10px 26px;
+  font-size: 1rem;
+  font-family: "Poppins", sans-serif;
+  border-radius: 50px;
+  font-weight: 500;
+  cursor: pointer;
+  background: rgba(27, 58, 75, 0.5);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.hotelLink::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: all 0.6s ease;
+}
+
+.hotelLink:hover::before {
+  left: 125%;
+}
+
+.hotelLink:hover {
+  background: rgba(27, 58, 75, 0.7);
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.hotelLink:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
+}
+
+
+@media (max-width: 900px) {
+  .sectionHeading {
+    padding-left: 40px !important;
+    padding-right: 15px !important;
+  }
+  .sectionHeading::before {
+    width: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sectionHeading {
+    padding-left: 20px !important;
+    padding-right: 10px !important;
+  }
+  .sectionHeading::before {
+    width: 20px;
+  }
+}

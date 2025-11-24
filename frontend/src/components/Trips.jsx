@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import UserNavbar from "./UserNavbar.jsx";
 import Navbar from "./Navbar.jsx";
 import "../assets/styles/Offerts.css";
 import OfferCard from "./OfferCard.jsx";
-import AddOfferModal from "./AddOfferModal.jsx";
 import EditOfferModal from "./EditOfferModal.jsx";
 import BookingModal from "./BookingModal.jsx";
 import ForcedLogout from "./ForcedLogout.js";
 import Footer2 from "./Footer2.jsx";
+import TripSearchFilter from "./TripSearchFilter.jsx";
 
 const Trips = () => {
   const [offers, setOffers] = useState([]);
@@ -17,9 +17,11 @@ const Trips = () => {
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [userRole, setUserRole] = useState("");
   const [userData, setUserData] = useState({});
+
   const [isForSelf, setIsForSelf] = useState(true);
   const [numGuests, setNumGuests] = useState(1);
   const [guestData, setGuestData] = useState([{ name: "", surname: "" }]);
+
   const [editFormData, setEditFormData] = useState({
     _id: "",
     title: "",
@@ -35,23 +37,9 @@ const Trips = () => {
     imageUrls: [],
     mainImageIndex: 0,
     placesToVisit: [{ name: "", description: "", image: null }],
-    flightConnections: [
-      {
-        departureAirportIATA: "",
-        arrivalAirportIATA: "",
-        departureTime: "",
-        arrivalTime: "",
-        flightType: "outbound",
-      },
-      {
-        departureAirportIATA: "",
-        arrivalAirportIATA: "",
-        departureTime: "",
-        arrivalTime: "",
-        flightType: "return",
-      },
-    ],
+    flightConnections: [],
   });
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [newOfferData, setNewOfferData] = useState({
     title: "",
@@ -66,11 +54,14 @@ const Trips = () => {
     images: [],
     mainImageIndex: null,
     placesToVisit: [{ name: "", description: "", image: null }],
-    flightConnections: [{ departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" }],
+    flightConnections: [
+      { departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" },
+    ],
   });
 
   const navigate = useNavigate();
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001'; 
+  const [searchParams] = useSearchParams();
+  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -81,7 +72,7 @@ const Trips = () => {
       try {
         const parsedUser = JSON.parse(userDataStr);
         setUserRole(parsedUser.role || "");
-        setUserData(parsedUser);
+        setUserData({ ...parsedUser, id: parsedUser.id || parsedUser._id });
       } catch (error) {
         console.error("Error parsing user data:", error);
         setUserRole("");
@@ -91,14 +82,15 @@ const Trips = () => {
   }, []);
 
   useEffect(() => {
-    fetch(`${apiUrl}/api/offers`)
+    const queryString = searchParams.toString();
+    fetch(`${apiUrl}/api/offers?${queryString}`)
       .then((res) => {
         if (!res.ok)
           throw new Error(`Failed to load offers: ${res.statusText}`);
         return res.json();
       })
       .then((data) => {
-        console.log("Fetched offers:", data); 
+        console.log("Fetched offers:", data);
         setOffers(data);
         setLoading(false);
       })
@@ -106,14 +98,21 @@ const Trips = () => {
         console.error("Error fetching offers:", error);
         setLoading(false);
       });
-  }, [apiUrl]);
+  }, [apiUrl, searchParams]);
 
   const handleBookNow = (offerId) => {
+    console.log("1. handleBookNow called with ID:", offerId); // <--- LOG 1
+
     if (!isAuthenticated) {
+      console.log("2. User not authenticated");
       localStorage.setItem("selectedOffer", offerId);
       navigate("/login");
     } else {
+      console.log("2. Setting selectedOffer:", offerId); // <--- LOG 2
       setSelectedOffer(offerId);
+      setIsForSelf(true);
+      setNumGuests(1);
+      setGuestData([{ name: "", surname: "" }]);
     }
   };
 
@@ -138,7 +137,9 @@ const Trips = () => {
           offerToEdit.imageUrls ||
           (offerToEdit.imageUrl ? [offerToEdit.imageUrl] : []),
         mainImageIndex: offerToEdit.mainImageIndex || 0,
-        placesToVisit: offerToEdit.placesToVisit || [{ name: "", description: "", image: null }],
+        placesToVisit: offerToEdit.placesToVisit || [
+          { name: "", description: "", image: null },
+        ],
         flightConnections: offerToEdit.flightConnections || [
           {
             departureAirportIATA: "",
@@ -159,81 +160,10 @@ const Trips = () => {
     }
   };
 
-  const handleAddNewOfferClick = () => {
-    setShowAddModal(true);
-  };
-
-  const handleNewOfferChange = (e) => {
-    const { name, value, files } = e.target;
-    setNewOfferData((prev) => ({
-      ...prev,
-      [name]: files
-        ? Array.from(files)
-        : name === "price" || name === "duration"
-        ? Number(value)
-        : value,
-    }));
-  };
-
-  const handleAddOfferSubmit = async (formData) => {
-    const token = localStorage.getItem("token");
-    console.log("Token before send:", token ? "Present" : "MISSING");
-    if (!token) return ForcedLogout();
-
-    try {
-      const formDataEntries = {};
-      for (const [key, value] of formData.entries()) {
-        formDataEntries[key] = value;
-      }
-      console.log('FormData being sent to add:', formDataEntries);
-
-      const response = await fetch(`${apiUrl}/api/offers`, { 
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          errorData = { message: `Raw error: ${response.statusText}` };
-        }
-        console.log("Server error details:", errorData);
-        throw new Error(errorData.message || `Server error: ${response.status}`);
-      }
-
-      const newOffer = await response.json();
-      setOffers((prev) => [...prev, newOffer]);
-      setShowAddModal(false);
-      setNewOfferData({
-        title: "",
-        description: "",
-        price: "",
-        duration: "",
-        city: "",
-        country: "",
-        departureAirportIATA: "",
-        categories: [],
-        availableDates: [],
-        images: [],
-        mainImageIndex: null,
-        placesToVisit: [{ name: "", description: "", image: null }],
-        flightConnections: [{ departureAirportIATA: "", arrivalAirportIATA: "", departureTime: "" }],
-      });
-      alert("Offer added successfully!");
-    } catch (error) {
-      console.error("Error adding offer:", error.message);
-      alert(`Failed to add offer: ${error.message}`);
-    }
-  };
-
   const handleDeleteOffer = (offerId) => {
     if (!window.confirm("Are you sure you want to delete this offer?")) {
       return;
     }
-
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Authentication token is missing.");
@@ -241,11 +171,9 @@ const Trips = () => {
       return;
     }
 
-    fetch(`${apiUrl}/api/offers/${offerId}`, { 
+    fetch(`${apiUrl}/api/offers/${offerId}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then(async (res) => {
         if (!res.ok) {
@@ -277,49 +205,33 @@ const Trips = () => {
 
   const handleEditSubmit = async (formData) => {
     const id = formData.get("_id") || editFormData._id;
-    if (!id) {
-      console.error("No offer ID found!");
-      alert("No offer ID found!");
-      return;
-    }
     const token = localStorage.getItem("token");
-    console.log("Token:", token);
+
     if (!token) {
       alert("Authentication token is missing.");
       ForcedLogout();
-      navigate("/login");
       return;
     }
-    try {
-      const formDataEntries = {};
-      for (const [key, value] of formData.entries()) {
-        formDataEntries[key] = value;
-      }
-      console.log('FormData being sent:', formDataEntries);
 
-      const response = await fetch(`${apiUrl}/api/offers/${id}`, { 
+    try {
+      const response = await fetch(`${apiUrl}/api/offers/${id}`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Server error" }));
-        if (response.status === 401) {
-          alert("Session expired or invalid token. Please log in again.");
-          ForcedLogout();
-          navigate("/login");
-          return;
-        }
-        if (response.status === 404) {
-          throw new Error("Offer not found on the server.");
-        }
-        throw new Error(errorData.message || `Server error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `Server error: ${response.status}`
+        );
       }
+
       const updatedOffer = await response.json();
       setOffers((prev) =>
-        prev.map((offer) => (offer._id === updatedOffer._id ? updatedOffer : offer))
+        prev.map((offer) =>
+          offer._id === updatedOffer._id ? updatedOffer : offer
+        )
       );
       setSelectedOffer(null);
       alert("Offer updated successfully!");
@@ -329,40 +241,68 @@ const Trips = () => {
     }
   };
 
-  const handleBookingSubmit = async (e) => {
-    e.preventDefault();
-    console.log("Form submitted to Formspree");
-    setSelectedOffer(null);
-  };
+  const handleBookingSubmit = async (bookingData) => {
+    const token = localStorage.getItem("token");
 
+    if (!token) {
+      alert("Please log in to book a trip.");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiUrl}/api/bookings/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Booking successful! Waiting for confirmation.");
+        closeModal();
+      } else {
+        alert(data.message || "Booking failed.");
+
+        if (response.status === 402) {
+          navigate("/profile/wallet");
+        }
+      }
+    } catch (error) {
+      console.error("Booking error:", error);
+      alert("Server error. Please try again later.");
+    }
+  };
   const closeModal = () => {
     setSelectedOffer(null);
     setShowAddModal(false);
   };
-
   const handleGuestChange = (index, field, value) => {
     const newGuestData = [...guestData];
-    newGuestData[index] = {
-      ...newGuestData[index],
-      [field]: value,
-    };
+    newGuestData[index] = { ...newGuestData[index], [field]: value };
     setGuestData(newGuestData);
   };
+
+const isEditing = selectedOffer && (userRole === "admin" || userRole === "agency");
+  const isBooking = selectedOffer && !isEditing;
+  
+  console.log("RENDER STATE -> selectedOffer:", selectedOffer, " isBooking:", isBooking); 
 
   return (
     <>
       {isAuthenticated ? <UserNavbar /> : <Navbar />}
+      <div className="container-for-filter">
+        <TripSearchFilter />
+      </div>
       <div className="offers-container">
         <div className="offers-header">
-          <h2 className="offers-title">Available Offers</h2>
-          {userRole === "admin" && (
-            <button
-              className="add-offer-button navbar-login-button"
-              onClick={handleAddNewOfferClick}
-            >
-              Add New Offer
-            </button>
-          )}
+          <h2 className="offers-title">
+            {searchParams.toString() ? "Search Results" : "All Offers"}
+          </h2>
         </div>
 
         {loading ? (
@@ -373,9 +313,10 @@ const Trips = () => {
           <div className="offers-grid">
             {offers.map((offer, index) => (
               <OfferCard
-                key={offer._id || index} 
+                key={offer._id || index}
                 offer={offer}
                 userRole={userRole}
+                currentUserId={userData.id}
                 handleBookNow={handleBookNow}
                 handleEditOffer={handleEditOffer}
                 handleDeleteOffer={handleDeleteOffer}
@@ -384,19 +325,7 @@ const Trips = () => {
           </div>
         )}
 
-        {showAddModal && (
-          <div className="offer-modal-wrapper">
-            <AddOfferModal
-              newOfferData={newOfferData}
-              setNewOfferData={setNewOfferData}
-              handleNewOfferChange={handleNewOfferChange}
-              handleAddOfferSubmit={handleAddOfferSubmit}
-              closeModal={closeModal}
-            />
-          </div>
-        )}
-
-        {selectedOffer && userRole === "admin" && (
+        {isEditing && (
           <div className="offer-modal-wrapper">
             <EditOfferModal
               offer={offers.find((o) => o._id === selectedOffer)}
@@ -409,7 +338,7 @@ const Trips = () => {
           </div>
         )}
 
-        {selectedOffer && userRole !== "admin" && (
+        {isBooking && (
           <BookingModal
             offer={offers.find((o) => o._id === selectedOffer)}
             userData={userData}

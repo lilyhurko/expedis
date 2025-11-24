@@ -5,13 +5,11 @@ import koloImg from "../assets/img/kolo.png";
 const Footer = () => {
   return (
     <footer className="footer">
-      {/* Section with line and 'Being Your Journey' */}
       <div className="footer-heading">
         <div className="line"></div>
         <h2>Being Your Journey</h2>
       </div>
 
-      {/* Section with 'Let’s Just Get Travel' text and image */}
       <div className="footer-center">
         <h2 className="footer-heading-text">
           Let’s just get a travel<br />
@@ -28,7 +26,6 @@ const Footer = () => {
         </a>
       </div>
 
-      {/* Footer content */}
       <div className="footer-content">
         <div>
           <div className="footer-subtext">Get touch with us</div>
@@ -43,7 +40,6 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Footer bottom */}
       <div className="footer-bottom">
         <div>© 2025 Expedis. All rights reserved.</div>
         <div className="footer-links">

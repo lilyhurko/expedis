@@ -1,263 +1,348 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import DatePicker from 'react-multi-date-picker';
+import React, { useState, useEffect } from "react";
+import { FaUser, FaChild, FaCalendarAlt } from "react-icons/fa";
+import styles from "../assets/styles/Modals.module.css";
 
 const BookingModal = ({
   offer,
   userData,
-  isForSelf,
-  setIsForSelf,
-  numGuests,
-  setNumGuests,
-  guestData,
-  setGuestData,
-  handleGuestChange,
   handleBookingSubmit,
   closeModal,
+  initialDate,      // <--- Новий пропс
+  initialTravelers  // <--- Новий пропс
 }) => {
-  const [selectedDate, setSelectedDate] = useState(null);
+  // Ініціалізація дати з пропса або пустий рядок
+  const [selectedDate, setSelectedDate] = useState(initialDate || "");
+  const [bookForSelf, setBookForSelf] = useState(true);
+
+  // Ініціалізація дорослих на основі кількості з TripDetails
+  const [adults, setAdults] = useState(() => {
+    const count = initialTravelers?.adults || 1;
+    // Створюємо масив потрібної довжини
+    const initialArray = Array(count).fill(null).map(() => ({ name: "", surname: "" }));
+    
+    // Якщо бронюємо для себе і є дані юзера, заповнюємо першого
+    if (userData && initialArray.length > 0) {
+        initialArray[0] = { 
+            name: userData.name || "", 
+            surname: userData.surname || "" 
+        };
+    }
+    return initialArray;
+  });
+
+  // Ініціалізація дітей. Якщо на головній вже ввели вік - переносимо його
+  const [children, setChildren] = useState(() => {
+    const inputChildren = initialTravelers?.children || [];
+    if (inputChildren.length > 0) {
+        return inputChildren.map(child => ({
+            name: "",
+            surname: "",
+            birthDate: child.birthDate || "" // Зберігаємо дату народження, якщо вона була введена
+        }));
+    }
+    return [];
+  });
+
+  const [totalPrice, setTotalPrice] = useState(0);
+
+  // Логіка перемикача "Бронюю для себе" (оновлена, щоб не скидати кількість)
+  useEffect(() => {
+    setAdults(prevAdults => {
+        const newAdults = [...prevAdults];
+        if (newAdults.length === 0) return newAdults;
+
+        if (bookForSelf) {
+            // Записуємо дані юзера в перший слот
+            newAdults[0] = {
+                ...newAdults[0], // зберігаємо інші поля, якщо раптом будуть
+                name: userData?.name || "",
+                surname: userData?.surname || ""
+            };
+        } else {
+            // Якщо зняли галочку і там були дані юзера - очищаємо
+            if (newAdults[0].name === userData?.name) {
+                newAdults[0] = { ...newAdults[0], name: "", surname: "" };
+            }
+        }
+        return newAdults;
+    });
+  }, [bookForSelf, userData]);
+
+  // Розрахунок ціни (Price Calculation)
+  useEffect(() => {
+    if (!offer?.price) return;
+
+    let total = adults.length * offer.price;
+
+    children.forEach((child) => {
+      if (!child.birthDate || !selectedDate) return;
+
+      const tripDate = new Date(selectedDate);
+      const birthDate = new Date(child.birthDate);
+
+      let age = tripDate.getFullYear() - birthDate.getFullYear();
+      const m = tripDate.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && tripDate.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      if (age < 2) total += offer.price * 0.1; // Infant
+      else if (age < 12) total += offer.price * 0.7; // Child
+      else total += offer.price; // Teen treated as adult price
+    });
+
+    setTotalPrice(total);
+  }, [adults.length, children, selectedDate, offer]);
+
+  const handleAdultCount = (delta) => {
+    setAdults((prev) => {
+      if (delta > 0) return [...prev, { name: "", surname: "" }];
+      if (delta < 0 && prev.length > 1) return prev.slice(0, -1);
+      return prev;
+    });
+  };
+
+  const handleChildCount = (delta) => {
+    setChildren((prev) => {
+      if (delta > 0) return [...prev, { name: "", surname: "", birthDate: "" }];
+      if (delta < 0 && prev.length > 0) return prev.slice(0, -1);
+      return prev;
+    });
+  };
+
+  const updateTraveler = (type, index, field, value) => {
+    if (type === "adult") {
+      const newAdults = [...adults];
+      newAdults[index][field] = value;
+      setAdults(newAdults);
+    } else {
+      const newChildren = [...children];
+      newChildren[index][field] = value;
+      setChildren(newChildren);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!isForSelf && numGuests < 1) {
-      alert("Number of guests must be at least 1.");
-      return;
-    }
-    if (!isForSelf && guestData.some((guest) => !guest.name.trim() || !guest.surname.trim())) {
-      alert("All guest names and surnames are required.");
-      return;
-    }
-    if (!selectedDate) {
-      alert("Please select a booking date.");
-      return;
-    }
+    if (!selectedDate) return alert("Please select a date");
 
-    const formData = new FormData(e.target);
-    formData.append("selectedDate", selectedDate);
-    if (!isForSelf) {
-      formData.append("guests", JSON.stringify(guestData));
-    }
-    handleBookingSubmit(formData);
+    const allAdultsValid = adults.every((a) => a.name && a.surname);
+    const allChildrenValid = children.every(
+      (c) => c.name && c.surname && c.birthDate
+    );
+
+    if (!allAdultsValid || !allChildrenValid)
+      return alert("Please fill in all traveler details");
+
+    handleBookingSubmit({
+      offerId: offer._id,
+      amount: parseFloat(totalPrice.toFixed(2)),
+      selectedDate,
+      travelers: {
+        adults: adults.length,
+        children: children,
+        details: [...adults, ...children], 
+      },
+    });
   };
 
-  const totalPrice = offer?.price ? offer.price * (isForSelf ? 1 : numGuests) : 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   return (
-    <div className="modal-overlay">
-      <div className="modal modal-booking">
-        <div className="modal-header">
-          <h3 className="modal-title">
-            Booking: {offer?.title || 'Selected Offer'}
-          </h3>
-          <button className="modal-close" onClick={closeModal}>×</button>
+    <div className={styles.modalOverlay} onClick={closeModal}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <div>
+            <h3 className={styles.modalTitle}>Confirm Your Trip</h3>
+            <p className={styles.modalSubtitle}>{offer?.title}</p>
+          </div>
+          <button className={styles.modalClose} onClick={closeModal}>
+            ×
+          </button>
         </div>
-        <div className="modal-body">
-          <form
-            action="https://formspree.io/f/mjkwnbvl"
-            method="POST"
-            onSubmit={handleSubmit}
-          >
-            <input type="hidden" name="_subject" value="New Booking Request" />
-            <input type="hidden" name="_replyto" value={isForSelf ? userData.email : ''} />
-            <input type="hidden" name="offerTitle" value={offer?.title || ''} />
-            <input type="hidden" name="offerPrice" value={offer?.price || 0} />
 
-            <div className="form-group">
-              <div className="radio-group">
-                <label className="form-label">
-                  <input
-                    type="radio"
-                    name="bookingFor"
-                    value="self"
-                    checked={isForSelf}
-                    onChange={() => setIsForSelf(true)}
-                  />
-                  Booking for myself
-                </label>
-                <label className="form-label">
-                  <input
-                    type="radio"
-                    name="bookingFor"
-                    value="others"
-                    checked={!isForSelf}
-                    onChange={() => setIsForSelf(false)}
-                  />
-                  Booking for someone else
-                </label>
-              </div>
-            </div>
-
-            {isForSelf ? (
-              <>
-                <div className="form-group">
-                  <label className="form-label">Name:</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    name="name"
-                    value={`${userData.name || ''} ${userData.surname || ''}`}
-                    readOnly
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Email:</label>
-                  <input
-                    type="email"
-                    className="form-input"
-                    name="email"
-                    value={userData.email || ''}
-                    readOnly
-                  />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="form-group">
-                  <label className="form-label">Your Name:</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    name="yourName"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Your Surname:</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    name="yourSurname"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Your Email:</label>
-                  <input
-                    type="email"
-                    className="form-input"
-                    name="email"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Number of Guests:</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    name="numGuests"
-                    min="1"
-                    value={numGuests}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value, 10) || 1;
-                      setNumGuests(value);
-                      setGuestData(Array(value).fill({ name: '', surname: '' }));
-                    }}
-                    required
-                  />
-                </div>
-                {guestData.map((guest, index) => (
-                  <div key={index} className="guest-group">
-                    <h4 className="form-label">Guest {index + 1}</h4>
-                    <div className="form-group">
-                      <label className="form-label">Name:</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        name={`guest_${index}_name`}
-                        value={guest.name}
-                        onChange={(e) => handleGuestChange(index, 'name', e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Surname:</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        name={`guest_${index}_surname`}
-                        value={guest.surname}
-                        onChange={(e) => handleGuestChange(index, 'surname', e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-            <div className="form-group">
-              <label className="form-label">Select Booking Date:</label>
-              <div className="date-picker-container">
-                <DatePicker
-                  value={selectedDate}
-                  onChange={(date) =>
-                    setSelectedDate(date?.toDate ? date.toDate().toISOString().split('T')[0] : date)
-                  }
-                  format="YYYY-MM-DD"
-                  placeholder="Select date"
-                  className="form-input"
-                  calendarPosition="bottom-left"
-                  onlyShowInRangeDates
-                  minDate={new Date()}
-                  range={false}
-                  mapDays={({ date }) => {
-                    const dateStr = date.format('YYYY-MM-DD');
-                    const isAvailable = offer?.availableDates?.includes(dateStr);
-                    return {
-                      disabled: !isAvailable,
-                      style: isAvailable ? { color: '#000' } : { color: '#ccc' },
-                    };
-                  }}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <div
-                className="total-price"
-                style={{ marginRight: 'auto', fontWeight: 'bold', fontSize: '1.1em', paddingTop: '8px' }}
+        <div className={styles.modalBody}>
+          <form id="booking-form" onSubmit={handleSubmit}>
+            <div className={styles.section}>
+              <label className={styles.label}>
+                <FaCalendarAlt /> Select Date
+              </label>
+              <select
+                className={styles.selectInput}
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                required
               >
-                Total Price: {totalPrice} PLN {isForSelf ? '' : `(${numGuests} guest${numGuests > 1 ? 's' : ''})`}
+                <option value="" disabled>
+                  -- Choose start date --
+                </option>
+                {offer?.availableDates
+                  ?.filter((d) => new Date(d) >= today)
+                  .map((date, i) => (
+                    <option key={i} value={date}>
+                      {new Date(date).toLocaleDateString()} ({offer.duration}{" "}
+                      days)
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div className={styles.section}>
+              <div className={styles.counterRow}>
+                <div className={styles.counterLabel}>
+                  <span className={styles.typeTitle}>Adults</span>
+                  <span className={styles.typeDesc}>Age 12+</span>
+                </div>
+                <div className={styles.counterControls}>
+                  <button
+                    type="button"
+                    onClick={() => handleAdultCount(-1)}
+                    disabled={adults.length <= 1}
+                  >
+                    -
+                  </button>
+                  <span>{adults.length}</span>
+                  <button type="button" onClick={() => handleAdultCount(1)}>
+                    +
+                  </button>
+                </div>
               </div>
-              <div className="buttons-group">
-                <button type="button" className="btn btn-secondary" onClick={closeModal}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Confirm Booking
-                </button>
+              <div className={styles.counterRow}>
+                <div className={styles.counterLabel}>
+                  <span className={styles.typeTitle}>Children</span>
+                  <span className={styles.typeDesc}>Age 0-11</span>
+                </div>
+                <div className={styles.counterControls}>
+                  <button
+                    type="button"
+                    onClick={() => handleChildCount(-1)}
+                    disabled={children.length === 0}
+                  >
+                    -
+                  </button>
+                  <span>{children.length}</span>
+                  <button type="button" onClick={() => handleChildCount(1)}>
+                    +
+                  </button>
+                </div>
               </div>
+            </div>
+
+            <div className={styles.travelersDetailsList}>
+              <div className={styles.checkboxWrapper}>
+                <input
+                  type="checkbox"
+                  id="selfBook"
+                  checked={bookForSelf}
+                  onChange={(e) => setBookForSelf(e.target.checked)}
+                />
+                <label htmlFor="selfBook">I am one of the travelers</label>
+              </div>
+
+              {adults.map((adult, i) => (
+                <div key={`adult-${i}`} className={styles.travelerCard}>
+                  <div className={styles.cardHeader}>
+                    <FaUser /> Adult {i + 1}
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <input
+                      placeholder="First Name"
+                      value={adult.name}
+                      onChange={(e) =>
+                        updateTraveler("adult", i, "name", e.target.value)
+                      }
+                      readOnly={bookForSelf && i === 0}
+                      className={bookForSelf && i === 0 ? styles.readOnly : ""}
+                      required
+                    />
+                    <input
+                      placeholder="Last Name"
+                      value={adult.surname}
+                      onChange={(e) =>
+                        updateTraveler("adult", i, "surname", e.target.value)
+                      }
+                      readOnly={bookForSelf && i === 0}
+                      className={bookForSelf && i === 0 ? styles.readOnly : ""}
+                      required
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {children.map((child, i) => (
+                <div key={`child-${i}`} className={styles.travelerCard}>
+                  <div className={styles.cardHeader}>
+                    <FaChild /> Child {i + 1}
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <input
+                      placeholder="First Name"
+                      value={child.name}
+                      onChange={(e) =>
+                        updateTraveler("child", i, "name", e.target.value)
+                      }
+                      required
+                    />
+                    <input
+                      placeholder="Last Name"
+                      value={child.surname}
+                      onChange={(e) =>
+                        updateTraveler("child", i, "surname", e.target.value)
+                      }
+                      required
+                    />
+                  </div>
+                  <div className={styles.dateInputWrapper}>
+                    <label>Date of Birth:</label>
+                    <input
+                      type="date"
+                      value={child.birthDate}
+                      onChange={(e) =>
+                        updateTraveler("child", i, "birthDate", e.target.value)
+                      }
+                      max={new Date().toISOString().split("T")[0]}
+                      required
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </form>
+        </div>
+
+        <div className={styles.modalFooter}>
+          <div className={styles.priceBreakdown}>
+            <span className={styles.totalLabel}>Total Price</span>
+            <span className={styles.totalAmount}>
+              {totalPrice.toFixed(2)} PLN
+            </span>
+            {children.length > 0 && (
+              <small className={styles.discountNote}>
+                *Includes child discounts
+              </small>
+            )}
+          </div>
+          <div className={styles.buttonsGroup}>
+            <button
+              type="button"
+              className={styles.btnSecondary}
+              onClick={closeModal}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="booking-form"
+              className={styles.btnPrimary}
+            >
+              Confirm & Pay
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-BookingModal.propTypes = {
-  offer: PropTypes.shape({
-    title: PropTypes.string,
-    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    availableDates: PropTypes.arrayOf(PropTypes.string),
-  }).isRequired,
-  userData: PropTypes.shape({
-    name: PropTypes.string,
-    surname: PropTypes.string,
-    email: PropTypes.string,
-  }).isRequired,
-  isForSelf: PropTypes.bool.isRequired,
-  setIsForSelf: PropTypes.func.isRequired,
-  numGuests: PropTypes.number.isRequired,
-  setNumGuests: PropTypes.func.isRequired,
-  guestData: PropTypes.arrayOf(
-    PropTypes.shape({
-      name: PropTypes.string,
-      surname: PropTypes.string,
-    })
-  ).isRequired,
-  setGuestData: PropTypes.func.isRequired,
-  handleGuestChange: PropTypes.func.isRequired,
-  handleBookingSubmit: PropTypes.func.isRequired,
-  closeModal: PropTypes.func.isRequired,
 };
 
 export default BookingModal;

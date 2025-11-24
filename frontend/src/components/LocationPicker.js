@@ -15,9 +15,12 @@ const LocationPicker = ({ setCityCountry, initialCity = '', initialCountry = '' 
 
     const fetchSuggestions = async () => {
       try {
+        // --- ЗМІНА ТУТ: Додано '&accept-language=en' ---
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityInput)}&addressdetails=1&limit=5&featuretype=city`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityInput)}&addressdetails=1&limit=5&featuretype=city&accept-language=en`
         );
+        // --- КІНЕЦЬ ЗМІНИ ---
+
         const data = await res.json();
         const citySuggestions = data
           .filter(item => item.address.city || item.address.town || item.address.village)
@@ -44,7 +47,12 @@ const LocationPicker = ({ setCityCountry, initialCity = '', initialCountry = '' 
 
   const handleCitySelect = (suggestion) => {
     setCityInput(suggestion.name);
-    setCityCountry({ city: suggestion.name, country: suggestion.country });
+    setCityCountry({ 
+      city: suggestion.name, 
+      country: suggestion.country,
+      lat: suggestion.lat, 
+      lng: suggestion.lon  
+    });
     setShowSuggestions(false);
     setError('');
   };
@@ -52,7 +60,7 @@ const LocationPicker = ({ setCityCountry, initialCity = '', initialCountry = '' 
   const handleCityChange = (e) => {
     setCityInput(e.target.value);
     if (!e.target.value) {
-      setCityCountry({ city: '', country: '' });
+      setCityCountry({ city: '', country: '', lat: null, lng: null }); 
       setShowSuggestions(false);
       setError('');
     }

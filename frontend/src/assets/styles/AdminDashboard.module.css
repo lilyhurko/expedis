@@ -1,0 +1,346 @@
+.adminDashboardContainer {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 2rem auto;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Poppins', sans-serif;
+  min-height: 80vh;
+}
+
+.pageTitle {
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+  color: #1B3A4B;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 1rem;
+    margin-top: 4rem; 
+
+}
+
+.pageSubtitle {
+  text-align: center;
+  color: #5a7d9b;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 1rem;
+}
+
+
+.tabsNav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  border-bottom: 2px solid #eaf0f6;
+  margin-bottom: 1.5rem;
+}
+
+.tabBtn {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5a7d9b;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tabBtn:hover {
+  color: #1B3A4B;
+}
+
+.tabBtn.active {
+  color: #1B3A4B;
+  border-bottom: 3px solid #1B3A4B;
+}
+
+.tabContent {
+  padding: 1rem 0;
+}
+
+
+.sectionTitle {
+  font-family: 'Playfair Display', serif;
+  color: #1B3A4B;
+  font-size: 1.8rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #dde3ea;
+}
+
+.emptyState {
+    padding: 2rem;
+    text-align: center;
+    color: #5a7d9b;
+    font-size: 1.2rem;
+    background-color: #f8faff;
+    border-radius: 8px;
+    border: 1px dashed #eaf0f6;
+}
+
+
+.tableWrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.offerTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+  background-color: white;
+}
+
+.offerTable th,
+.offerTable td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eaf0f6;
+}
+
+.offerTable th {
+  background-color: #1B3A4B;
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.offerTable tr:hover td {
+  background-color: #f8faff;
+}
+
+
+.actionBtn {
+  padding: 8px 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 8px;
+    font-size: 0.9rem;
+  font-family: "Poppins", sans-serif;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.3); 
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(15px) saturate(180%);
+  -webkit-backdrop-filter: blur(15px) saturate(180%);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1), inset 0 0 8px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.actionBtn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: skewX(-25deg);
+  transition: all 0.6s ease;
+}
+
+.actionBtn:hover::before {
+  left: 125%;
+}
+
+.actionBtn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 4px 60px rgba(0, 0, 0, 0.1);
+}
+
+.actionBtn:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
+}
+
+
+.approveBtn {
+  background: rgba(27, 58, 75, 0.85); 
+  color: #F0EADA; 
+}
+.approveBtn:hover {
+  background: rgba(27, 58, 75, 1);
+  color: #ffffff; 
+}
+
+.rejectBtn {
+  background: rgba(200, 50, 50, 0.75); 
+  color: #ffffff;
+}
+.rejectBtn:hover {
+  background: rgba(200, 50, 50, 0.9);
+  color: #ffffff;
+}
+
+/* AdminDashboard.module.css */
+
+.glassBtn {
+  padding: 10px 26px;
+  font-size: 1rem;
+  font-family: "Poppins", sans-serif;
+  border-radius: 50px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 4px;
+  
+  /* Flexbox для вирівнювання іконки */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  /* Ефект скла (Glassmorphism) */
+  background: rgba(27, 58, 75, 0.5);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.glassBtn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.4), 
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: all 0.6s ease;
+}
+
+.glassBtn:hover {
+  background: rgba(27, 58, 75, 0.7); 
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.glassBtn:hover::before {
+  left: 125%;
+}
+
+.glassBtn:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 1024px) {
+  .adminDashboardContainer {
+    max-width: 95%;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .adminDashboardContainer {
+    padding: 1rem;
+    margin: 1rem auto;
+    width: 95%;
+    min-height: auto;
+  }
+
+  .pageTitle {
+    font-size: 1.8rem;
+  }
+
+  .pageSubtitle {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .tabsNav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto; 
+    justify-content: flex-start; 
+    padding-bottom: 10px;
+    gap: 10px;
+    border-bottom: none;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; 
+  }
+  
+  .tabsNav::-webkit-scrollbar {
+    display: none; 
+  }
+
+  .tabBtn {
+    flex: 0 0 auto; 
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    background-color: #f8faff;
+    border-radius: 20px;
+    border: 1px solid #eaf0f6;
+    border-bottom: 1px solid #eaf0f6; 
+  }
+
+  .tabBtn.active {
+    background-color: #1B3A4B;
+    color: white;
+    border-color: #1B3A4B;
+  }
+
+  .tableWrapper {
+    border: 1px solid #eee;
+    margin-top: 0.5rem;
+  }
+
+  .offerTable th, .offerTable td {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+  
+  .actionBtn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    margin-bottom: 4px; 
+  }
+}
+
+@media (max-width: 480px) {
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.4rem;
+  }
+
+  .offerTable th, .offerTable td {
+    padding: 8px 6px;
+    font-size: 0.8rem;
+  }
+  
+  .actionBtn {
+     white-space: nowrap;
+  }
+}

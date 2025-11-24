@@ -107,7 +107,6 @@
   transition: all 0.3s ease;
 }
 
-/* Ефект блиску при наведенні */
 .navbar-signup-button::before {
   content: "";
   position: absolute;
@@ -138,7 +137,6 @@
     0 4px 60px rgba(255, 255, 255, 0.1);
 }
 
-/* Ефект натискання */
 .navbar-signup-button:active {
   transform: translateY(0) scale(0.96);
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
@@ -229,6 +227,8 @@
     border-radius: 2px;
     transition: 0.3s;
 }
+
+
 
 @media (max-width: 768px) {
     .navbar-links {

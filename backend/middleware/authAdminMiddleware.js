@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const JWT_SECRET = 'mySuperSecretKey'; 
+const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret';
 const authAdminMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
