@@ -22,6 +22,7 @@ import MyBookings from "./components/MyBookings.jsx";
 import Wishlist from "./components/Wishlist.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import AgencyDashboard from "./components/AgencyDashboard.jsx";
+import ChatBot from "./components/ChatBot.jsx";
 
 function AppWrapper() {
   return (
@@ -89,6 +90,7 @@ function App() {
   return (
     <Router>
       <AppWrapper />
+      <ChatBot />
     </Router>
   );
 }
