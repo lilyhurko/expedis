@@ -40,7 +40,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/cars', carrentRoutes);
-
+app.use('/api/chat', require('./routes/chat'));
 
 
 async function startServer() {
