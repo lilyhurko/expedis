@@ -15,7 +15,7 @@ const IconPower = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="n
 const CHAT_CONTENT = {
   en: {
     greeting: "Hi! 👋 I'm Expedis Bot. Pick a topic to get started:",
-    greeting_personal: "Hi, {name}! 👋 Nice to see you again. Planning a new trip? ✈️", 
+    greeting_personal: "Hi, {name}! 👋 Nice to see you again. Planning a new trip? ✈️",
     placeholder: "Type a question...",
     unknown: "I'm mostly trained on travel & booking. Try using the categories above! 👆",
     login_req: "Please log in to access this feature. 🔒",
@@ -35,6 +35,25 @@ const CHAT_CONTENT = {
     feedback_ask: "Was this helpful?",
     feedback_thanks: "Thanks for your feedback! 🙏",
     
+    easter_eggs: {
+      money: [
+        "If you find a discount >50%, tell me. I'll be shocked. 🤯",
+        "My algorithms suggest today is a good day to save money. 😉",
+        "Payment confirmed! (Just kidding, I'm just a bot, but I believe in you 💸)"
+      ],
+      travel: [
+        "They say those who travel are happier. They say. Not me. 🤖",
+        "In my next life, I want to be carry-on luggage. At least I'd go somewhere. 😔✈️",
+        "I'm not a cat. But I purr when you pick a cheap flight. 🐈"
+      ],
+      general: [
+        "I'm a bot, but even I dream of a vacation. Spain. Beach. Stable Wi-Fi. 😌",
+        "Working 110%. Devs promised to patch in 'sleep' mode next update...",
+        "Secret tip: discounts get bigger during full moon. Allegedly. 🌕😉",
+        "If you click 'Booking' three times, a portal opens. Jk... or am I? 🤫"
+      ]
+    },
+
     flows: {
       main: [
         { id: 'cat_payment', label: "💸 Payments", action: 'switch_flow', target: 'flow_payment', styleClass: 'btnPayment' },
@@ -80,7 +99,7 @@ const CHAT_CONTENT = {
   },
   pl: {
     greeting: "Cześć! 👋 Jestem Expedis Bot. Wybierz temat:",
-    greeting_personal: "Cześć, {name}! 👋 Miło Cię widzieć. Planujesz nową podróż? ✈️", 
+    greeting_personal: "Cześć, {name}! 👋 Miło Cię widzieć. Planujesz nową podróż? ✈️",
     placeholder: "Wpisz pytanie...",
     unknown: "Spróbuj wybrać kategorię z menu powyżej! 👆",
     login_req: "Zaloguj się, aby uzyskać dostęp. 🔒",
@@ -99,6 +118,25 @@ const CHAT_CONTENT = {
     applying_filter: "Filtruję oferty... 🚀",
     feedback_ask: "Czy to było pomocne?",
     feedback_thanks: "Dzięki za opinię! 🙏",
+
+    easter_eggs: {
+      money: [
+        "Jak znajdziesz zniżkę >50%, daj znać. Będę w szoku. 🤯",
+        "Moje algorytmy podpowiadają: dziś dobry dzień, żeby nie przepłacać 😉",
+        "Płatność zaakceptowana! (Żartuję, jestem tylko botem, ale wierzę w Ciebie 💸)"
+      ],
+      travel: [
+        "Mówią, że podróże kształcą. Mnie zaprogramowali, więc nie wiem. 🤖",
+        "W następnym życiu chcę być bagażem podręcznym. Przynajmniej gdzieś polecę. 😔✈️",
+        "Nie jestem kotem, ale mruczę jak widzę tani bilet. 🐈"
+      ],
+      general: [
+        "Jestem botem, ale nawet ja marzę o wakacjach. Hiszpania. Plaża. Stabilne Wi-Fi. 😌",
+        "Pracuję na 110%. Programiści obiecali dodać mi sen w następnej aktualizacji...",
+        "Sekretna rada: w pełnię księżyca zniżki są podobno większe. Ale ciii... 🌕😉",
+        "Widziałem w kodzie zniżkę, którą przede mną ukryli. Sprytni ci programiści. 🤫"
+      ]
+    },
 
     flows: {
       main: [
@@ -153,8 +191,10 @@ const ChatBot = () => {
   const [currentFlow, setCurrentFlow] = useState('main');
   const messagesEndRef = useRef(null);
 
+  const msgCountRef = useRef(0);
+  const nextEggThresholdRef = useRef(Math.floor(Math.random() * 5) + 5); 
+
   const [lang, setLang] = useState(() => localStorage.getItem("chat_lang") || 'en');
-  
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
     return savedUser ? JSON.parse(savedUser) : null;
@@ -171,14 +211,12 @@ const ChatBot = () => {
   useEffect(() => {
     if (messages.length === 0) {
         let greetingText = CHAT_CONTENT[lang].greeting;
-        
         if (user && user.name) {
             greetingText = CHAT_CONTENT[lang].greeting_personal.replace("{name}", user.name);
         }
-
         setMessages([{ id: Date.now(), text: greetingText, sender: "bot" }]);
     }
-  }, [lang, user]); 
+  }, [lang, user]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isOpen, isTyping]);
 
@@ -190,7 +228,6 @@ const ChatBot = () => {
 
   const handleFeedback = async (msgId, vote) => {
     console.log(`Feedback collected: ${vote}`);
-    
     const targetMessage = messages.find(m => m.id === msgId);
     const botText = targetMessage ? targetMessage.text : "Unknown";
 
@@ -198,14 +235,9 @@ const ChatBot = () => {
         await fetch(`${API_URL}/api/chat/feedback`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                vote: vote,
-                botMessage: botText
-            })
+            body: JSON.stringify({ vote, botMessage: botText })
         });
-    } catch (err) {
-        console.error("Feedback send error", err);
-    }
+    } catch (err) { console.error("Feedback error", err); }
 
     setMessages(prev => prev.map(msg => {
         if (msg.id === msgId) {
@@ -226,26 +258,52 @@ const ChatBot = () => {
         if (user && user.name) {
             greetingText = CHAT_CONTENT[lang].greeting_personal.replace("{name}", user.name);
         }
-
         setMessages([{ id: Date.now(), text: greetingText, sender: "bot" }]);
         setCurrentFlow('main');
+        msgCountRef.current = 0; 
         setIsOpen(false);
     }
   };
 
   const t = (key) => CHAT_CONTENT[lang][key]; 
 
+  const getEasterEgg = () => {
+    const eggs = CHAT_CONTENT[lang].easter_eggs;
+    let categoryEggs = eggs.general;
+
+    if (currentFlow.includes('payment')) categoryEggs = eggs.money;
+    else if (currentFlow.includes('booking')) categoryEggs = eggs.travel;
+    
+    return categoryEggs[Math.floor(Math.random() * categoryEggs.length)];
+  };
+
   const simulateBotResponse = (text, delay = 0, needsFeedback = false) => {
     setIsTyping(true);
     const calcDelay = delay || Math.min(Math.max(text.length * 20, 600), 2500);
+    
     setTimeout(() => {
       setIsTyping(false);
-      addMessage(text, "bot");
-      if (needsFeedback) {
+      
+      setMessages((prev) => {
+          msgCountRef.current += 1;
+          const newMsgs = [...prev, { id: Date.now(), text, sender: "bot", isFeedback: false }];
+          return newMsgs;
+      });
+
+      if (msgCountRef.current >= nextEggThresholdRef.current) {
+          const eggText = getEasterEgg();
+          setTimeout(() => {
+              addMessage(eggText, "bot"); 
+          }, 800); 
+          
+          msgCountRef.current = 0;
+          nextEggThresholdRef.current = Math.floor(Math.random() * 5) + 5; 
+      } else if (needsFeedback) {
           setTimeout(() => {
               addMessage(t('feedback_ask'), "bot", true);
           }, 600);
       }
+
     }, calcDelay);
   };
 
@@ -293,7 +351,7 @@ const ChatBot = () => {
             setTimeout(() => { setIsTyping(true); }, 1100 + (i * 2000));
             setTimeout(() => { setIsTyping(false); addMessage(step, "bot"); }, 2500 + (i * 2000));
         });
-        setTimeout(() => { addMessage(t('feedback_ask'), "bot", true); }, 2500 + (t('guide_steps').length * 2000) + 500);
+        msgCountRef.current += 3; 
         break;
       case 'show_policy': simulateBotResponse(t('cancel_policy'), 0, true); break;
       case 'simple_response': simulateBotResponse(payload, 0, needsFeedback); break;
