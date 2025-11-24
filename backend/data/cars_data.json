@@ -1,0 +1,122 @@
+[
+{
+  "name": "Audi A3 35 TDI Premium Plus",
+  "year": 2017,
+  "rental_price": 1650,
+  "category": "Sedan (Compact)"
+ },
+ {
+  "name": "Audi Q5 35TDI Premium Plus",
+  "year": 2018,
+  "rental_price": 1750,
+  "category": "SUV\/Crossover"
+ },
+ {
+  "name": "BMW 3 Series 320d",
+  "year": 2017,
+  "rental_price": 1600,
+  "category": "Sedan"
+ },
+ {
+  "name": "BMW 6 Series GT 630d Luxury Line",
+  "year": 2018,
+  "rental_price": 1900,
+  "category": "Sedan (Grand Turismo)"
+ },
+ {
+  "name": "BMW X4 M Sport X xDrive20d",
+  "year": 2019,
+  "rental_price": 1850,
+  "category": "SUV\/Crossover (Coupe)"
+ },
+ {
+  "name": "Ford Aspire Titanium BSIV",
+  "year": 2019,
+  "rental_price": 750,
+  "category": "Sedan (Compact)"
+ },
+ {
+  "name": "Ford Ecosport 1.0 Ecoboost Titanium Optional",
+  "year": 2013,
+  "rental_price": 850,
+  "category": "SUV\/Crossover"
+ },
+ {
+  "name": "Ford Fiesta 1.4 SXi TDCi ABS",
+  "year": 2010,
+  "rental_price": 700,
+  "category": "Hatchback"
+ },
+ {
+  "name": "Ford Figo Titanium Blu",
+  "year": 2019,
+  "rental_price": 1000,
+  "category": "Hatchback"
+ },
+ {
+  "name": "Honda Accord 2.4 A\/T",
+  "year": 2013,
+  "rental_price": 950,
+  "category": "Sedan"
+ },
+ {
+  "name": "Honda Amaze Anniversary Edition",
+  "year": 2015,
+  "rental_price": 900,
+  "category": "Sedan (Compact)"
+ },
+ {
+  "name": "Hyundai Grand i10 1.2 Kappa Sportz AT",
+  "year": 2017,
+  "rental_price": 1100,
+  "category": "Hatchback"
+ },
+ {
+  "name": "Hyundai i20 1.2 Asta",
+  "year": 2010,
+  "rental_price": 1250,
+  "category": "Hatchback"
+ },
+ {
+  "name": "Hyundai Sonata 2.4 GDi MT",
+  "year": 2012,
+  "rental_price": 1450,
+  "category": "Sedan"
+ },
+ {
+  "name": "Jeep Compass 2.0 Limited 4X4",
+  "year": 2017,
+  "rental_price": 1450,
+  "category": "SUV\/Crossover"
+ },
+ {
+  "name": "Kia Seltos HTX Plus AT D",
+  "year": 2019,
+  "rental_price": 1400,
+  "category": "SUV\/Crossover"
+ },
+ {
+  "name": "Lexus ES 300h",
+  "year": 2019,
+  "rental_price": 1950,
+  "category": "Sedan (Luxury)"
+ },
+ {
+  "name": "Mercedes-Benz S-Class S 350 CDI",
+  "year": 2017,
+  "rental_price": 2000,
+  "category": "Sedan (Executive)"
+ },
+ {
+  "name": "Skoda Rapid Monte Carlo 1.5 TDI AT BSIV",
+  "year": 2017,
+  "rental_price": 1300,
+  "category": "Sedan"
+ },
+ {
+  "name": "Toyota Camry 2.5 Hybrid",
+  "year": 2016,
+  "rental_price": 1500,
+  "category": "Sedan"
+ }
+]

@@ -15,6 +15,8 @@ const hotelRoutes = require('./routes/hotels');
 const walletRoutes = require('./routes/wallet');
 const bookingRoutes = require('./routes/bookings');
 const adminRoutes = require('./routes/admin');
+const carrentRoutes = require('./routes/carrent');
+
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -37,6 +39,8 @@ app.use('/api/hotels', hotelRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/cars', carrentRoutes);
+
 
 
 async function startServer() {
