@@ -38,8 +38,8 @@
 
 .chatWindow {
   position: relative;
-  width: 350px;
-  height: 500px;
+  width: 360px; 
+  height: 550px; 
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
   border-radius: 20px;
@@ -90,11 +90,7 @@
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.headerInfo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.headerInfo { display: flex; align-items: center; gap: 10px; }
 
 .botAvatar {
   width: 32px;
@@ -125,14 +121,8 @@
   transition: opacity 0.2s;
   padding: 5px;
 }
-
-.closeBtn:hover, .clearBtn:hover {
-  opacity: 1;
-}
-
-.clearBtn {
-  margin-right: 5px;
-}
+.closeBtn:hover, .clearBtn:hover { opacity: 1; }
+.clearBtn { margin-right: 5px; }
 
 .messagesArea {
   flex: 1;
@@ -140,44 +130,43 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background: #f9f9f9;
+  gap: 12px;
+  background: #f8f9fa;
 }
 
 .message {
-  max-width: 80%;
-  padding: 10px 15px;
-  border-radius: 15px;
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 18px;
   font-size: 0.9rem;
-  line-height: 1.4;
+  line-height: 1.5;
   animation: fadeIn 0.3s;
   word-wrap: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .botMessage {
   background: white;
   color: #333;
   align-self: flex-start;
-  border-bottom-left-radius: 2px;
+  border-bottom-left-radius: 4px;
   border: 1px solid #eee;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .userMessage {
   background: #1b3a4b;
   color: white;
   align-self: flex-end;
-  border-bottom-right-radius: 2px;
+  border-bottom-right-radius: 4px;
 }
 
 .typingContainer {
   background: white;
   align-self: flex-start;
-  padding: 10px 15px;
-  border-radius: 15px;
-  border-bottom-left-radius: 2px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  border-bottom-left-radius: 4px;
   border: 1px solid #eee;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -192,7 +181,6 @@
   border-radius: 50%;
   animation: typingBounce 1.4s infinite ease-in-out both;
 }
-
 .typingDot:nth-child(1) { animation-delay: -0.32s; }
 .typingDot:nth-child(2) { animation-delay: -0.16s; }
 
@@ -202,37 +190,103 @@
 }
 
 .optionsArea {
-  padding: 10px 15px;
+  padding: 10px 15px 15px;
   background: white;
   border-top: 1px solid #eee;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-height: 120px;
+  max-height: 160px;
   overflow-y: auto;
 }
 
+.categoryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.listGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .optionBtn {
-  background: rgba(27, 58, 75, 0.05);
-  border: 1px solid rgba(27, 58, 75, 0.1);
-  color: #1b3a4b;
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 0.8rem;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s;
-  flex-grow: 1;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); 
   text-align: center;
-  white-space: nowrap;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  
+  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+.optionBtn:nth-child(1) { animation-delay: 0.05s; }
+.optionBtn:nth-child(2) { animation-delay: 0.1s; }
+.optionBtn:nth-child(3) { animation-delay: 0.15s; }
+.optionBtn:nth-child(4) { animation-delay: 0.2s; }
+.optionBtn:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .optionBtn:hover {
-  background: #1b3a4b;
-  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  filter: brightness(0.95);
+}
+
+.optionBtn:active {
+  transform: scale(0.98);
+}
+
+.btnPayment {
+  background-color: #e6fffa;
+  color: #2c7a7b;
+  border: 1px solid #b2f5ea;
+}
+
+.btnBooking {
+  background-color: #ebf8ff;
+  color: #2b6cb0;
+  border: 1px solid #bee3f8;
+}
+
+.btnCancel {
+  background-color: #fff5f5;
+  color: #c53030;
+  border: 1px solid #fed7d7;
+}
+
+.btnAccount {
+  background-color: #faf5ff;
+  color: #805ad5;
+  border: 1px solid #e9d8fd;
+}
+
+.btnGeneral {
+  background-color: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+}
+
+.btnBack {
+  background-color: white;
+  color: #718096;
+  border: 1px solid #e2e8f0;
+  grid-column: span 2; 
 }
 
 .inputArea {
-  padding: 10px;
+  padding: 10px 15px;
   background: white;
   border-top: 1px solid #eee;
   display: flex;
@@ -244,17 +298,18 @@
   flex: 1;
   padding: 10px 15px;
   border-radius: 20px;
-  border: 1px solid #ddd;
+  border: 1px solid #eee;
   outline: none;
   font-family: "Poppins", sans-serif;
   font-size: 0.9rem;
-  background: #f5f5f5;
-  transition: border 0.3s;
+  background: #f9f9f9;
+  transition: all 0.3s;
 }
 
 .chatInput:focus {
   border-color: #1b3a4b;
   background: #fff;
+  box-shadow: 0 0 0 3px rgba(27, 58, 75, 0.1);
 }
 
 .sendButton {
@@ -271,14 +326,8 @@
   transition: background 0.3s;
 }
 
-.sendButton:hover {
-  background: #2c5d75;
-}
-
-.sendButton:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
+.sendButton:hover { background: #2c5d75; }
+.sendButton:disabled { background: #e2e8f0; cursor: not-allowed; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(5px); }

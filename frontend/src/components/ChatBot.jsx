@@ -4,6 +4,7 @@ import styles from "../assets/styles/ChatBot.module.css";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
+// --- Icons (SVG) ---
 const IconChat = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>);
 const IconClose = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
 const IconSend = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>);
@@ -11,100 +12,144 @@ const IconBotFace = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill=
 const IconBack = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>);
 const IconTrash = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>);
 
+// --- MULTILINGUAL CONTENT WITH CATEGORIES ---
 const CHAT_CONTENT = {
   en: {
-    greeting: "Hi! 👋 I'm Expedis Bot. How can I help you today?",
+    greeting: "Hi! 👋 I'm Expedis Bot. Pick a topic to get started:",
     placeholder: "Type a question...",
-    unknown: "I'm mostly trained on travel & booking. Try using the menu buttons below! 👇",
-    login_req: "Please log in to see your wallet/bookings. 🔒",
-    wallet_msg: "💰 Your current balance is:",
-    held_msg: "Held funds:",
-    no_bookings: "You don't have any upcoming bookings yet. Time to plan a trip? ✈️",
-    booking_msg: "Here is your latest booking:",
-    guide_intro: "It's easy! Here is how:",
-    guide_steps: [
-      "1️⃣ Go to 'All Offers' and pick a trip.",
-      "2️⃣ Click 'Book Now' on the card.",
-      "3️⃣ Choose a date & pay from wallet. Done! 🎉"
-    ],
-    cancel_policy: "You can cancel up to 48h before the trip for a full refund. 🛡️",
-    applying_filter: "Sure! Applying filters for you... 🚀",
+    unknown: "I'm mostly trained on travel & booking. Try using the categories above! 👆",
+    login_req: "Please log in to access this feature. 🔒",
+    wallet_msg: "💰 Your balance:",
+    held_msg: "Held:",
+    no_bookings: "No active bookings found. Time for a vacation? ✈️",
+    booking_msg: "Latest booking info:",
     clear_confirm: "Clear chat history?",
+    guide_intro: "Booking Guide:",
+    guide_steps: [
+      "1️⃣ Explore 'All Offers' page.",
+      "2️⃣ Choose a trip and click 'Book Now'.",
+      "3️⃣ Select dates, guests & confirm payment. Easy!"
+    ],
+    cancel_policy: "Cancellation is free up to 48h before the trip. Refund is instant to your wallet. 🛡️",
+    applying_filter: "Applying filters... 🚀",
     
+    // --- FLOWS (CATEGORIES) ---
     flows: {
       main: [
-        { id: 'find_trip', label: "🔍 Find a Trip", action: 'switch_flow', target: 'discovery' },
-        { id: 'wallet', label: "💰 My Balance", action: 'fetch_wallet' },
-        { id: 'bookings', label: "📅 My Bookings", action: 'fetch_bookings' },
+        { id: 'cat_payment', label: "💸 Payments", action: 'switch_flow', target: 'flow_payment', styleClass: 'btnPayment' },
+        { id: 'cat_booking', label: "✈️ Booking", action: 'switch_flow', target: 'flow_booking', styleClass: 'btnBooking' },
+        { id: 'cat_cancel', label: "❌ Cancellation", action: 'switch_flow', target: 'flow_cancel', styleClass: 'btnCancel' },
+        { id: 'cat_account', label: "🔐 Account", action: 'switch_flow', target: 'flow_account', styleClass: 'btnAccount' },
+        { id: 'cat_general', label: "🧭 General", action: 'switch_flow', target: 'flow_general', styleClass: 'btnGeneral' },
+      ],
+      
+      flow_payment: [
+        { id: 'wallet', label: "💰 Check Balance", action: 'fetch_wallet' },
+        { id: 'topup', label: "💵 How to Top Up?", action: 'simple_response', text: "Go to Profile > Wallet > Click 'Top Up'. Enter amount & wait for approval." },
+        { id: 'safe', label: "🛡️ Is payment safe?", action: 'simple_response', text: "Yes! We use secure encrypted connections." },
+        { id: 'back', label: "⬅️ Main Menu", action: 'switch_flow', target: 'main', styleClass: 'btnBack' },
+      ],
+
+      flow_booking: [
+        { id: 'my_books', label: "📅 My Bookings", action: 'fetch_bookings' },
+        { id: 'cheap', label: "📉 Cheap Trips (<500)", action: 'navigate', url: '/trips?maxPrice=500' },
+        { id: 'weekend', label: "⚡ Weekend Trip", action: 'navigate', url: '/trips?duration=2' },
         { id: 'guide', label: "❓ How to book?", action: 'start_guide' },
-        { id: 'support', label: "📞 Help & Support", action: 'switch_flow', target: 'support_flow' },
+        { id: 'back', label: "⬅️ Main Menu", action: 'switch_flow', target: 'main', styleClass: 'btnBack' },
       ],
-      discovery: [
-        { id: 'cheap', label: "💸 Cheap (< 1000 PLN)", action: 'navigate', url: '/trips?maxPrice=1000' },
-        { id: 'weekend', label: "⏱️ Weekend (2 days)", action: 'navigate', url: '/trips?duration=2' },
-        { id: 'warm', label: "☀️ Warm Places", action: 'navigate', url: '/trips?destination=Spain' },
-        { id: 'back', label: "⬅️ Back", action: 'switch_flow', target: 'main' },
+
+      flow_cancel: [
+        { id: 'policy', label: "📜 Refund Policy", action: 'show_policy' },
+        { id: 'how_cancel', label: "🚫 How to cancel?", action: 'simple_response', text: "Go to Profile > My Bookings > Select Trip > Click 'Cancel'. Refund is automatic." },
+        { id: 'back', label: "⬅️ Main Menu", action: 'switch_flow', target: 'main', styleClass: 'btnBack' },
       ],
-      support_flow: [
-        { id: 'cancel', label: "❌ Cancellation Policy", action: 'show_policy' },
-        { id: 'contacts', label: "📞 Contacts", action: 'simple_response', text: "Email: support@expedis.com\nPhone: +48 123 456 789" },
-        { id: 'back', label: "⬅️ Back", action: 'switch_flow', target: 'main' },
+
+      flow_account: [
+        { id: 'login', label: "🔑 Login Issue", action: 'simple_response', text: "Ensure your email is correct. Reset password if needed." },
+        { id: 'support', label: "📞 Contact Support", action: 'simple_response', text: "Email: support@expedis.com\nPhone: +48 123 456 789" },
+        { id: 'back', label: "⬅️ Main Menu", action: 'switch_flow', target: 'main', styleClass: 'btnBack' },
+      ],
+
+      flow_general: [
+        { id: 'about', label: "🌍 About Expedis", action: 'navigate', url: '/about' },
+        { id: 'back', label: "⬅️ Main Menu", action: 'switch_flow', target: 'main', styleClass: 'btnBack' },
       ]
     },
-
+    
     keywords: [
-      { keys: ["cheap", "budget", "low cost"], action: 'navigate', url: '/trips?maxPrice=500', response: "I found some budget-friendly options for you! 💸" },
-      { keys: ["balance", "wallet", "money", "cash"], action: 'fetch_wallet' },
-      { keys: ["booking", "reservation", "history"], action: 'fetch_bookings' },
+      { keys: ["balance", "wallet", "money"], action: 'fetch_wallet' },
+      { keys: ["book", "reservation", "history"], action: 'fetch_bookings' },
       { keys: ["cancel", "refund"], action: 'show_policy' },
-      { keys: ["book", "guide", "how to"], action: 'start_guide' },
+      { keys: ["cheap", "budget"], action: 'navigate', url: '/trips?maxPrice=500', response: "Checking budget options..." },
     ]
   },
   pl: {
-    greeting: "Cześć! 👋 Jestem Expedis Bot. W czym mogę pomóc?",
+    greeting: "Cześć! 👋 Jestem Expedis Bot. Wybierz temat:",
     placeholder: "Wpisz pytanie...",
-    unknown: "Znam się głównie na podróżach. Spróbuj użyć przycisków menu poniżej! 👇",
-    login_req: "Zaloguj się, aby zobaczyć portfel/rezerwacje. 🔒",
-    wallet_msg: "💰 Twoje aktualne saldo:",
-    held_msg: "Zablokowane środki:",
-    no_bookings: "Nie masz jeszcze żadnych rezerwacji. Czas zaplanować podróż? ✈️",
-    booking_msg: "Twoja ostatnia rezerwacja:",
-    guide_intro: "To proste! Oto jak to zrobić:",
+    unknown: "Spróbuj wybrać kategorię z menu powyżej! 👆",
+    login_req: "Zaloguj się, aby uzyskać dostęp. 🔒",
+    wallet_msg: "💰 Saldo:",
+    held_msg: "Zablokowane:",
+    no_bookings: "Brak aktywnych rezerwacji. ✈️",
+    booking_msg: "Ostatnia rezerwacja:",
+    clear_confirm: "Wyczyścić czat?",
+    guide_intro: "Poradnik rezerwacji:",
     guide_steps: [
-      "1️⃣ Wejdź w 'All Offers' i wybierz wycieczkę.",
-      "2️⃣ Kliknij 'Book Now' na karcie.",
-      "3️⃣ Wybierz datę i zapłać z portfela. Gotowe! 🎉"
+      "1️⃣ Wybierz wycieczkę w 'All Offers'.",
+      "2️⃣ Kliknij 'Book Now'.",
+      "3️⃣ Wybierz datę i zapłać. Gotowe! 🎉"
     ],
-    cancel_policy: "Możesz anulować do 48h przed wyjazdem, aby otrzymać pełny zwrot. 🛡️",
-    applying_filter: "Jasne! Filtruję oferty dla Ciebie... 🚀",
-    clear_confirm: "Wyczyścić historię czatu?",
+    cancel_policy: "Anulacja do 48h przed wyjazdem jest darmowa. Zwrot na portfel. 🛡️",
+    applying_filter: "Filtruję oferty... 🚀",
 
+    // Flows
     flows: {
       main: [
-        { id: 'find_trip', label: "🔍 Znajdź wycieczkę", action: 'switch_flow', target: 'discovery' },
-        { id: 'wallet', label: "💰 Mój portfel", action: 'fetch_wallet' },
-        { id: 'bookings', label: "📅 Moje rezerwacje", action: 'fetch_bookings' },
+        { id: 'cat_payment', label: "💸 Płatności", action: 'switch_flow', target: 'flow_payment', styleClass: 'btnPayment' },
+        { id: 'cat_booking', label: "✈️ Rezerwacje", action: 'switch_flow', target: 'flow_booking', styleClass: 'btnBooking' },
+        { id: 'cat_cancel', label: "❌ Anulacje", action: 'switch_flow', target: 'flow_cancel', styleClass: 'btnCancel' },
+        { id: 'cat_account', label: "🔐 Konto", action: 'switch_flow', target: 'flow_account', styleClass: 'btnAccount' },
+        { id: 'cat_general', label: "🧭 Ogólne", action: 'switch_flow', target: 'flow_general', styleClass: 'btnGeneral' },
+      ],
+      
+      flow_payment: [
+        { id: 'wallet', label: "💰 Sprawdź saldo", action: 'fetch_wallet' },
+        { id: 'topup', label: "💵 Jak doładować?", action: 'simple_response', text: "Profil > Portfel > 'Doładuj'. Wpisz kwotę i czekaj na akceptację." },
+        { id: 'safe', label: "🛡️ Czy to bezpieczne?", action: 'simple_response', text: "Tak! Używamy szyfrowanych połączeń." },
+        { id: 'back', label: "⬅️ Menu główne", action: 'switch_flow', target: 'main', styleClass: 'btnBack' },
+      ],
+
+      flow_booking: [
+        { id: 'my_books', label: "📅 Moje rezerwacje", action: 'fetch_bookings' },
+        { id: 'cheap', label: "📉 Tanie (<500)", action: 'navigate', url: '/trips?maxPrice=500' },
+        { id: 'weekend', label: "⚡ Weekend", action: 'navigate', url: '/trips?duration=2' },
         { id: 'guide', label: "❓ Jak rezerwować?", action: 'start_guide' },
-        { id: 'support', label: "📞 Pomoc", action: 'switch_flow', target: 'support_flow' },
+        { id: 'back', label: "⬅️ Menu główne", action: 'switch_flow', target: 'main', styleClass: 'btnBack' },
       ],
-      discovery: [
-        { id: 'cheap', label: "💸 Tanie (< 1000 PLN)", action: 'navigate', url: '/trips?maxPrice=1000' },
-        { id: 'weekend', label: "⏱️ Weekend (2 dni)", action: 'navigate', url: '/trips?duration=2' },
-        { id: 'warm', label: "☀️ Ciepłe kraje", action: 'navigate', url: '/trips?destination=Spain' },
-        { id: 'back', label: "⬅️ Wróć", action: 'switch_flow', target: 'main' },
+
+      flow_cancel: [
+        { id: 'policy', label: "📜 Zasady zwrotów", action: 'show_policy' },
+        { id: 'how_cancel', label: "🚫 Jak anulować?", action: 'simple_response', text: "Profil > Rezerwacje > Wybierz > 'Anuluj'. Zwrot jest automatyczny." },
+        { id: 'back', label: "⬅️ Menu główne", action: 'switch_flow', target: 'main', styleClass: 'btnBack' },
       ],
-      support_flow: [
-        { id: 'cancel', label: "❌ Polityka zwrotów", action: 'show_policy' },
-        { id: 'contacts', label: "📞 Kontakt", action: 'simple_response', text: "Email: support@expedis.com\nTelefon: +48 123 456 789" },
-        { id: 'back', label: "⬅️ Wróć", action: 'switch_flow', target: 'main' },
+
+      flow_account: [
+        { id: 'login', label: "🔑 Problem z logowaniem", action: 'simple_response', text: "Sprawdź email. W razie potrzeby zresetuj hasło." },
+        { id: 'support', label: "📞 Wsparcie", action: 'simple_response', text: "Email: support@expedis.com\nTelefon: +48 123 456 789" },
+        { id: 'back', label: "⬅️ Menu główne", action: 'switch_flow', target: 'main', styleClass: 'btnBack' },
+      ],
+
+      flow_general: [
+        { id: 'about', label: "🌍 O Expedis", action: 'navigate', url: '/about' },
+        { id: 'back', label: "⬅️ Menu główne", action: 'switch_flow', target: 'main', styleClass: 'btnBack' },
       ]
     },
+    
     keywords: [
-      { keys: ["tanie", "budżet", "tania"], action: 'navigate', url: '/trips?maxPrice=500', response: "Znalazłem kilka tanich opcji! 💸" },
-      { keys: ["saldo", "portfel", "pieniądze", "kasa"], action: 'fetch_wallet' },
-      { keys: ["rezerwacj", "historia", "bilet"], action: 'fetch_bookings' },
-      { keys: ["anuluj", "zwrot", "odwołaj"], action: 'show_policy' },
-      { keys: ["jak", "rezerwow", "poradnik"], action: 'start_guide' },
+      { keys: ["saldo", "kasa"], action: 'fetch_wallet' },
+      { keys: ["rezerwacj", "bilet"], action: 'fetch_bookings' },
+      { keys: ["anuluj", "zwrot"], action: 'show_policy' },
+      { keys: ["tanie", "budżet"], action: 'navigate', url: '/trips?maxPrice=500', response: "Szukam tanich opcji..." },
     ]
   }
 };
@@ -115,7 +160,6 @@ const ChatBot = () => {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [currentFlow, setCurrentFlow] = useState('main');
-  
   const messagesEndRef = useRef(null);
 
   const [lang, setLang] = useState(() => localStorage.getItem("chat_lang") || 'en');
@@ -124,29 +168,19 @@ const ChatBot = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  useEffect(() => {
-    localStorage.setItem("chat_messages", JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
-    localStorage.setItem("chat_lang", lang);
-  }, [lang]);
+  useEffect(() => { localStorage.setItem("chat_messages", JSON.stringify(messages)); }, [messages]);
+  useEffect(() => { localStorage.setItem("chat_lang", lang); }, [lang]);
 
   useEffect(() => {
     if (messages.length === 0) {
         setMessages([{ id: Date.now(), text: CHAT_CONTENT[lang].greeting, sender: "bot" }]);
     }
-  }, []); 
+  }, []);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isOpen, isTyping]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isOpen, isTyping]);
 
   const toggleChat = () => setIsOpen(!isOpen);
-
-  const addMessage = (text, sender) => {
-    setMessages((prev) => [...prev, { id: Date.now(), text, sender }]);
-  };
+  const addMessage = (text, sender) => setMessages((prev) => [...prev, { id: Date.now(), text, sender }]);
 
   const changeLanguage = (newLang) => {
     setLang(newLang);
@@ -160,8 +194,6 @@ const ChatBot = () => {
     }
   };
 
-  // --- LOGIC HELPERS ---
-
   const t = (key) => CHAT_CONTENT[lang][key]; 
 
   const simulateBotResponse = (text, delay = 0) => {
@@ -174,46 +206,32 @@ const ChatBot = () => {
   };
 
   // --- ACTIONS ---
-
   const fetchWalletData = async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      simulateBotResponse(t('login_req'));
-      return;
-    }
+    if (!token) { simulateBotResponse(t('login_req')); return; }
     setIsTyping(true);
     try {
       const res = await fetch(`${API_URL}/api/wallet/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error();
       const data = await res.json();
       simulateBotResponse(`${t('wallet_msg')} **${data.balance?.toFixed(2)} PLN**\n(${t('held_msg')} ${data.balance_held?.toFixed(2)} PLN)`);
-    } catch {
-      simulateBotResponse("Error checking wallet.");
-    }
+    } catch { simulateBotResponse("Error."); }
   };
 
   const fetchBookingsData = async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      simulateBotResponse(t('login_req'));
-      return;
-    }
+    if (!token) { simulateBotResponse(t('login_req')); return; }
     setIsTyping(true);
     try {
       const res = await fetch(`${API_URL}/api/bookings/my-bookings`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      
-      if (data.length === 0) {
-        simulateBotResponse(t('no_bookings'));
-      } else {
+      if (data.length === 0) { simulateBotResponse(t('no_bookings')); } 
+      else {
         const latest = data[0];
-        const date = new Date(latest.selectedDate).toLocaleDateString();
-        simulateBotResponse(`${t('booking_msg')}\n📍 **${latest.offer?.title}**\n📅 ${date}\n✅ ${latest.status}`);
+        simulateBotResponse(`${t('booking_msg')}\n📍 **${latest.offer?.title}**\n📅 ${new Date(latest.selectedDate).toLocaleDateString()}\n✅ ${latest.status}`);
       }
-    } catch {
-      simulateBotResponse("Error checking bookings.");
-    }
+    } catch { simulateBotResponse("Error."); }
   };
 
   const executeAction = (actionType, payload) => {
@@ -221,18 +239,14 @@ const ChatBot = () => {
       case 'switch_flow': setCurrentFlow(payload); break;
       case 'navigate':
         simulateBotResponse(t('applying_filter'));
-        setTimeout(() => {
-            navigate(payload);
-            if (window.innerWidth < 768) setIsOpen(false);
-        }, 1500);
+        setTimeout(() => { navigate(payload); if (window.innerWidth < 768) setIsOpen(false); }, 1500);
         break;
       case 'fetch_wallet': fetchWalletData(); break;
       case 'fetch_bookings': fetchBookingsData(); break;
       case 'start_guide':
         setIsTyping(true);
         setTimeout(() => { setIsTyping(false); addMessage(t('guide_intro'), "bot"); }, 1000);
-        const steps = t('guide_steps');
-        steps.forEach((step, i) => {
+        t('guide_steps').forEach((step, i) => {
             setTimeout(() => { setIsTyping(true); }, 1100 + (i * 2000));
             setTimeout(() => { setIsTyping(false); addMessage(step, "bot"); }, 2500 + (i * 2000));
         });
@@ -244,6 +258,7 @@ const ChatBot = () => {
   };
 
   const handleOptionClick = (option) => {
+    // Не показуємо текст кнопки, якщо це просто навігація "Назад"
     if (option.id !== 'back') addMessage(option.label, "user");
     
     if (option.action === 'navigate') executeAction('navigate', option.url);
@@ -258,7 +273,6 @@ const ChatBot = () => {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
-    
     const text = inputValue.trim();
     addMessage(text, "user");
     setInputValue("");
@@ -266,7 +280,6 @@ const ChatBot = () => {
     setTimeout(() => {
       const lowerText = text.toLowerCase();
       const match = CHAT_CONTENT[lang].keywords.find(k => k.keys.some(word => lowerText.includes(word)));
-
       if (match) {
         if (match.response) simulateBotResponse(match.response);
         executeAction(match.action, match.url);
@@ -275,6 +288,9 @@ const ChatBot = () => {
       }
     }, 500);
   };
+
+  // Вибираємо клас для контейнера кнопок: сітка для Main, список для решти
+  const optionsContainerClass = currentFlow === 'main' ? styles.categoryGrid : styles.listGrid;
 
   return (
     <div className={styles.chatContainer}>
@@ -285,26 +301,11 @@ const ChatBot = () => {
               <div className={styles.botAvatar}><IconBotFace /></div>
               <span>Expedis Assistant</span>
             </div>
-            
             <div style={{display: 'flex', gap: '5px', marginLeft: 'auto', marginRight: '5px', alignItems: 'center'}}>
-                <button 
-                    onClick={clearHistory} 
-                    className={styles.clearBtn}
-                    title="Clear history"
-                ><IconTrash/></button>
-
-                <button 
-                    onClick={() => changeLanguage('en')} 
-                    style={{opacity: lang === 'en' ? 1 : 0.5, border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 2px'}}
-                    title="English"
-                >🇬🇧</button>
-                <button 
-                    onClick={() => changeLanguage('pl')} 
-                    style={{opacity: lang === 'pl' ? 1 : 0.5, border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 2px'}}
-                    title="Polski"
-                >🇵🇱</button>
+                <button onClick={clearHistory} className={styles.clearBtn} title="Clear history"><IconTrash/></button>
+                <button onClick={() => changeLanguage('en')} style={{opacity: lang === 'en' ? 1 : 0.5, border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 2px'}}>🇬🇧</button>
+                <button onClick={() => changeLanguage('pl')} style={{opacity: lang === 'pl' ? 1 : 0.5, border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 2px'}}>🇵🇱</button>
             </div>
-
             <button onClick={toggleChat} className={styles.closeBtn}><IconClose /></button>
           </div>
 
@@ -323,12 +324,17 @@ const ChatBot = () => {
           </div>
 
           <div className={styles.optionsArea}>
-            {CHAT_CONTENT[lang].flows[currentFlow].map((option) => (
-              <button key={option.id} className={styles.optionBtn} onClick={() => handleOptionClick(option)}>
-                {option.id === 'back' && <span style={{marginRight: '5px'}}><IconBack/></span>}
-                {option.label}
-              </button>
-            ))}
+            <div className={optionsContainerClass}>
+              {CHAT_CONTENT[lang].flows[currentFlow].map((option) => (
+                <button 
+                  key={option.id} 
+                  className={`${styles.optionBtn} ${option.styleClass ? styles[option.styleClass] : styles.btnGeneral}`} 
+                  onClick={() => handleOptionClick(option)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <form className={styles.inputArea} onSubmit={handleSendMessage}>
