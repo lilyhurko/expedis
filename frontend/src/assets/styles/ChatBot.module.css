@@ -109,7 +109,6 @@
   50% { transform: scale(1.05); }
 }
 
-/* Кнопки управління в хедері */
 .closeBtn, .clearBtn {
   background: none;
   border: none;
@@ -125,7 +124,6 @@
 .closeBtn:hover, .clearBtn:hover { opacity: 1; }
 .clearBtn { margin-right: 5px; }
 
-/* Тіло чату */
 .messagesArea {
   flex: 1;
   padding: 15px;
@@ -162,7 +160,6 @@
   border-bottom-right-radius: 4px;
 }
 
-/* Стилі для повідомлення-фідбеку */
 .feedbackMessage {
   background: transparent;
   box-shadow: none;
@@ -206,7 +203,6 @@
   transform: scale(0.95);
 }
 
-/* Тайпінг анімація */
 .typingContainer {
   background: white;
   align-self: flex-start;
@@ -236,7 +232,6 @@
   40% { transform: scale(1); }
 }
 
-/* Опції (Категорії) */
 .optionsArea {
   padding: 10px 15px 15px;
   background: white;
@@ -293,7 +288,6 @@
 
 .optionBtn:active { transform: scale(0.98); }
 
-/* Стилі категорій */
 .btnPayment { background-color: #e6fffa; color: #2c7a7b; border: 1px solid #b2f5ea; }
 .btnBooking { background-color: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
 .btnCancel { background-color: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
@@ -301,7 +295,6 @@
 .btnGeneral { background-color: #f7fafc; color: #4a5568; border: 1px solid #e2e8f0; }
 .btnBack { background-color: white; color: #718096; border: 1px solid #e2e8f0; grid-column: span 2; }
 
-/* Input Area */
 .inputArea {
   padding: 10px 15px;
   background: white;

@@ -15,6 +15,7 @@ const IconPower = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="n
 const CHAT_CONTENT = {
   en: {
     greeting: "Hi! 👋 I'm Expedis Bot. Pick a topic to get started:",
+    greeting_personal: "Hi, {name}! 👋 Nice to see you again. Planning a new trip? ✈️", 
     placeholder: "Type a question...",
     unknown: "I'm mostly trained on travel & booking. Try using the categories above! 👆",
     login_req: "Please log in to access this feature. 🔒",
@@ -79,6 +80,7 @@ const CHAT_CONTENT = {
   },
   pl: {
     greeting: "Cześć! 👋 Jestem Expedis Bot. Wybierz temat:",
+    greeting_personal: "Cześć, {name}! 👋 Miło Cię widzieć. Planujesz nową podróż? ✈️", 
     placeholder: "Wpisz pytanie...",
     unknown: "Spróbuj wybrać kategorię z menu powyżej! 👆",
     login_req: "Zaloguj się, aby uzyskać dostęp. 🔒",
@@ -152,6 +154,12 @@ const ChatBot = () => {
   const messagesEndRef = useRef(null);
 
   const [lang, setLang] = useState(() => localStorage.getItem("chat_lang") || 'en');
+  
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem("chat_messages");
     return saved ? JSON.parse(saved) : [];
@@ -162,9 +170,15 @@ const ChatBot = () => {
 
   useEffect(() => {
     if (messages.length === 0) {
-        setMessages([{ id: Date.now(), text: CHAT_CONTENT[lang].greeting, sender: "bot" }]);
+        let greetingText = CHAT_CONTENT[lang].greeting;
+        
+        if (user && user.name) {
+            greetingText = CHAT_CONTENT[lang].greeting_personal.replace("{name}", user.name);
+        }
+
+        setMessages([{ id: Date.now(), text: greetingText, sender: "bot" }]);
     }
-  }, []);
+  }, [lang, user]); 
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isOpen, isTyping]);
 
@@ -175,6 +189,8 @@ const ChatBot = () => {
   };
 
   const handleFeedback = async (msgId, vote) => {
+    console.log(`Feedback collected: ${vote}`);
+    
     const targetMessage = messages.find(m => m.id === msgId);
     const botText = targetMessage ? targetMessage.text : "Unknown";
 
@@ -187,7 +203,6 @@ const ChatBot = () => {
                 botMessage: botText
             })
         });
-        console.log("Feedback sent to backend");
     } catch (err) {
         console.error("Feedback send error", err);
     }
@@ -207,7 +222,12 @@ const ChatBot = () => {
 
   const endChat = () => {
     if(window.confirm(CHAT_CONTENT[lang].end_chat_confirm || "End chat?")) {
-        setMessages([{ id: Date.now(), text: CHAT_CONTENT[lang].greeting, sender: "bot" }]);
+        let greetingText = CHAT_CONTENT[lang].greeting;
+        if (user && user.name) {
+            greetingText = CHAT_CONTENT[lang].greeting_personal.replace("{name}", user.name);
+        }
+
+        setMessages([{ id: Date.now(), text: greetingText, sender: "bot" }]);
         setCurrentFlow('main');
         setIsOpen(false);
     }
