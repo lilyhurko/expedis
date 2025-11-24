@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const Car = require('../models/Car'); 
+const Offer = require('../models/Offer'); 
 
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/expedisDB'; 
 const CARS_FILE_PATH = path.join(__dirname, 'cars_data.json'); 
@@ -30,23 +31,34 @@ const carImages = [
     '/images/cars/Toyota Camry 2.5 Hybrid.jpg',
 ];
 
-const locations = [
-    { country: 'Poland', cities: ['Warsaw', 'Krakow', 'Lublin', 'Gdansk'] },
-    { country: 'Germany', cities: ['Berlin', 'Munich', 'Hamburg'] },
-    { country: 'France', cities: ['Paris', 'Lyon', 'Marseille'] },
-    { country: 'Spain', cities: ['Madrid', 'Barcelona', 'Valencia'] },
-    { country: 'Italy', cities: ['Rome', 'Milan', 'Naples'] },
-    { country: 'Czech Republic', cities: ['Prague', 'Brno'] },
-    { country: 'Austria', cities: ['Vienna', 'Salzburg'] },
-    { country: 'Netherlands', cities: ['Amsterdam', 'Rotterdam', 'The Hague'] },
-    { country: 'UK', cities: ['London', 'Manchester', 'Edinburgh'] },
-    { country: 'Portugal', cities: ['Lisbon', 'Porto'] }
-];
-
 const seedDatabase = async () => {
     try {
         await mongoose.connect(MONGO_URI);
         console.log('--- MongoDB Connected ---');
+
+        console.log('Fetching locations from Offers...');
+        const offers = await Offer.find({}, 'city country');
+        
+        const uniqueLocationsMap = new Map();
+        
+        offers.forEach(offer => {
+            if (offer.city && offer.country) {
+                const key = `${offer.city}-${offer.country}`;
+                if (!uniqueLocationsMap.has(key)) {
+                    uniqueLocationsMap.set(key, { city: offer.city, country: offer.country });
+                }
+            }
+        });
+
+        const locations = Array.from(uniqueLocationsMap.values());
+
+        if (locations.length === 0) {
+            console.warn('Warning: No locations found in Offers collection! Using default fallback.');
+            locations.push({ city: 'Lublin', country: 'Poland' }); 
+        } else {
+            console.log(`Found ${locations.length} unique locations from offers.`);
+        }
+
         await Car.deleteMany();
         console.log('Existing Car collection cleared.');
 
@@ -56,12 +68,19 @@ const seedDatabase = async () => {
 
         const transformedCars = carsArray.map((row, index) => { 
             
-            const nameParts = row.name.split(' ');
-            const make = nameParts[0]; 
-            const model = nameParts.slice(1).join(' '); 
+            const nameParts = (row.name || '').split(' ').filter(Boolean);
+            let make = 'Unknown';
+            let model = 'Unknown';
+
+            if (nameParts.length > 1) {
+                make = nameParts[0]; 
+                model = nameParts.slice(1).join(' '); 
+            } else if (nameParts.length === 1) {
+                make = nameParts[0]; 
+                model = nameParts[0]; 
+            }
 
             const randomLocation = locations[Math.floor(Math.random() * locations.length)];
-            const randomCity = randomLocation.cities[Math.floor(Math.random() * randomLocation.cities.length)];
             
             const stableImage = carImages[index % carImages.length]; 
 
@@ -69,22 +88,22 @@ const seedDatabase = async () => {
                 make: make,
                 model: model,
                 year: parseInt(row.year) || 2020,
-                city: randomCity, 
+                
+                city: randomLocation.city, 
                 country: randomLocation.country, 
+                
                 pricePerDay: parseFloat(row.rental_price) || 50, 
-                
                 imageUrl: stableImage, 
-                
                 options: [
                     row.category || 'Standard', 
                     `${row.seats || 5} seats`
                 ],
                 description: row.category, 
             };
-        }).filter(car => car.pricePerDay > 0);
+        }).filter(car => car.pricePerDay > 0 && car.model !== 'Unknown');
 
         await Car.insertMany(transformedCars);
-        console.log(`Successfully imported ${transformedCars.length} cars!`);
+        console.log(`Successfully imported ${transformedCars.length} cars distributed across ${locations.length} locations!`);
 
         mongoose.connection.close();
         console.log('--- Connection closed ---');
