@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../assets/styles/ChatBot.module.css";
 
@@ -9,45 +9,134 @@ const IconClose = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="n
 const IconSend = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>);
 const IconBotFace = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>);
 const IconBack = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>);
+const IconTrash = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>);
 
-const BOT_FLOWS = {
-  main: [
-    { id: 'find_trip', label: "🔍 Find a Trip", action: 'switch_flow', target: 'discovery' },
-    { id: 'wallet', label: "💰 My Balance", action: 'fetch_wallet' },
-    { id: 'guide', label: "❓ How to book?", action: 'start_guide' },
-    { id: 'support', label: "📞 Help & Support", action: 'switch_flow', target: 'support_flow' },
-  ],
-  discovery: [
-    { id: 'cheap', label: "💸 Cheap (< 1000 PLN)", action: 'navigate', url: '/trips?maxPrice=1000' },
-    { id: 'weekend', label: "⏱️ Weekend (2 days)", action: 'navigate', url: '/trips?duration=2' },
-    { id: 'warm', label: "☀️ Warm Places", action: 'navigate', url: '/trips?destination=Spain' }, 
-    { id: 'back', label: "⬅️ Back", action: 'switch_flow', target: 'main' },
-  ],
-  support_flow: [
-    { id: 'cancel', label: "❌ Cancellation Policy", action: 'show_policy' },
-    { id: 'contacts', label: "📞 Contacts", action: 'simple_response', text: "Email: support@expedis.com\nPhone: +48 123 456 789" },
-    { id: 'back', label: "⬅️ Back", action: 'switch_flow', target: 'main' },
-  ]
+const CHAT_CONTENT = {
+  en: {
+    greeting: "Hi! 👋 I'm Expedis Bot. How can I help you today?",
+    placeholder: "Type a question...",
+    unknown: "I'm mostly trained on travel & booking. Try using the menu buttons below! 👇",
+    login_req: "Please log in to see your wallet/bookings. 🔒",
+    wallet_msg: "💰 Your current balance is:",
+    held_msg: "Held funds:",
+    no_bookings: "You don't have any upcoming bookings yet. Time to plan a trip? ✈️",
+    booking_msg: "Here is your latest booking:",
+    guide_intro: "It's easy! Here is how:",
+    guide_steps: [
+      "1️⃣ Go to 'All Offers' and pick a trip.",
+      "2️⃣ Click 'Book Now' on the card.",
+      "3️⃣ Choose a date & pay from wallet. Done! 🎉"
+    ],
+    cancel_policy: "You can cancel up to 48h before the trip for a full refund. 🛡️",
+    applying_filter: "Sure! Applying filters for you... 🚀",
+    clear_confirm: "Clear chat history?",
+    
+    flows: {
+      main: [
+        { id: 'find_trip', label: "🔍 Find a Trip", action: 'switch_flow', target: 'discovery' },
+        { id: 'wallet', label: "💰 My Balance", action: 'fetch_wallet' },
+        { id: 'bookings', label: "📅 My Bookings", action: 'fetch_bookings' },
+        { id: 'guide', label: "❓ How to book?", action: 'start_guide' },
+        { id: 'support', label: "📞 Help & Support", action: 'switch_flow', target: 'support_flow' },
+      ],
+      discovery: [
+        { id: 'cheap', label: "💸 Cheap (< 1000 PLN)", action: 'navigate', url: '/trips?maxPrice=1000' },
+        { id: 'weekend', label: "⏱️ Weekend (2 days)", action: 'navigate', url: '/trips?duration=2' },
+        { id: 'warm', label: "☀️ Warm Places", action: 'navigate', url: '/trips?destination=Spain' },
+        { id: 'back', label: "⬅️ Back", action: 'switch_flow', target: 'main' },
+      ],
+      support_flow: [
+        { id: 'cancel', label: "❌ Cancellation Policy", action: 'show_policy' },
+        { id: 'contacts', label: "📞 Contacts", action: 'simple_response', text: "Email: support@expedis.com\nPhone: +48 123 456 789" },
+        { id: 'back', label: "⬅️ Back", action: 'switch_flow', target: 'main' },
+      ]
+    },
+
+    keywords: [
+      { keys: ["cheap", "budget", "low cost"], action: 'navigate', url: '/trips?maxPrice=500', response: "I found some budget-friendly options for you! 💸" },
+      { keys: ["balance", "wallet", "money", "cash"], action: 'fetch_wallet' },
+      { keys: ["booking", "reservation", "history"], action: 'fetch_bookings' },
+      { keys: ["cancel", "refund"], action: 'show_policy' },
+      { keys: ["book", "guide", "how to"], action: 'start_guide' },
+    ]
+  },
+  pl: {
+    greeting: "Cześć! 👋 Jestem Expedis Bot. W czym mogę pomóc?",
+    placeholder: "Wpisz pytanie...",
+    unknown: "Znam się głównie na podróżach. Spróbuj użyć przycisków menu poniżej! 👇",
+    login_req: "Zaloguj się, aby zobaczyć portfel/rezerwacje. 🔒",
+    wallet_msg: "💰 Twoje aktualne saldo:",
+    held_msg: "Zablokowane środki:",
+    no_bookings: "Nie masz jeszcze żadnych rezerwacji. Czas zaplanować podróż? ✈️",
+    booking_msg: "Twoja ostatnia rezerwacja:",
+    guide_intro: "To proste! Oto jak to zrobić:",
+    guide_steps: [
+      "1️⃣ Wejdź w 'All Offers' i wybierz wycieczkę.",
+      "2️⃣ Kliknij 'Book Now' na karcie.",
+      "3️⃣ Wybierz datę i zapłać z portfela. Gotowe! 🎉"
+    ],
+    cancel_policy: "Możesz anulować do 48h przed wyjazdem, aby otrzymać pełny zwrot. 🛡️",
+    applying_filter: "Jasne! Filtruję oferty dla Ciebie... 🚀",
+    clear_confirm: "Wyczyścić historię czatu?",
+
+    flows: {
+      main: [
+        { id: 'find_trip', label: "🔍 Znajdź wycieczkę", action: 'switch_flow', target: 'discovery' },
+        { id: 'wallet', label: "💰 Mój portfel", action: 'fetch_wallet' },
+        { id: 'bookings', label: "📅 Moje rezerwacje", action: 'fetch_bookings' },
+        { id: 'guide', label: "❓ Jak rezerwować?", action: 'start_guide' },
+        { id: 'support', label: "📞 Pomoc", action: 'switch_flow', target: 'support_flow' },
+      ],
+      discovery: [
+        { id: 'cheap', label: "💸 Tanie (< 1000 PLN)", action: 'navigate', url: '/trips?maxPrice=1000' },
+        { id: 'weekend', label: "⏱️ Weekend (2 dni)", action: 'navigate', url: '/trips?duration=2' },
+        { id: 'warm', label: "☀️ Ciepłe kraje", action: 'navigate', url: '/trips?destination=Spain' },
+        { id: 'back', label: "⬅️ Wróć", action: 'switch_flow', target: 'main' },
+      ],
+      support_flow: [
+        { id: 'cancel', label: "❌ Polityka zwrotów", action: 'show_policy' },
+        { id: 'contacts', label: "📞 Kontakt", action: 'simple_response', text: "Email: support@expedis.com\nTelefon: +48 123 456 789" },
+        { id: 'back', label: "⬅️ Wróć", action: 'switch_flow', target: 'main' },
+      ]
+    },
+    keywords: [
+      { keys: ["tanie", "budżet", "tania"], action: 'navigate', url: '/trips?maxPrice=500', response: "Znalazłem kilka tanich opcji! 💸" },
+      { keys: ["saldo", "portfel", "pieniądze", "kasa"], action: 'fetch_wallet' },
+      { keys: ["rezerwacj", "historia", "bilet"], action: 'fetch_bookings' },
+      { keys: ["anuluj", "zwrot", "odwołaj"], action: 'show_policy' },
+      { keys: ["jak", "rezerwow", "poradnik"], action: 'start_guide' },
+    ]
+  }
 };
-
-const KEYWORDS_MAP = [
-  { keys: ["cheap", "budget", "low cost"], action: 'navigate', url: '/trips?maxPrice=500', response: "I found some budget-friendly options for you! 💸" },
-  { keys: ["balance", "wallet", "money"], action: 'fetch_wallet' },
-  { keys: ["cancel", "refund"], action: 'show_policy' },
-  { keys: ["book", "guide", "how to"], action: 'start_guide' },
-];
 
 const ChatBot = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hi! 👋 I'm Expedis Bot. How can I help you today?", sender: "bot" }
-  ]);
   const [isTyping, setIsTyping] = useState(false);
-  const [currentFlow, setCurrentFlow] = useState('main'); 
+  const [currentFlow, setCurrentFlow] = useState('main');
   
   const messagesEndRef = useRef(null);
+
+  const [lang, setLang] = useState(() => localStorage.getItem("chat_lang") || 'en');
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem("chat_messages");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("chat_messages", JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem("chat_lang", lang);
+  }, [lang]);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+        setMessages([{ id: Date.now(), text: CHAT_CONTENT[lang].greeting, sender: "bot" }]);
+    }
+  }, []); 
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,74 +148,37 @@ const ChatBot = () => {
     setMessages((prev) => [...prev, { id: Date.now(), text, sender }]);
   };
 
+  const changeLanguage = (newLang) => {
+    setLang(newLang);
+    setCurrentFlow('main');
+  };
+
+  const clearHistory = () => {
+    if(window.confirm(CHAT_CONTENT[lang].clear_confirm)) {
+        setMessages([{ id: Date.now(), text: CHAT_CONTENT[lang].greeting, sender: "bot" }]);
+        setCurrentFlow('main');
+    }
+  };
+
+  // --- LOGIC HELPERS ---
+
+  const t = (key) => CHAT_CONTENT[lang][key]; 
 
   const simulateBotResponse = (text, delay = 0) => {
     setIsTyping(true);
     const calcDelay = delay || Math.min(Math.max(text.length * 20, 600), 2500);
-    
     setTimeout(() => {
       setIsTyping(false);
       addMessage(text, "bot");
     }, calcDelay);
   };
 
-  const executeAction = (actionType, payload) => {
-    switch (actionType) {
-      case 'switch_flow':
-        setCurrentFlow(payload); 
-        break;
-      
-      case 'navigate':
-        simulateBotResponse("Sure! Applying filters for you... 🚀");
-        setTimeout(() => {
-            navigate(payload); 
-            if (window.innerWidth < 768) setIsOpen(false);
-        }, 1500);
-        break;
-
-      case 'fetch_wallet':
-        fetchWalletData();
-        break;
-
-      case 'start_guide':
-        startBookingGuide();
-        break;
-
-      case 'show_policy':
-        addMessage("You can cancel up to 48h before the trip for a full refund. 🛡️", "bot");
-        setTimeout(() => {
-            addMessage("Would you like to check your active bookings?", "bot");
-        }, 1000);
-        break;
-
-      case 'simple_response':
-        simulateBotResponse(payload);
-        break;
-
-      default:
-        break;
-    }
-  };
-
-  const handleOptionClick = (option) => {
-    if (option.id !== 'back') {
-        addMessage(option.label, "user");
-    }
-    
-
-    if (option.action === 'navigate') executeAction('navigate', option.url);
-    else if (option.action === 'switch_flow') executeAction('switch_flow', option.target);
-    else if (option.action === 'fetch_wallet') executeAction('fetch_wallet');
-    else if (option.action === 'start_guide') executeAction('start_guide');
-    else if (option.action === 'show_policy') executeAction('show_policy');
-    else if (option.action === 'simple_response') executeAction('simple_response', option.text);
-  };
-
+  // --- ACTIONS ---
 
   const fetchWalletData = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      simulateBotResponse("Please log in to see your wallet. 🔒");
+      simulateBotResponse(t('login_req'));
       return;
     }
     setIsTyping(true);
@@ -134,25 +186,73 @@ const ChatBot = () => {
       const res = await fetch(`${API_URL}/api/wallet/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      simulateBotResponse(`💰 Balance: **${data.balance?.toFixed(2)} PLN**`);
+      simulateBotResponse(`${t('wallet_msg')} **${data.balance?.toFixed(2)} PLN**\n(${t('held_msg')} ${data.balance_held?.toFixed(2)} PLN)`);
     } catch {
-      simulateBotResponse("Couldn't check wallet right now.");
+      simulateBotResponse("Error checking wallet.");
     }
   };
 
-
-  const startBookingGuide = () => {
+  const fetchBookingsData = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      simulateBotResponse(t('login_req'));
+      return;
+    }
     setIsTyping(true);
-    setTimeout(() => { setIsTyping(false); addMessage("It's easy! Here is how:", "bot"); }, 1000);
+    try {
+      const res = await fetch(`${API_URL}/api/bookings/my-bookings`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      
+      if (data.length === 0) {
+        simulateBotResponse(t('no_bookings'));
+      } else {
+        const latest = data[0];
+        const date = new Date(latest.selectedDate).toLocaleDateString();
+        simulateBotResponse(`${t('booking_msg')}\n📍 **${latest.offer?.title}**\n📅 ${date}\n✅ ${latest.status}`);
+      }
+    } catch {
+      simulateBotResponse("Error checking bookings.");
+    }
+  };
+
+  const executeAction = (actionType, payload) => {
+    switch (actionType) {
+      case 'switch_flow': setCurrentFlow(payload); break;
+      case 'navigate':
+        simulateBotResponse(t('applying_filter'));
+        setTimeout(() => {
+            navigate(payload);
+            if (window.innerWidth < 768) setIsOpen(false);
+        }, 1500);
+        break;
+      case 'fetch_wallet': fetchWalletData(); break;
+      case 'fetch_bookings': fetchBookingsData(); break;
+      case 'start_guide':
+        setIsTyping(true);
+        setTimeout(() => { setIsTyping(false); addMessage(t('guide_intro'), "bot"); }, 1000);
+        const steps = t('guide_steps');
+        steps.forEach((step, i) => {
+            setTimeout(() => { setIsTyping(true); }, 1100 + (i * 2000));
+            setTimeout(() => { setIsTyping(false); addMessage(step, "bot"); }, 2500 + (i * 2000));
+        });
+        break;
+      case 'show_policy': simulateBotResponse(t('cancel_policy')); break;
+      case 'simple_response': simulateBotResponse(payload); break;
+      default: break;
+    }
+  };
+
+  const handleOptionClick = (option) => {
+    if (option.id !== 'back') addMessage(option.label, "user");
     
-    setTimeout(() => { setIsTyping(true); }, 1100);
-    setTimeout(() => { setIsTyping(false); addMessage("1️⃣ Go to 'All Offers' and pick a trip.", "bot"); }, 2500);
-
-    setTimeout(() => { setIsTyping(true); }, 2600);
-    setTimeout(() => { setIsTyping(false); addMessage("2️⃣ Click 'Book Now' on the card.", "bot"); }, 4500);
-
-    setTimeout(() => { setIsTyping(true); }, 4600);
-    setTimeout(() => { setIsTyping(false); addMessage("3️⃣ Choose a date & pay from wallet. Done! 🎉", "bot"); }, 6500);
+    if (option.action === 'navigate') executeAction('navigate', option.url);
+    else if (option.action === 'switch_flow') executeAction('switch_flow', option.target);
+    else if (option.action === 'fetch_wallet') executeAction('fetch_wallet');
+    else if (option.action === 'fetch_bookings') executeAction('fetch_bookings');
+    else if (option.action === 'start_guide') executeAction('start_guide');
+    else if (option.action === 'show_policy') executeAction('show_policy');
+    else if (option.action === 'simple_response') executeAction('simple_response', option.text);
   };
 
   const handleSendMessage = (e) => {
@@ -163,16 +263,15 @@ const ChatBot = () => {
     addMessage(text, "user");
     setInputValue("");
 
-
     setTimeout(() => {
       const lowerText = text.toLowerCase();
-      const match = KEYWORDS_MAP.find(k => k.keys.some(word => lowerText.includes(word)));
+      const match = CHAT_CONTENT[lang].keywords.find(k => k.keys.some(word => lowerText.includes(word)));
 
       if (match) {
         if (match.response) simulateBotResponse(match.response);
         executeAction(match.action, match.url);
       } else {
-        simulateBotResponse("I'm mostly trained on travel & booking. Try using the menu buttons below! 👇");
+        simulateBotResponse(t('unknown'));
       }
     }, 500);
   };
@@ -186,6 +285,26 @@ const ChatBot = () => {
               <div className={styles.botAvatar}><IconBotFace /></div>
               <span>Expedis Assistant</span>
             </div>
+            
+            <div style={{display: 'flex', gap: '5px', marginLeft: 'auto', marginRight: '5px', alignItems: 'center'}}>
+                <button 
+                    onClick={clearHistory} 
+                    className={styles.clearBtn}
+                    title="Clear history"
+                ><IconTrash/></button>
+
+                <button 
+                    onClick={() => changeLanguage('en')} 
+                    style={{opacity: lang === 'en' ? 1 : 0.5, border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 2px'}}
+                    title="English"
+                >🇬🇧</button>
+                <button 
+                    onClick={() => changeLanguage('pl')} 
+                    style={{opacity: lang === 'pl' ? 1 : 0.5, border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 2px'}}
+                    title="Polski"
+                >🇵🇱</button>
+            </div>
+
             <button onClick={toggleChat} className={styles.closeBtn}><IconClose /></button>
           </div>
 
@@ -204,7 +323,7 @@ const ChatBot = () => {
           </div>
 
           <div className={styles.optionsArea}>
-            {BOT_FLOWS[currentFlow].map((option) => (
+            {CHAT_CONTENT[lang].flows[currentFlow].map((option) => (
               <button key={option.id} className={styles.optionBtn} onClick={() => handleOptionClick(option)}>
                 {option.id === 'back' && <span style={{marginRight: '5px'}}><IconBack/></span>}
                 {option.label}
@@ -213,7 +332,7 @@ const ChatBot = () => {
           </div>
 
           <form className={styles.inputArea} onSubmit={handleSendMessage}>
-            <input type="text" className={styles.chatInput} placeholder="Type a question..." value={inputValue} onChange={(e) => setInputValue(e.target.value)} disabled={isTyping} />
+            <input type="text" className={styles.chatInput} placeholder={t('placeholder')} value={inputValue} onChange={(e) => setInputValue(e.target.value)} disabled={isTyping} />
             <button type="submit" className={styles.sendButton} disabled={!inputValue.trim() || isTyping}><IconSend /></button>
           </form>
         </div>
