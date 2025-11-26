@@ -3,76 +3,77 @@ import "../assets/styles/TopDestinations.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const isAuthenticated = () => !!localStorage.getItem("token"); 
+const API_URL = "http://localhost:5001"; 
+const FALLBACK_IMAGE = "https://placehold.co/600x400?text=No+Image";
 
 const TopDestinations = () => {
   const [destinations, setDestinations] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  const getImageUrl = (offer) => {
+    let imagePath = null;
+
+    if (offer.imageUrls && offer.imageUrls.length > 0) {
+      imagePath = offer.imageUrls[0];
+    } 
+    else if (offer.imageUrl) {
+      imagePath = offer.imageUrl;
+    }
+
+    if (!imagePath) return FALLBACK_IMAGE;
+
+    return imagePath.startsWith("http") ? imagePath : `${API_URL}${imagePath}`;
+  };
 
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/api/offers");
-        const fetchedDestinations = response.data.map((offer) => ({
+        const response = await axios.get(`${API_URL}/api/offers`);
+      
+        const fetchedDestinations = response.data.slice(0, 5).map((offer) => ({
           name: offer.title,
           tags: offer.categories,
-          count: offer.categories.length.toString(),
+          count: offer.categories.length.toString(), 
           key: offer._id,
-          image:
-            offer.imageUrl && offer.imageUrl.startsWith("http")
-              ? offer.imageUrl
-              : offer.imageUrl
-              ? `${window.location.origin}${offer.imageUrl}`
-              : "https://via.placeholder.com/300x200?text=No+Image",
-
+          image: getImageUrl(offer), 
           description: offer.description,
           price: `from ${offer.price} PLN`,
           duration: `${offer.duration} days`,
         }));
+
         setDestinations(fetchedDestinations);
         setSelected(fetchedDestinations[0] || null);
       } catch (err) {
         console.error("Error fetching destinations:", err);
-        setError("Failed to load destinations. Please try again later.");
+        setError("Failed to load destinations.");
       }
     };
 
     fetchDestinations();
   }, []);
 
-  const handleOpen = (dest) => {
+  const handleSelect = (dest) => {
     setSelected(dest);
-    setShowModal(true);
   };
 
-  const handleBookNow = (offerId) => {
-    if (!isAuthenticated()) {
-      localStorage.setItem("selectedOffer", offerId);
-      navigate("/login");
-    } else {
-      setSelected(destinations.find((o) => o._id === offerId));
-      navigate(`/Trips?offer=${offerId}`); 
+  const handleImageClick = () => {
+    if (selected) {
+      navigate(`/offer/${selected.key}`);
     }
-    setShowModal(false);
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-  };
-
-  if (error) {
-    return <div className="error-message">{error}</div>;
-  }
+  if (error) return null; 
 
   return (
-    <div className="top-destinations container">
-      <h2>Top Destinations of the Week</h2>
-      <p className="description">
-        Explore the most popular travel spots chosen by adventurers this week!
-      </p>
+    <div className="top-destinations-section">
+      <div className="top-destinations-header">
+        <h2 className="top-destinations-title">Top Destinations of the Week</h2>
+        <p className="top-destinations-description">
+          Explore the most popular travel spots chosen by adventurers this week!
+        </p>
+      </div>
 
       <div className="content">
         <div className="destination-list">
@@ -80,57 +81,28 @@ const TopDestinations = () => {
             <div
               key={dest.key}
               className={`city ${selected?.key === dest.key ? "active" : ""}`}
-              onClick={() => handleOpen(dest)}
+              onClick={() => handleSelect(dest)}
             >
               <span>{dest.name}</span>
-              <span className="tag">{dest.tags[0] || "N/A"}</span>
-              <span className="count">{dest.count}</span>
+              <div className="city-badges">
+                 <span className="tag">{dest.tags[0] || "Trip"}</span>
+              </div>
             </div>
           ))}
         </div>
-        {selected && (
-          <div className="destination-image">
-            <img src={selected.image} alt={selected.name} />
-          </div>
-        )}
-      </div>
 
-      {showModal && selected && (
-        <div className="modal-overlay">
-          <div className="modal modal-lg">
-            <div className="modal-header">
-              <h3 className="modal-title">{selected.name}</h3>
-              <button className="modal-close" onClick={closeModal}>
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="destination-modal-content">
-                <p className="modal-description">{selected.description}</p>
-                <div className="tags-container">
-                  {selected.tags.map((tag, index) => (
-                    <span key={index} className="custom-tag">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="duration-label">
-                  Duration: {selected.duration}
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <div className="price-label">Price: {selected.price}</div>
-              <button
-                className="btn btn-primary"
-                onClick={() => handleBookNow(selected.key)}
-              >
-                Book Now
-              </button>
-            </div>
-          </div>
+        <div className="destination-image" onClick={handleImageClick} style={{cursor: 'pointer'}} title="Click to view details">
+          {selected ? (
+            <img 
+              src={selected.image} 
+              alt={selected.name} 
+              onError={(e) => { e.target.src = FALLBACK_IMAGE; }} 
+            />
+          ) : (
+            <div className="placeholder-box">Select a destination</div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

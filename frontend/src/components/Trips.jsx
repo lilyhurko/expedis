@@ -101,14 +101,14 @@ const Trips = () => {
   }, [apiUrl, searchParams]);
 
   const handleBookNow = (offerId) => {
-    console.log("1. handleBookNow called with ID:", offerId); // <--- LOG 1
+    console.log("1. handleBookNow called with ID:", offerId); 
 
     if (!isAuthenticated) {
       console.log("2. User not authenticated");
       localStorage.setItem("selectedOffer", offerId);
       navigate("/login");
     } else {
-      console.log("2. Setting selectedOffer:", offerId); // <--- LOG 2
+      console.log("2. Setting selectedOffer:", offerId); 
       setSelectedOffer(offerId);
       setIsForSelf(true);
       setNumGuests(1);

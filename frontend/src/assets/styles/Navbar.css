@@ -128,7 +128,6 @@
   left: 125%;
 }
 
-/* Hover — світиться, як у iOS */
 .navbar-signup-button:hover {
   background: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px) scale(1.03);
@@ -166,7 +165,6 @@
   transition: all 0.3s ease;
 }
 
-/* Елегантний блиск зверху */
 .navbar-login-button::before {
   content: "";
   position: absolute;
@@ -184,12 +182,10 @@
   transition: all 0.6s ease;
 }
 
-/* При наведенні — ковзаючий світловий ефект */
 .navbar-login-button:hover::before {
   left: 125%;
 }
 
-/* Hover — більше “об’єму” та м’яке світіння */
 .navbar-login-button:hover {
   transform: translateY(-2px) scale(1.03);
   box-shadow:
@@ -197,7 +193,6 @@
     0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* При натисканні — плавне стиснення */
 .navbar-login-button:active {
   transform: translateY(0) scale(0.96);
   box-shadow:
