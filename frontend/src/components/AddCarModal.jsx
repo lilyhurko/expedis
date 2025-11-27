@@ -1,4 +1,3 @@
-// src/components/AddCarModal.jsx
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import styles from "../assets/styles/Modals.module.css";
@@ -37,7 +36,6 @@ const AddCarModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
-
     if (
       !carData.make ||
       !carData.model ||

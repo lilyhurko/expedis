@@ -54,10 +54,10 @@ router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
         pricePerDay: Number(pricePerDay),
         city,
         country,
-        image: req.file ? `/images/cars/${req.file.filename}` : null,
+        imageUrl: `/images/cars/${req.file.filename}`,
         agency: req.user.id,
         status: 'pending',
-        description: category, // просто передаємо те, що прийшло з форми
+        description: category,
     });
 
     await newCar.save();
@@ -107,7 +107,7 @@ router.get('/', async (req, res) => {
 
       cars = cars.filter(car => !booked.map(id => id.toString()).includes(car._id.toString()));
     }
-
+    res.json(cars);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -222,7 +222,7 @@ router.get('/admin/pending', authMiddleware, authAdminMiddleware, async (req, re
   try {
     const pendingCars = await Car.find({ status: 'pending' })
       .sort({ createdAt: -1 })
-      .lean(); // швидше
+      .lean(); 
 
     res.json(pendingCars);
   } catch (error) {
@@ -261,10 +261,9 @@ router.get("/my-rents", authMiddleware, async (req, res) => {
   }
 });
 
-// Підтвердження або відхилення авто адміном
 router.patch('/:id/status', authMiddleware, authAdminMiddleware, async (req, res) => {
   try {
-    const { status } = req.body; // "active" або "rejected"
+    const { status } = req.body; 
     
     if (!['active', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
@@ -283,6 +282,15 @@ router.patch('/:id/status', authMiddleware, authAdminMiddleware, async (req, res
     res.json({ message: 'Status updated', car: updatedCar });
   } catch (error) {
     console.error('Error updating car status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/allrents', async (req, res) => { // authMiddleware, authAdminMiddleware,
+  try {
+    let cars = await CarBooking.find({});
+    res.json(cars);
+  } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 });

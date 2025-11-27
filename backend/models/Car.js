@@ -7,7 +7,7 @@ const carSchema = new mongoose.Schema({
     city: { type: String, required: true, index: true },
     country: { type: String, required: true },
     pricePerDay: { type: Number, required: true, min: 0 },
-    image: { type: String, required: true },
+    imageUrl: { type: String, required: true },
     options: [{ type: String }], 
     description: { type: String },
     status: { type: String, enum: ['pending', 'active', 'rejected'], default: 'pending'},

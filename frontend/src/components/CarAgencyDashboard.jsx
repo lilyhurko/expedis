@@ -82,7 +82,7 @@ const MyCars = ({ authHeaders }) => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `${API_URL}/api/cars/agency/my-cars`,
+        `${API_URL}/api/cars/`,
         authHeaders
       );
       setCars(res.data);
@@ -190,11 +190,11 @@ const MyCars = ({ authHeaders }) => {
                     <span
                         className={`${styles.roleBadge} ${
                         car.status === "active"
-                            ? styles.roleAdmin          // зелений – підтверджено
+                            ? styles.roleAdmin          
                             : car.status === "pending"
-                            ? styles.rolePending        // жовтий – на розгляді
+                            ? styles.rolePending        
                             : car.status === "rejected"
-                            ? styles.roleRejected       // червоний – відхилено
+                            ? styles.roleRejected       
                             : styles.rolePending
                         }`}
                     >
@@ -204,10 +204,6 @@ const MyCars = ({ authHeaders }) => {
                     </span>
                     </td>
                 <td>
-                  {/* Ти можеш додати Edit пізніше */}
-                  {/* <button className={`${styles.actionBtn} ${styles.warningBtn}`}>
-                    <FaEdit /> Edit
-                  </button> */}
                   <button
                     onClick={() => handleDelete(car._id)}
                     className={`${styles.actionBtn} ${styles.rejectBtn}`}
@@ -253,7 +249,7 @@ const CarAgencyRents = ({ authHeaders }) => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `${API_URL}/api/bookings/car-agency-orders`,
+        `${API_URL}/api/cars/allrents`,
         authHeaders
       );
       setRents(res.data);

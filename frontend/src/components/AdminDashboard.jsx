@@ -95,9 +95,6 @@ function AdminDashboard() {
 
 export default AdminDashboard;
 
-// =====================================================================
-// 1. OffersReview
-// =====================================================================
 const OffersReview = ({ authHeaders }) => {
   const [pendingOffers, setPendingOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -175,9 +172,6 @@ const OffersReview = ({ authHeaders }) => {
   );
 };
 
-// =====================================================================
-// 2. TopUpsTable
-// =====================================================================
 const TopUpsTable = ({ authHeaders }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -249,9 +243,6 @@ const TopUpsTable = ({ authHeaders }) => {
   );
 };
 
-// =====================================================================
-// 3. BookingsReview
-// =====================================================================
 const BookingsReview = ({ authHeaders }) => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -327,9 +318,6 @@ const BookingsReview = ({ authHeaders }) => {
   );
 };
 
-// =====================================================================
-// 4. RentsReview (можна залишити порожнім або підключити коли буде)
-// =====================================================================
 const RentsReview = () => (
   <section className={styles.section}>
     <h3 className={styles.sectionTitle}>Pending Rents</h3>
@@ -339,10 +327,6 @@ const RentsReview = () => (
   </section>
 );
 
-// =====================================================================
-// 5. PendingCarsReview – НОВА ВКЛАДКА ДЛЯ ПІДТВЕРДЖЕННЯ АВТО
-// =====================================================================
-// Заміни ТІЛЬКИ цей компонент у своєму AdminDashboard.jsx
 const PendingCarsReview = ({ authHeaders }) => {
   const [pendingCars, setPendingCars] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -351,7 +335,6 @@ const PendingCarsReview = ({ authHeaders }) => {
     setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/api/cars/admin/pending`, authHeaders);
-      // Важливо: populate agency, інакше приходить тільки _id
       setPendingCars(res.data || []);
     } catch (err) {
       console.error(err);
@@ -421,11 +404,10 @@ const PendingCarsReview = ({ authHeaders }) => {
           <tbody>
             {pendingCars.map(car => (
               <tr key={car._id}>
-                {/* Фото */}
                 <td>
-                  {car.image ? (
+                  {car.imageUrl ? (
                     <img
-                      src={`${API_URL}/${car.image}`}
+                      src={`${API_URL}${car.imageUrl}`}
                       alt={`${car.make} ${car.model}`}
                       style={{
                         width: '100px',
@@ -454,7 +436,6 @@ const PendingCarsReview = ({ authHeaders }) => {
                   )}
                 </td>
 
-                {/* Марка + модель + категорія + рік */}
                 <td>
                   <strong>{car.make} {car.model || '—'}</strong>
                   <br />
@@ -463,22 +444,18 @@ const PendingCarsReview = ({ authHeaders }) => {
                   </small>
                 </td>
 
-                {/* Агенція */}
                 <td>
                   {car.agency?.name || car.agency?.email || '—'}
                 </td>
 
-                {/* Ціна */}
                 <td>
                   <strong>{car.pricePerDay || '—'} PLN</strong>
                 </td>
 
-                {/* Локація */}
                 <td>
                   {car.city || ''}{car.city && car.country ? ', ' : ''}{car.country || '—'}
                 </td>
 
-                {/* Кнопки */}
                 <td>
                   <button
                     onClick={() => approveCar(car._id)}
@@ -503,9 +480,6 @@ const PendingCarsReview = ({ authHeaders }) => {
   );
 };
 
-// =====================================================================
-// 6. UserManagement
-// =====================================================================
 const UserManagement = ({ authHeaders }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
