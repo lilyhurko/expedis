@@ -38,77 +38,80 @@ async function isCarAvailable(carId, pickupDate, returnDate) {
     return !overlappingBooking; 
 }
 
+router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
+  try {
+    const { make, model, year, category, pricePerDay, city, country, description } = req.body;
 
-router.post('/', authMiddleware, authAdminMiddleware, upload.single('image'), async (req, res) => {
-    try {
-        const { make, model, year, city, country, pricePerDay, options, description } = req.body;
-        const imageUrl = req.file ? `/images/cars/${req.file.filename}` : null;
-
-        if (!make || !model || !pricePerDay || !city || !imageUrl) {
-            if (req.file) fs.unlinkSync(req.file.path); 
-            return res.status(400).json({ error: 'Missing required fields: make, model, city, pricePerDay, and image.' });
-        }
-        
-        const newCar = new Car({
-            make, model, city, country, imageUrl, description,
-            year: Number(year),
-            pricePerDay: Number(pricePerDay),
-            options: JSON.parse(options || '[]'),
-        });
-
-        await newCar.save();
-        res.status(201).json(newCar);
-    } catch (error) {
-        console.error('Error adding car:', error);
-        if (req.file) fs.unlinkSync(req.file.path); 
-        res.status(500).json({ message: error.message });
+    if (!make || !model || !pricePerDay || !city || !country) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: 'Заповніть усі обов’язкові поля' });
     }
+
+    const newCar = new Car({
+        make,
+        model,
+        year: year ? Number(year) : undefined,
+        pricePerDay: Number(pricePerDay),
+        city,
+        country,
+        image: req.file ? `/images/cars/${req.file.filename}` : null,
+        agency: req.user.id,
+        status: 'pending',
+        description: category, // просто передаємо те, що прийшло з форми
+    });
+
+    await newCar.save();
+    res.status(201).json({ message: 'Авто додано на перевірку', car: newCar });
+
+  } catch (error) {
+    console.error('Error adding car by agency:', error);
+    if (req.file) fs.unlinkSync(req.file.path);
+    res.status(500).json({ message: error.message });
+  }
 });
 
 
 router.get('/', async (req, res) => {
-    try {
-        const { city, pickupDate, returnDate, maxPrice, category } = req.query;
+  try {
+    const { city, pickupDate, returnDate, maxPrice, category } = req.query;
 
-        if (!city) {
-            return res.status(400).json({ message: "City parameter is required." });
-        }
+    let cars = await Car.find({});
 
-        const carQuery = { city: new RegExp(city, 'i') };
+    if (category && category.toString().trim() !== '') {
+      const exactCategory = category.toString().trim();
 
-        if (maxPrice) {
-            carQuery.pricePerDay = { $lte: Number(maxPrice) };
-        }
-
-        if (category) {
-            carQuery.options = category;
-        }
-
-        if (!pickupDate || !returnDate) {
-            const allCars = await Car.find(carQuery);
-            return res.json(allCars);
-        }
-
-        const overlappingBookings = await CarBooking.find({
-            status: 'confirmed',
-            pickupDate: { $lt: new Date(returnDate) },
-            returnDate: { $gt: new Date(pickupDate) }
-        }).select('car');
-
-        const unavailableCarIds = overlappingBookings.map(b => b.car);
-
-        const availableCars = await Car.find({
-            ...carQuery, 
-            _id: { $nin: unavailableCarIds } 
-        });
-
-        res.json(availableCars);
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+      cars = cars.filter(car => {
+        if (!car.description) return false;
+        const desc = car.description.toString().trim();
+        return desc === exactCategory; 
+      });
     }
-});
 
+    if (city && city.toString().trim()) {
+      const c = city.toString().trim().toLowerCase();
+      cars = cars.filter(car => car.city?.toString().toLowerCase().includes(c));
+    }
+
+    if (maxPrice && !isNaN(maxPrice)) {
+      cars = cars.filter(car => car.pricePerDay <= Number(maxPrice));
+    }
+
+    cars = cars.filter(car => !car.status || car.status === 'active');
+
+    if (pickupDate && returnDate) {
+      const booked = await CarBooking.find({
+        status: 'confirmed',
+        pickupDate: { $lt: new Date(returnDate) },
+        returnDate: { $gt: new Date(pickupDate) }
+      }).distinct('car');
+
+      cars = cars.filter(car => !booked.map(id => id.toString()).includes(car._id.toString()));
+    }
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 router.post('/book', authMiddleware, async (req, res) => {
     const { carId, pickupDate, returnDate } = req.body;
@@ -215,13 +218,17 @@ router.delete('/:id', authMiddleware, authAdminMiddleware, async (req, res) => {
 });
 
 
-router.get('/bookings/pending', authMiddleware, authAdminMiddleware, async (req, res) => {
-    try {
-        const bookings = await CarBooking.find({ status: 'pending' }).populate('car').populate('user', 'username email');
-        res.json(bookings);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+router.get('/admin/pending', authMiddleware, authAdminMiddleware, async (req, res) => {
+  try {
+    const pendingCars = await Car.find({ status: 'pending' })
+      .sort({ createdAt: -1 })
+      .lean(); // швидше
+
+    res.json(pendingCars);
+  } catch (error) {
+    console.error('Помилка завантаження авто на перевірку:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 router.put('/bookings/:id/confirm', authMiddleware, authAdminMiddleware, async (req, res) => {
@@ -238,6 +245,46 @@ router.put('/bookings/:id/confirm', authMiddleware, authAdminMiddleware, async (
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+});
+
+
+router.get("/my-rents", authMiddleware, async (req, res) => {
+  try {
+    const bookings = await CarBooking.find({ user: req.user.id })
+      .populate("car")
+      .sort({ createdAt: -1 });
+
+    res.json(bookings);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// Підтвердження або відхилення авто адміном
+router.patch('/:id/status', authMiddleware, authAdminMiddleware, async (req, res) => {
+  try {
+    const { status } = req.body; // "active" або "rejected"
+    
+    if (!['active', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    const updatedCar = await Car.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedCar) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+
+    res.json({ message: 'Status updated', car: updatedCar });
+  } catch (error) {
+    console.error('Error updating car status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 module.exports = router;

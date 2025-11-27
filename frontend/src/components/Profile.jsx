@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from '../assets/styles/Profile.module.css';
-import { FaUser, FaWallet, FaBriefcase, FaHeart } from 'react-icons/fa';
+import { FaUser, FaWallet, FaBriefcase, FaHeart, FaCarSide } from 'react-icons/fa';
 
 function Profile() {
   return (
@@ -34,7 +34,14 @@ function Profile() {
             <FaBriefcase />
             <span>My Bookings</span>
           </NavLink>
-          
+          <NavLink 
+            to="/profile/my-rents" 
+            className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}
+          >
+            <FaCarSide />
+            <span>My Rents</span>
+          </NavLink>
+                    
           <NavLink 
             to="/profile/wishlist" 
             className={({ isActive }) => isActive ? `${styles.navLink} ${styles.active}` : styles.navLink}

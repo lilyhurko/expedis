@@ -1,0 +1,73 @@
+
+
+.offers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  padding: 20px 16px;
+  align-items: stretch;            
+}
+
+.offer-card {
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;                   
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.offer-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.offer-footer {
+  margin-top: auto;
+  padding: 16px;
+  background: #f9f9f9;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.admin-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+
+.admin-actions button {
+  background: rgba(255,255,255,0.95);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+}
+
+.admin-actions button:hover:nth-child(1) { background: #e3f2fd; }
+.admin-actions button:hover:nth-child(2) { background: #ffebee; color: #d32f2f; }
+
+/* Повідомлення коли машин немає */
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 1.3rem;
+  color: #666;
+  padding: 60px 20px;
+}

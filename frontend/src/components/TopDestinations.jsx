@@ -11,11 +11,12 @@ const TopDestinations = () => {
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001'; 
 
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/api/offers");
+        const response = await axios.get(`${apiUrl}/api/offers`);
         const fetchedDestinations = response.data.map((offer) => ({
           name: offer.title,
           tags: offer.categories,

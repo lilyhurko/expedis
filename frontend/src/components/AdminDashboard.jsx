@@ -1,366 +1,613 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import styles from '../assets/styles/AdminDashboard.module.css';
-import { FaCheckCircle, FaTimesCircle, FaGlobe, FaDollarSign, FaUsers, FaTasks, FaTrash, FaUserTag } from 'react-icons/fa';
+import {
+  FaCheckCircle,
+  FaTimesCircle,
+  FaGlobe,
+  FaCarAlt,
+  FaDollarSign,
+  FaUsers,
+  FaTasks,
+  FaTrash,
+  FaUserTag,
+} from 'react-icons/fa';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 const TabNames = {
-    OFFERS: 'Offers for Review',
-    TOP_UPS: 'Top-Up Requests',
-    BOOKINGS: 'Pending Bookings',
-    USERS: 'User Management',
+  OFFERS: 'Offers for Review',
+  TOP_UPS: 'Top-Up Requests',
+  BOOKINGS: 'Pending Bookings',
+  RENTS: 'Pending Rents',
+  CARS: 'Pending Cars',
+  USERS: 'User Management',
 };
 
 function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState(TabNames.OFFERS);
+  const [activeTab, setActiveTab] = useState(TabNames.OFFERS);
+  const token = localStorage.getItem('token');
 
-    const token = localStorage.getItem('token');
-    
-    const authHeaders = useMemo(() => ({
-        headers: { Authorization: `Bearer ${token}` }
-    }), [token]); 
+  const authHeaders = useMemo(
+    () => ({
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+    [token]
+  );
 
-    return (
-        <div className={styles.adminDashboardContainer}>
-            <h2 className={styles.pageTitle}>Admin Control Panel</h2>
-            <p className={styles.pageSubtitle}>System health and content moderation for Expedis.</p>
+  return (
+    <div className={styles.adminDashboardContainer}>
+      <h2 className={styles.pageTitle}>Admin Control Panel</h2>
+      <p className={styles.pageSubtitle}>
+        System health and content moderation for Expedis.
+      </p>
 
-            <div className={styles.tabsNav}>
-                <button 
-                    onClick={() => setActiveTab(TabNames.OFFERS)} 
-                    className={`${styles.tabBtn} ${activeTab === TabNames.OFFERS ? styles.active : ''}`}
-                >
-                    <FaTasks /> {TabNames.OFFERS}
-                </button>
-                <button 
-                    onClick={() => setActiveTab(TabNames.TOP_UPS)} 
-                    className={`${styles.tabBtn} ${activeTab === TabNames.TOP_UPS ? styles.active : ''}`}
-                >
-                    <FaDollarSign /> {TabNames.TOP_UPS}
-                </button>
-                <button 
-                    onClick={() => setActiveTab(TabNames.BOOKINGS)} 
-                    className={`${styles.tabBtn} ${activeTab === TabNames.BOOKINGS ? styles.active : ''}`}
-                >
-                    <FaGlobe /> {TabNames.BOOKINGS}
-                </button>
-                <button 
-                    onClick={() => setActiveTab(TabNames.USERS)} 
-                    className={`${styles.tabBtn} ${activeTab === TabNames.USERS ? styles.active : ''}`}
-                >
-                    <FaUsers /> {TabNames.USERS}
-                </button>
-            </div>
+      <div className={styles.tabsNav}>
+        <button
+          onClick={() => setActiveTab(TabNames.OFFERS)}
+          className={`${styles.tabBtn} ${activeTab === TabNames.OFFERS ? styles.active : ''}`}
+        >
+          <FaTasks /> {TabNames.OFFERS}
+        </button>
+        <button
+          onClick={() => setActiveTab(TabNames.TOP_UPS)}
+          className={`${styles.tabBtn} ${activeTab === TabNames.TOP_UPS ? styles.active : ''}`}
+        >
+          <FaDollarSign /> {TabNames.TOP_UPS}
+        </button>
+        <button
+          onClick={() => setActiveTab(TabNames.BOOKINGS)}
+          className={`${styles.tabBtn} ${activeTab === TabNames.BOOKINGS ? styles.active : ''}`}
+        >
+          <FaGlobe /> {TabNames.BOOKINGS}
+        </button>
+        <button
+          onClick={() => setActiveTab(TabNames.RENTS)}
+          className={`${styles.tabBtn} ${activeTab === TabNames.RENTS ? styles.active : ''}`}
+        >
+          <FaCarAlt /> {TabNames.RENTS}
+        </button>
+        <button
+          onClick={() => setActiveTab(TabNames.CARS)}
+          className={`${styles.tabBtn} ${activeTab === TabNames.CARS ? styles.active : ''}`}
+        >
+          <FaCarAlt /> {TabNames.CARS}
+        </button>
+        <button
+          onClick={() => setActiveTab(TabNames.USERS)}
+          className={`${styles.tabBtn} ${activeTab === TabNames.USERS ? styles.active : ''}`}
+        >
+          <FaUsers /> {TabNames.USERS}
+        </button>
+      </div>
 
-            <div className={styles.tabContent}>
-                {activeTab === TabNames.OFFERS && <OffersReview authHeaders={authHeaders} />} 
-                {activeTab === TabNames.TOP_UPS && <TopUpsTable authHeaders={authHeaders} />} 
-                {activeTab === TabNames.BOOKINGS && <BookingsReview authHeaders={authHeaders} />}
-                {activeTab === TabNames.USERS && <UserManagement authHeaders={authHeaders} />}
-            </div>
-        </div>
-    );
+      <div className={styles.tabContent}>
+        {activeTab === TabNames.OFFERS && <OffersReview authHeaders={authHeaders} />}
+        {activeTab === TabNames.TOP_UPS && <TopUpsTable authHeaders={authHeaders} />}
+        {activeTab === TabNames.BOOKINGS && <BookingsReview authHeaders={authHeaders} />}
+        {activeTab === TabNames.RENTS && <RentsReview authHeaders={authHeaders} />}
+        {activeTab === TabNames.CARS && <PendingCarsReview authHeaders={authHeaders} />}
+        {activeTab === TabNames.USERS && <UserManagement authHeaders={authHeaders} />}
+      </div>
+    </div>
+  );
 }
+
 export default AdminDashboard;
 
-
+// =====================================================================
+// 1. OffersReview
+// =====================================================================
 const OffersReview = ({ authHeaders }) => {
-    const [pendingOffers, setPendingOffers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [pendingOffers, setPendingOffers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const fetchPendingOffers = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await axios.get(`${API_URL}/api/admin/offers/pending`, authHeaders);
-            setPendingOffers(response.data);
-        } catch (err) {
-            setError(err.response?.data?.message || "Failed to load offers.");
-        } finally { setLoading(false); }
-    }, [authHeaders]);
+  const fetchPendingOffers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/admin/offers/pending`, authHeaders);
+      setPendingOffers(res.data);
+    } catch (err) {
+      alert('Failed to load offers');
+    } finally {
+      setLoading(false);
+    }
+  }, [authHeaders]);
 
-    const handleOfferStatusChange = async (offerId, status) => {
-        if (!window.confirm(`Are you sure you want to ${status} this offer?`)) return;
-        try {
-            await axios.patch(`${API_URL}/api/offers/${offerId}/status`, { status }, authHeaders);
-            setPendingOffers(prev => prev.filter(o => o._id !== offerId));
-            alert(`Offer ${status}d.`);
-        } catch (err) { alert(err.message); }
-    };
+  const handleOfferStatusChange = async (offerId, status) => {
+    if (!window.confirm(`Are you sure you want to ${status} this offer?`)) return;
+    try {
+      await axios.patch(`${API_URL}/api/offers/${offerId}/status`, { status }, authHeaders);
+      setPendingOffers(prev => prev.filter(o => o._id !== offerId));
+      alert(`Offer ${status}d`);
+    } catch (err) {
+      alert(err.response?.data?.message || err.message);
+    }
+  };
 
-    useEffect(() => { fetchPendingOffers(); }, [fetchPendingOffers]);
+  useEffect(() => { fetchPendingOffers(); }, [fetchPendingOffers]);
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div className={styles.errorMessage}>Error: {error}</div>;
-    if (pendingOffers.length === 0) return <div className={styles.emptyState}>No pending offers.</div>;
+  if (loading) return <div>Loading offers...</div>;
+  if (pendingOffers.length === 0) return <div className={styles.emptyState}>No pending offers.</div>;
 
-    return (
-        <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>Offers Review</h3>
-            <div className={styles.tableWrapper}>
-                <table className={styles.offerTable}>
-                    <thead><tr><th>Title</th><th>Agency</th><th>Price</th><th>Actions</th></tr></thead>
-                    <tbody>
-                        {pendingOffers.map(o => (
-                            <tr key={o._id}>
-                                <td>{o.title}</td>
-                                <td>
-                                    {o.creator?.name || 'Unknown'} <br/>
-                                    <span className={styles.smallText}>{o.creator?.email}</span>
-                                </td>
-                                <td>{o.price} PLN</td>
-                                <td>
-                                    <button onClick={() => handleOfferStatusChange(o._id, 'active')} className={`${styles.actionBtn} ${styles.approveBtn}`}><FaCheckCircle/> Approve</button>
-                                    <button onClick={() => handleOfferStatusChange(o._id, 'rejected')} className={`${styles.actionBtn} ${styles.rejectBtn}`}><FaTimesCircle/> Reject</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    );
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>Offers Review</h3>
+      <div className={styles.tableWrapper}>
+        <table className={styles.offerTable}>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Agency</th>
+              <th>Price</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingOffers.map(o => (
+              <tr key={o._id}>
+                <td>{o.title}</td>
+                <td>
+                  {o.creator?.name || 'Unknown'}<br />
+                  <span className={styles.smallText}>{o.creator?.email}</span>
+                </td>
+                <td>{o.price} PLN</td>
+                <td>
+                  <button
+                    onClick={() => handleOfferStatusChange(o._id, 'active')}
+                    className={`${styles.actionBtn} ${styles.approveBtn}`}
+                  >
+                    <FaCheckCircle /> Approve
+                  </button>
+                  <button
+                    onClick={() => handleOfferStatusChange(o._id, 'rejected')}
+                    className={`${styles.actionBtn} ${styles.rejectBtn}`}
+                  >
+                    <FaTimesCircle /> Reject
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 };
 
+// =====================================================================
+// 2. TopUpsTable
+// =====================================================================
 const TopUpsTable = ({ authHeaders }) => {
-    const [requests, setRequests] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    
-    const fetchRequests = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await axios.get(`${API_URL}/api/admin/top-ups/pending`, authHeaders);
-            setRequests(response.data);
-        } catch (err) { setError(err.message); } finally { setLoading(false); }
-    }, [authHeaders]);
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const handleConfirm = async (id) => {
-        if(!window.confirm("Confirm top-up?")) return;
-        try {
-            await axios.post(`${API_URL}/api/admin/top-ups/${id}/confirm`, {}, authHeaders);
-            setRequests(prev => prev.filter(r => r._id !== id));
-            alert("Confirmed.");
-        } catch(e) { alert(e.message); }
-    };
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/admin/top-ups/pending`, authHeaders);
+      setRequests(res.data);
+    } catch (err) {
+      alert('Failed to load top-up requests');
+    } finally {
+      setLoading(false);
+    }
+  }, [authHeaders]);
 
-    useEffect(() => { fetchRequests(); }, [fetchRequests]);
+  const handleConfirm = async (id) => {
+    if (!window.confirm('Confirm this top-up?')) return;
+    try {
+      await axios.post(`${API_URL}/api/admin/top-ups/${id}/confirm`, {}, authHeaders);
+      setRequests(prev => prev.filter(r => r._id !== id));
+      alert('Top-up confirmed');
+    } catch (err) {
+      alert(err.response?.data?.message || err.message);
+    }
+  };
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div className={styles.errorMessage}>Error: {error}</div>;
-    if (requests.length === 0) return <div className={styles.emptyState}>No pending requests.</div>;
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
-    return (
-        <section>
-            <h3 className={styles.sectionTitle}>Top-Ups</h3>
-            <div className={styles.tableWrapper}>
-                <table className={styles.offerTable}>
-                    <thead><tr><th>User</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead>
-                    <tbody>
-                        {requests.map(r => (
-                            <tr key={r._id}>
-                                <td>
-                                    {r.user?.email} <br/>
-                                    <span className={styles.smallText}>{r.user?.name} {r.user?.surname}</span>
-                                </td>
-                                <td>{r.amount} PLN</td>
-                                <td>{new Date(r.createdAt).toLocaleDateString()}</td>
-                                <td><button onClick={() => handleConfirm(r._id)} className={`${styles.actionBtn} ${styles.approveBtn}`}><FaCheckCircle/> Confirm</button></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    );
+  if (loading) return <div>Loading top-ups...</div>;
+  if (requests.length === 0) return <div className={styles.emptyState}>No pending top-up requests.</div>;
+
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>Top-Up Requests</h3>
+      <div className={styles.tableWrapper}>
+        <table className={styles.offerTable}>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {requests.map(r => (
+              <tr key={r._id}>
+                <td>
+                  {r.user?.email}<br />
+                  <span className={styles.smallText}>{r.user?.name}</span>
+                </td>
+                <td>{r.amount} PLN</td>
+                <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+                <td>
+                  <button
+                    onClick={() => handleConfirm(r._id)}
+                    className={`${styles.actionBtn} ${styles.approveBtn}`}
+                  >
+                    <FaCheckCircle /> Confirm
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 };
 
+// =====================================================================
+// 3. BookingsReview
+// =====================================================================
 const BookingsReview = ({ authHeaders }) => {
-    const [bookings, setBookings] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    
-    const fetchBookings = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await axios.get(`${API_URL}/api/bookings/admin/pending`, authHeaders);
-            
-            setBookings(response.data);
-        } catch (err) { 
-            console.error("Error fetching bookings:", err);
-            
-            setLoading(false);
-        } finally { setLoading(false); }
-    }, [authHeaders]);
+  const fetchBookings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/bookings/admin/pending`, authHeaders);
+      setBookings(res.data);
+    } catch (err) {
+      alert('Failed to load bookings');
+    } finally {
+      setLoading(false);
+    }
+  }, [authHeaders]);
 
-    const handleAction = async (id, actionType) => {
-        const statusToSend = actionType === 'confirm' ? 'confirmed' : 'rejected';
+  const handleAction = async (id, action) => {
+    const status = action === 'confirm' ? 'confirmed' : 'rejected';
+    if (!window.confirm(`Mark booking as ${status}?`)) return;
+    try {
+      await axios.patch(`${API_URL}/api/bookings/${id}/status`, { status }, authHeaders);
+      setBookings(prev => prev.filter(b => b._id !== id));
+      alert(`Booking ${status}`);
+    } catch (err) {
+      alert(err.response?.data?.message || err.message);
+    }
+  };
 
-        if(!window.confirm(`Are you sure you want to mark this booking as ${statusToSend}?`)) return;
+  useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
-        try {
-            console.log(`Sending PATCH to ${API_URL}/api/bookings/${id}/status with status: ${statusToSend}`);
-            
-            await axios.patch(
-                `${API_URL}/api/bookings/${id}/status`, 
-                { status: statusToSend }, 
-                authHeaders
-            );
+  if (loading) return <div>Loading bookings...</div>;
+  if (bookings.length === 0) return <div className={styles.emptyState}>No pending bookings.</div>;
 
-            setBookings(prev => prev.filter(b => b._id !== id));
-            alert(`Booking marked as ${statusToSend}.`);
-        } catch(e) { 
-            console.error("Booking Update Error:", e);
-            alert(e.response?.data?.message || e.message); 
-        }
-    };
-
-    useEffect(() => { fetchBookings(); }, [fetchBookings]);
-
-    if(loading) return <div>Loading...</div>;
-
-    if(!bookings || bookings.length === 0) return <div className={styles.emptyState}>No pending bookings found.</div>;
-
-    return (
-        <section>
-            <h3 className={styles.sectionTitle}>Pending Bookings</h3>
-            <div className={styles.tableWrapper}>
-                <table className={styles.offerTable}>
-                    <thead><tr><th>User</th><th>Tour</th><th>Amount</th><th>Action</th></tr></thead>
-                    <tbody>
-                        {bookings.map(b => (
-                            <tr key={b._id}>
-                                <td>
-                                    {b.user?.email} <br/>
-                                    <span className={styles.smallText}>{b.user?.name} {b.user?.surname}</span>
-                                </td>
-                                <td>{b.offer?.title}</td>
-                                <td>{b.amount} PLN</td>
-                                <td>
-                                    <button onClick={() => handleAction(b._id, 'confirm')} className={`${styles.actionBtn} ${styles.approveBtn}`}><FaCheckCircle/> Confirm</button>
-                                    <button onClick={() => handleAction(b._id, 'reject')} className={`${styles.actionBtn} ${styles.rejectBtn}`}><FaTimesCircle/> Reject</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    );
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>Pending Bookings</h3>
+      <div className={styles.tableWrapper}>
+        <table className={styles.offerTable}>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Tour</th>
+              <th>Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bookings.map(b => (
+              <tr key={b._id}>
+                <td>{b.user?.email}</td>
+                <td>{b.offer?.title || '—'}</td>
+                <td>{b.amount} PLN</td>
+                <td>
+                  <button
+                    onClick={() => handleAction(b._id, 'confirm')}
+                    className={`${styles.actionBtn} ${styles.approveBtn}`}
+                  >
+                    <FaCheckCircle /> Confirm
+                  </button>
+                  <button
+                    onClick={() => handleAction(b._id, 'reject')}
+                    className={`${styles.actionBtn} ${styles.rejectBtn}`}
+                  >
+                    <FaTimesCircle /> Reject
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 };
 
+// =====================================================================
+// 4. RentsReview (можна залишити порожнім або підключити коли буде)
+// =====================================================================
+const RentsReview = () => (
+  <section className={styles.section}>
+    <h3 className={styles.sectionTitle}>Pending Rents</h3>
+    <div className={styles.emptyState}>
+      Car rental booking moderation will be added later.
+    </div>
+  </section>
+);
 
-const UserManagement = ({ authHeaders }) => {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+// =====================================================================
+// 5. PendingCarsReview – НОВА ВКЛАДКА ДЛЯ ПІДТВЕРДЖЕННЯ АВТО
+// =====================================================================
+// Заміни ТІЛЬКИ цей компонент у своєму AdminDashboard.jsx
+const PendingCarsReview = ({ authHeaders }) => {
+  const [pendingCars, setPendingCars] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const fetchUsers = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await axios.get(`${API_URL}/api/admin/users`, authHeaders);
-            setUsers(response.data);
-        } catch (err) {
-            console.error("Error fetching users:", err);
-            setError(err.response?.data?.message || "Failed to load users.");
-        } finally {
-            setLoading(false);
-        }
-    }, [authHeaders]);
+  const fetchPendingCars = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/cars/admin/pending`, authHeaders);
+      // Важливо: populate agency, інакше приходить тільки _id
+      setPendingCars(res.data || []);
+    } catch (err) {
+      console.error(err);
+      alert('Не вдалося завантажити авто на перевірку');
+    } finally {
+      setLoading(false);
+    }
+  }, [authHeaders]);
 
-    const handleChangeRole = async (userId, currentRole) => {
-        const newRole = prompt("Enter new role (user / agency / admin):", currentRole);
-        if (!newRole || newRole === currentRole) return;
-        
-        if (!['user', 'agency', 'admin'].includes(newRole)) {
-            alert("Invalid role! Use: user, agency, or admin.");
-            return;
-        }
+  const approveCar = async (id) => {
+    if (!window.confirm('Підтвердити це авто?')) return;
+    try {
+      await axios.patch(`${API_URL}/api/cars/${id}/status`, { status: 'active' }, authHeaders);
+      setPendingCars(prev => prev.filter(c => c._id !== id));
+      alert('Авто підтверджено та опубліковано!');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Помилка');
+    }
+  };
 
-        try {
-            await axios.patch(`${API_URL}/api/admin/users/${userId}/role`, { role: newRole }, authHeaders);
-            setUsers(prev => prev.map(u => u._id === userId ? { ...u, role: newRole } : u));
-            alert(`Role updated to ${newRole}`);
-        } catch (err) {
-            alert(`Error: ${err.response?.data?.message}`);
-        }
-    };
+  const rejectCar = async (id) => {
+    if (!window.confirm('Відхилити це авто?')) return;
+    try {
+      await axios.patch(`${API_URL}/api/cars/${id}/status`, { status: 'rejected' }, authHeaders);
+      setPendingCars(prev => prev.filter(c => c._id !== id));
+      alert('Авто відхилено');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Помилка');
+    }
+  };
 
-    const handleDeleteUser = async (userId) => {
-        if (!window.confirm("Are you sure you want to PERMANENTLY delete this user?")) return;
-        try {
-            await axios.delete(`${API_URL}/api/admin/users/${userId}`, authHeaders);
-            setUsers(prev => prev.filter(u => u._id !== userId));
-            alert("User deleted.");
-        } catch (err) {
-            alert(`Error: ${err.response?.data?.message}`);
-        }
-    };
+  useEffect(() => {
+    fetchPendingCars();
+  }, [fetchPendingCars]);
 
-    const getRoleBadgeClass = (role) => {
-        switch(role) {
-            case 'admin': return `${styles.roleBadge} ${styles.roleAdmin}`;
-            case 'agency': return `${styles.roleBadge} ${styles.roleAgency}`;
-            default: return `${styles.roleBadge} ${styles.roleUser}`;
-        }
-    };
+  if (loading) {
+    return <div className={styles.loading}>Завантаження авто...</div>;
+  }
 
-    useEffect(() => { fetchUsers(); }, [fetchUsers]);
-
-    if (loading) return <div>Loading users...</div>;
-    if (error) return <div className={styles.errorMessage}>Error: {error}</div>;
-
+  if (pendingCars.length === 0) {
     return (
-        <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>All Users ({users.length})</h3>
-            <div className={styles.tableWrapper}>
-                <table className={styles.offerTable}>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Balance</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map(user => (
-                            <tr key={user._id}>
-                                <td>
-                                    {user.name} {user.surname} <br/> 
-                                    <span className={styles.smallText}>@{user.username}</span>
-                                </td>
-                                <td>{user.email}</td>
-                                <td>
-                                    <span className={getRoleBadgeClass(user.role)}>
-                                        {user.role.toUpperCase()}
-                                    </span>
-                                </td>
-                                <td>{user.balance?.toFixed(2)} PLN</td>
-                                <td>
-                                    <button 
-                                        onClick={() => handleChangeRole(user._id, user.role)}
-                                        className={`${styles.actionBtn} ${styles.warningBtn}`}
-                                        title="Change Role"
-                                    >
-                                        <FaUserTag /> Role
-                                    </button>
-                                    <button 
-                                        onClick={() => handleDeleteUser(user._id)}
-                                        className={`${styles.actionBtn} ${styles.rejectBtn}`}
-                                        title="Delete User"
-                                    >
-                                        <FaTrash /> Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>Pending Car Listings</h3>
+        <div className={styles.emptyState}>No pending cars</div>
+      </section>
     );
+  }
+
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>
+        Pending Car Listings ({pendingCars.length})
+      </h3>
+
+      <div className={styles.tableWrapper}>
+        <table className={styles.offerTable}>
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Car</th>
+              <th>Agency</th>
+              <th>Price/day</th>
+              <th>Location</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingCars.map(car => (
+              <tr key={car._id}>
+                {/* Фото */}
+                <td>
+                  {car.image ? (
+                    <img
+                      src={`${API_URL}/${car.image}`}
+                      alt={`${car.make} ${car.model}`}
+                      style={{
+                        width: '100px',
+                        height: '65px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: '100px',
+                        height: '65px',
+                        background: '#e9ecef',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#888',
+                        fontSize: '12px',
+                      }}
+                    >
+                      No photo
+                    </div>
+                  )}
+                </td>
+
+                {/* Марка + модель + категорія + рік */}
+                <td>
+                  <strong>{car.make} {car.model || '—'}</strong>
+                  <br />
+                  <small style={{ color: '#666' }}>
+                    {car.category || ''} {car.year ? `• ${car.year}` : ''}
+                  </small>
+                </td>
+
+                {/* Агенція */}
+                <td>
+                  {car.agency?.name || car.agency?.email || '—'}
+                </td>
+
+                {/* Ціна */}
+                <td>
+                  <strong>{car.pricePerDay || '—'} PLN</strong>
+                </td>
+
+                {/* Локація */}
+                <td>
+                  {car.city || ''}{car.city && car.country ? ', ' : ''}{car.country || '—'}
+                </td>
+
+                {/* Кнопки */}
+                <td>
+                  <button
+                    onClick={() => approveCar(car._id)}
+                    className={`${styles.actionBtn} ${styles.approveBtn}`}
+                  >
+                    <FaCheckCircle /> Approve
+                  </button>
+                  <button
+                    onClick={() => rejectCar(car._id)}
+                    className={`${styles.actionBtn} ${styles.rejectBtn}`}
+                    style={{ marginLeft: '8px' }}
+                  >
+                    <FaTimesCircle /> Reject
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+};
+
+// =====================================================================
+// 6. UserManagement
+// =====================================================================
+const UserManagement = ({ authHeaders }) => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/admin/users`, authHeaders);
+      setUsers(res.data);
+    } catch (err) {
+      alert('Failed to load users');
+    } finally {
+      setLoading(false);
+    }
+  }, [authHeaders]);
+
+  const changeRole = async (userId, currentRole) => {
+    const newRole = prompt('Enter new role (user / agency / admin):', currentRole);
+    if (!newRole || !['user', 'agency', 'admin'].includes(newRole.toLowerCase())) {
+      alert('Invalid role');
+      return;
+    }
+    try {
+      await axios.patch(`${API_URL}/api/admin/users/${userId}/role`, { role: newRole.toLowerCase() }, authHeaders);
+      setUsers(prev => prev.map(u => (u._id === userId ? { ...u, role: newRole.toLowerCase() } : u)));
+      alert('Role updated');
+    } catch (err) {
+      alert(err.response?.data?.message || err.message);
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    if (!window.confirm('Delete this user permanently?')) return;
+    try {
+      await axios.delete(`${API_URL}/api/admin/users/${userId}`, authHeaders);
+      setUsers(prev => prev.filter(u => u._id !== userId));
+      alert('User deleted');
+    } catch (err) {
+      alert(err.response?.data?.message || err.message);
+    }
+  };
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  if (loading) return <div>Loading users...</div>;
+
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>All Users ({users.length})</h3>
+      <div className={styles.tableWrapper}>
+        <table className={styles.offerTable}>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Balance</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(user => (
+              <tr key={user._id}>
+                <td>
+                  {user.name} {user.surname}
+                  <br />
+                  <span className={styles.smallText}>@{user.username}</span>
+                </td>
+                <td>{user.email}</td>
+                <td>
+                  <span
+                    className={`${styles.roleBadge} ${
+                      user.role === 'admin'
+                        ? styles.roleAdmin
+                        : user.role === 'agency'
+                        ? styles.roleAgency
+                        : styles.roleUser
+                    }`}
+                  >
+                    {user.role.toUpperCase()}
+                  </span>
+                </td>
+                <td>{(user.balance || 0).toFixed(2)} PLN</td>
+                <td>
+                  <button
+                    onClick={() => changeRole(user._id, user.role)}
+                    className={`${styles.actionBtn} ${styles.warningBtn}`}
+                  >
+                    <FaUserTag /> Role
+                  </button>
+                  <button
+                    onClick={() => deleteUser(user._id)}
+                    className={`${styles.actionBtn} ${styles.rejectBtn}`}
+                  >
+                    <FaTrash /> Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 };
