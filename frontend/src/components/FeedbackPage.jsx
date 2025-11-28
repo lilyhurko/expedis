@@ -82,7 +82,8 @@ const FeedbackPage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this comment?")) return;
+    if (!window.confirm("Are you sure you want to delete this comment?"))
+      return;
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -152,8 +153,9 @@ const FeedbackPage = () => {
   return (
     <>
       <div className="feedback-page">
+        <h2 className="feedback-title">Leave Feedback</h2>
+
         <div className="feedback-container">
-          <h2>Leave Feedback</h2>
           {error && <div className="alert alert-danger">{error}</div>}
 
           {user ? (
@@ -175,7 +177,7 @@ const FeedbackPage = () => {
                 </div>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="btn-primary-submit"
                   disabled={isLoading || !message.trim()}
                 >
                   {isLoading ? "Submitting..." : "Submit"}
@@ -191,8 +193,8 @@ const FeedbackPage = () => {
                   borderRadius: "5px",
                 }}
               >
-                Writing comments is allowed only for travelers. You are logged in
-                as <strong>{user.role}</strong>.
+                Writing comments is allowed only for travelers. You are logged
+                in as <strong>{user.role}</strong>.
               </p>
             )
           ) : (
@@ -200,7 +202,9 @@ const FeedbackPage = () => {
           )}
 
           <hr />
-          <h4>All Comments</h4>
+        </div>
+        <div className="coments-box">
+          <h4 className="feedback-subtitle">All Comments</h4>
           {isLoading && comments.length === 0 ? (
             <div className="text-center">Loading comments...</div>
           ) : comments.length > 0 ? (
@@ -213,7 +217,6 @@ const FeedbackPage = () => {
                   (user.id === commentUser._id || user._id === commentUser._id);
                 const isAdmin = user && user.role === "admin";
 
-            
                 const canDelete = isOwner || isAdmin;
                 const canEdit = isOwner;
 

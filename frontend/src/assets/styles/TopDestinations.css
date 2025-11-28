@@ -19,21 +19,20 @@
     font-weight: 600;
     color: #1B3A4B;
     font-size: 2rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     position: relative;
-    padding-left: 150px; 
-    margin-top: 1rem;
+    padding-left: 150px;
 }
 
 .top-destinations-title::before {
     content: "";
     position: absolute;
-    left: 80px; 
+    left: 80px;
     top: 50%;
     transform: translateY(-50%);
     width: 65px;
     height: 2px;
-    background-color: #1B3A4B;
+    background-color: #1B3A4B;      
 }
 
 .top-destinations-description {

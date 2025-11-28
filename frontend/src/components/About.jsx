@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../assets/styles/About.css';
+import Footer2 from "./Footer2.jsx";
+
 
 const About = () => {
   const [comments, setComments] = useState([]);
@@ -50,6 +52,8 @@ const About = () => {
           </div>
         </div>
       </section>
+            <Footer2 />
+
     </div>
   );
 };

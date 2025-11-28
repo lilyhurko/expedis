@@ -5,14 +5,14 @@
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   min-height: 70vh;
 }
 
 .pageTitle {
   text-align: center;
-  font-family: 'Playfair Display', serif;
-  color: #1B3A4B;
+  font-family: "Playfair Display", serif;
+  color: #1b3a4b;
   font-size: 2.5rem;
   margin-bottom: 2rem;
   border-bottom: 1px solid #e0e0e0;
@@ -21,13 +21,13 @@
 
 .profileLayout {
   display: grid;
-  grid-template-columns: 280px 1fr; 
+  grid-template-columns: 280px 1fr;
   gap: 2.5rem;
 }
 
 @media (max-width: 992px) {
   .profileLayout {
-    grid-template-columns: 1fr; 
+    grid-template-columns: 1fr;
     gap: 2rem;
   }
 }
@@ -39,9 +39,9 @@
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  align-self: flex-start; 
+  align-self: flex-start;
   position: sticky;
-  top: 100px; 
+  top: 100px;
 }
 @media (max-width: 992px) {
   .sidebarNav {
@@ -75,12 +75,14 @@
     padding: 0.75rem;
   }
   .navLink span {
-    display: none; 
+    display: none;
   }
 }
 
 @media (max-width: 480px) {
-  .navLink span { display: block; }
+  .navLink span {
+    display: block;
+  }
 }
 
 .navLink svg {
@@ -90,7 +92,7 @@
 
 .navLink:hover {
   background-color: #eaf0f6;
-  color: #1B3A4B;
+  color: #1b3a4b;
 }
 
 .navLink:hover svg {
@@ -98,13 +100,13 @@
 }
 
 .navLink.active {
-  background-color: #1B3A4B;
+  background-color: #1b3a4b;
   color: #ffffff;
   box-shadow: 0 4px 15px rgba(27, 58, 75, 0.3);
 }
 
 .navLink.active:hover {
-  background-color: #1B3A4B;
+  background-color: #1b3a4b;
 }
 
 .contentArea {
@@ -115,10 +117,9 @@
   min-height: 60vh;
 }
 
-
 .sectionTitle {
-  font-family: 'Playfair Display', serif;
-  color: #1B3A4B;
+  font-family: "Playfair Display", serif;
+  color: #1b3a4b;
   font-size: 1.8rem;
   margin-top: 0;
   margin-bottom: 1.5rem;
@@ -128,8 +129,8 @@
 }
 
 .subSectionTitle {
-  font-family: 'Poppins', sans-serif;
-  color: #1B3A4B;
+  font-family: "Poppins", sans-serif;
+  color: #1b3a4b;
   font-size: 1.3rem;
   margin-top: 1.5rem;
   margin-bottom: 1rem;
@@ -149,7 +150,7 @@
   margin-bottom: 1.5rem;
 }
 .profileDetail strong {
-  color: #1B3A4B;
+  color: #1b3a4b;
   font-weight: 600;
   margin-right: 0.5rem;
 }
@@ -162,7 +163,6 @@
   padding-top: 1.5rem;
   border-top: 1px solid #eaf0f6;
 }
-
 
 .formButton {
   max-width: 180px;
@@ -179,9 +179,10 @@
   overflow: hidden;
   backdrop-filter: blur(15px) saturate(180%);
   -webkit-backdrop-filter: blur(15px) saturate(180%);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1), inset 0 0 8px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 0 8px rgba(255, 255, 255, 0.15);
   transition: all 0.3s ease;
-  background: rgba(90, 125, 155, 0.7); 
+  background: rgba(90, 125, 155, 0.7);
   color: #ffffff;
 }
 .formButton:hover {
@@ -201,22 +202,18 @@
   left: -75%;
   width: 50%;
   height: 100%;
-  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
   transform: skewX(-25deg);
   transition: all 0.6s ease;
 }
-.formButton:hover::before { left: 125%; }
-
-.formButton.primary {
-  background: rgba(240, 234, 218, 0.7); 
-  color: #1b3a4b;
+.formButton:hover::before {
+  left: 125%;
 }
-.formButton.primary:hover {
-  background: rgba(240, 234, 218, 1);
-  color: #1b3a4b;
-}
-
-
 
 .avatarContainer {
   display: flex;
@@ -246,7 +243,8 @@
   overflow: hidden;
   backdrop-filter: blur(15px) saturate(180%);
   -webkit-backdrop-filter: blur(15px) saturate(180%);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1), inset 0 0 8px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 0 8px rgba(255, 255, 255, 0.15);
   transition: all 0.3s ease;
   background: rgba(90, 125, 155, 0.7);
   color: #ffffff;
@@ -268,18 +266,24 @@
   left: -75%;
   width: 50%;
   height: 100%;
-  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
   transform: skewX(-25deg);
   transition: all 0.6s ease;
 }
-.changeAvatarButton:hover::before { left: 125%; }
+.changeAvatarButton:hover::before {
+  left: 125%;
+}
 .avatarMessage {
   font-size: 0.9rem;
   margin-top: 0.8rem;
   text-align: center;
   font-weight: 500;
 }
-
 
 .walletInfo {
   display: flex;
@@ -302,11 +306,14 @@
   flex: 1;
   min-width: 150px;
 }
-.walletBalance span, .walletHeld span { font-weight: 500; }
+.walletBalance span,
+.walletHeld span {
+  font-weight: 500;
+}
 .walletBalance strong {
   font-size: 2.2rem;
   font-weight: 700;
-  color: #1B3A4B;
+  color: #1b3a4b;
   margin-top: 0.5rem;
 }
 .walletHeld strong {
@@ -344,7 +351,7 @@
   font-size: 1rem;
   width: 100%;
   box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 .formInput:focus {
   border-color: #5a7d9b;
@@ -389,8 +396,8 @@
 }
 .modalTitle {
   font-size: 1.8rem;
-  color: #1B3A4B;
-  font-family: 'Playfair Display', serif;
+  color: #1b3a4b;
+  font-family: "Playfair Display", serif;
 }
 .modalClose {
   background: none;
