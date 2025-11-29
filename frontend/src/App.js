@@ -19,9 +19,11 @@ import Profile from "./components/Profile.jsx";
 import ProfileDetails from "./components/ProfileDetails.jsx";
 import Wallet from "./components/Wallet.jsx";
 import MyBookings from "./components/MyBookings.jsx";
+import MyRents from "./components/MyRents.jsx";
 import Wishlist from "./components/Wishlist.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import AgencyDashboard from "./components/AgencyDashboard.jsx";
+import CarAgencyDashboard from "./components/CarAgencyDashboard.jsx";
 import ChatBot from "./components/ChatBot.jsx";
 
 function AppWrapper() {
@@ -49,6 +51,7 @@ function AppWrapper() {
           <Route index element={<ProfileDetails />} />
           <Route path="wallet" element={<Wallet />} />
           <Route path="my-bookings" element={<MyBookings />} />
+          <Route path="my-rents" element={<MyRents />} />
           <Route path="wishlist" element={<Wishlist />} />
         </Route>
       </Route>
@@ -75,12 +78,13 @@ function AppWrapper() {
 
       <Route
         element={
-          <ProtectedRoute allowedRoles={["agency", "admin"]}>
+          <ProtectedRoute allowedRoles={["agency", "caragency", "admin"]}>
             <UserLayout />
           </ProtectedRoute>
         }
       >
         <Route path="/agency/dashboard" element={<AgencyDashboard />} />
+        <Route path="/caragency/dashboard" element={<CarAgencyDashboard />} />
       </Route>
     </Routes>
   );

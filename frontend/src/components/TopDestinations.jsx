@@ -11,6 +11,7 @@ const TopDestinations = () => {
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001'; 
 
   const getImageUrl = (offer) => {
     let imagePath = null;

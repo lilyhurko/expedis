@@ -37,6 +37,8 @@ function UserNavbar() {
     dashboardLink = { path: '/admin/dashboard', name: 'Admin Panel' };
   } else if (userRole === 'agency') {
     dashboardLink = { path: '/agency/dashboard', name: 'Agency Dashboard' };
+  } else if (userRole === 'caragency') {
+    dashboardLink = { path: '/caragency/dashboard', name: 'Car Agency Dashboard' };
   }
   
   const profileLink = dashboardLink 

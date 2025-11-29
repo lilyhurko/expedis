@@ -10,6 +10,7 @@ const carSchema = new mongoose.Schema({
     imageUrl: { type: String, required: true },
     options: [{ type: String }], 
     description: { type: String },
+    status: { type: String, enum: ['pending', 'active', 'rejected'], default: 'pending'},
 }, { timestamps: true });
 
 module.exports = mongoose.model("Car", carSchema);

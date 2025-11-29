@@ -1,0 +1,140 @@
+.car-search-container {
+  text-align: center;
+  margin: 60px auto 40px auto;
+  padding: 0 20px;
+  max-width: 1000px;
+  position: relative;
+  z-index: 10;
+}
+
+.car-search-container h3 {
+  font-family: "Playfair Display", serif;
+  font-size: 2.5rem; 
+  color: #152e3d; 
+  margin-bottom: 1rem;
+  margin-top: 7rem;
+}
+
+.car-search-subtitle {
+  font-family: "Poppins", sans-serif;
+  font-size: 1rem;
+  color: #555;
+  max-width: 600px;
+  margin: 0 auto 2.5rem auto;
+  line-height: 1.6;
+}
+
+.car-search-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  background-color: #9CA3AF; 
+  border-radius: 50px; 
+  padding: 12px 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.car-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #FFFFFF;
+  border-radius: 30px;
+  padding: 0 15px;
+  height: 50px;
+  flex: 1;
+  min-width: 180px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.car-input-icon {
+  color: #888;
+  margin-right: 10px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.car-search-input {
+  border: none;
+  outline: none;
+  width: 100%;
+  height: 100%;
+  font-size: 0.95rem;
+  color: #333;
+  font-family: "Poppins", sans-serif;
+  background-color: transparent;
+}
+
+.car-search-select {
+  border: none;
+  outline: none;
+  width: 100%;
+  height: 100%;
+  font-size: 0.95rem;
+  color: #333;
+  font-family: "Poppins", sans-serif;
+  background-color: transparent;
+  cursor: pointer;
+  appearance: none; 
+}
+
+.car-datepicker-wrapper {
+  width: 100%;
+}
+
+.car-datepicker-wrapper .rmdp-input {
+  border: none;
+  width: 100%;
+  height: 100%;
+  font-size: 0.95rem;
+  color: #333;
+  font-family: "Poppins", sans-serif;
+  background-color: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.car-search-button {
+  background-color: #D6CFC4; 
+  color: #152e3d; 
+  border: none;
+  border-radius: 30px;
+  padding: 0 40px;
+  height: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: "Poppins", sans-serif;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.car-search-button:hover {
+  background-color: #c5beae;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .car-search-bar {
+    flex-direction: column;
+    border-radius: 20px;
+    padding: 20px;
+    gap: 10px;
+  }
+
+  .car-input-wrapper,
+  .car-search-button {
+    width: 100%;
+    min-width: unset;
+  }
+  
+  .car-search-container h3 {
+    font-size: 2.5rem;
+  }
+}

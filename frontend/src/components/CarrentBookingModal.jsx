@@ -1,14 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import PropTypes from 'prop-types';
 import ForcedLogout from './ForcedLogout'; 
+import styles from "../assets/styles/Modals.module.css";
+import "../assets/styles/Offerts.css";
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 const CarrentBookingModal = ({ car, userData, searchDates, closeModal }) => {
-    
     const { pickupDate, returnDate } = searchDates;
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001'; 
     const [bookingLoading, setBookingLoading] = useState(false);
     const [bookingError, setBookingError] = useState(null);
+    const [wallet, setWallet] = useState({ balance: 0, balance_held: 0 });
+    const token = localStorage.getItem('token');
+    const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
+
+    useEffect(() => {
+        axios.get(`${API_URL}/api/wallet/me`, authHeaders)
+        .then(res => setWallet(res.data))
+        .catch(err => console.error('Error fetching wallet:', err));
+    }, []);
 
     const start = new Date(pickupDate);
     const end = new Date(returnDate);
@@ -85,14 +97,14 @@ const CarrentBookingModal = ({ car, userData, searchDates, closeModal }) => {
 
 
     return (
-        <div className="modal-overlay"> 
-            <div className="modal modal-booking"> 
-                <div className="modal-header">
-                    <h3 className="modal-title">Confirm Rental: {car.make} {car.model}</h3> 
-                    <button className="modal-close" onClick={closeModal}>×</button>
+        <div className={`${styles.modalOverlay} ${styles.offerModalWrapper}`}>
+            <div className={`${styles.modal} ${styles.modalAdd}`}>
+                <div className={styles.modalHeader}>
+                    <h3 className={styles.modalTitle}>Confirm Rental: {car.make} {car.model}</h3> 
+                    <button className={styles.modalClose} onClick={closeModal}>×</button>
                 </div>
 
-                <div className="modal-body">
+                <div className={styles.modalBody}>
                     <div className="form-group">
                         <label className="form-label">Rental Summary:</label>
                         <div className="booking-details-summary" style={{ padding: '15px', border: '1px solid #eee', borderRadius: '8px' }}>
@@ -101,28 +113,28 @@ const CarrentBookingModal = ({ car, userData, searchDates, closeModal }) => {
                             <p><strong>Duration:</strong> {diffDays} days</p>
                             <p><strong>Daily Rate:</strong> {car.pricePerDay.toFixed(2)} PLN</p>
                             <hr style={{ margin: '10px 0' }}/>
-                            <p><strong>Your Current Balance:</strong> {userData.balance ? userData.balance.toFixed(2) : '---'} PLN</p>
+                            <p><strong>Your Current Balance:</strong> {wallet.balance.toFixed(2)} PLN</p>
                         </div>
                     </div>
                     
                     {bookingError && <p style={{ color: 'red', margin: '15px 0' }}>{bookingError}</p>}
                 </div>
                 
-                <div className="modal-footer"> 
+                <div className={`${styles.modalFooter} ${styles.stickyFooter}`}>
                     <div className="total-price" style={{ marginRight: 'auto', fontWeight: 'bold', fontSize: '1.1em', paddingTop: '8px' }}>
                         Total Price: {totalPrice.toFixed(2)} PLN
                     </div>
 
-                    <div className="buttons-group">
+                    <div className={styles.buttonsGroup}>
                         <button 
-                            className="btn btn-secondary" 
+                            className={`btn ${styles.btnSecondary}`}
                             onClick={closeModal}
                             disabled={bookingLoading}
                         >
                             Cancel
                         </button>
                         <button 
-                            className="btn btn-primary" 
+                            className={`btn ${styles.btnPrimary}`}
                             onClick={handleConfirmBooking}
                             disabled={bookingLoading || userData.balance < totalPrice}
                         >

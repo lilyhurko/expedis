@@ -173,7 +173,7 @@ const MyOffers = ({ authHeaders, navigate }) => {
                                 </td>
                                 <td>
                                     <button 
-                                        onClick={() => navigate(`/edit-offer/${o._id}`)} // Перехід на сторінку редагування (або відкриття модалки редагування)
+                                        onClick={() => navigate(`/edit-offer/${o._id}`)} 
                                         className={`${styles.actionBtn} ${styles.warningBtn}`}
                                     >
                                         <FaEdit/> Edit

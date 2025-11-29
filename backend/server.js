@@ -17,7 +17,6 @@ const bookingRoutes = require('./routes/bookings');
 const adminRoutes = require('./routes/admin');
 const carrentRoutes = require('./routes/carrent');
 
-
 const app = express();
 const port = process.env.PORT || 5001;
 
@@ -42,10 +41,10 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/cars', carrentRoutes);
 app.use('/api/chat', require('./routes/chat'));
 
-
 async function startServer() {
   try {
-await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/expedisDB?replicaSet=rs0');    console.log('Connected to MongoDB');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/expedisDB');
+    console.log('Connected to MongoDB');
     app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
     });
