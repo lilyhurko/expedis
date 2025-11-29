@@ -10,7 +10,8 @@
   justify-content: flex-end;
 }
 
-.toggleButton, .chatWindow {
+.toggleButton,
+.chatWindow {
   pointer-events: auto;
 }
 
@@ -18,22 +19,50 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: #1b3a4b;
-  border: none;
-  color: white;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
   position: relative;
   margin-left: 15px;
+  cursor: pointer;
+  background: rgba(90, 125, 155, 0.7);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(15px) saturate(180%);
+  -webkit-backdrop-filter: blur(15px) saturate(180%);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1),
+    inset 0 0 8px rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .toggleButton:hover {
-  transform: scale(1.1);
-  background: #2c5d75;
+  background: rgba(90, 125, 155, 1);
+  color: #ffffff;
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 4px 60px rgba(0, 0, 0, 0.1);
+}
+
+.toggleButton::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+
+  transform: skewX(-25deg);
+  transition: all 0.6s ease;
+}
+
+.toggleButton:hover::before {
+  left: 125%;
 }
 
 .chatWindow {
@@ -54,8 +83,14 @@
 }
 
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px) scale(0.95); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateX(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }
 
 @media (max-width: 480px) {
@@ -72,10 +107,18 @@
     margin-right: 0;
     animation: slideUpMobile 0.3s ease-out;
   }
-  .toggleButton { margin-left: 0; }
+  .toggleButton {
+    margin-left: 0;
+  }
   @keyframes slideUpMobile {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
@@ -87,10 +130,14 @@
   justify-content: space-between;
   align-items: center;
   font-weight: 600;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.headerInfo { display: flex; align-items: center; gap: 10px; }
+.headerInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
 .botAvatar {
   width: 32px;
@@ -105,11 +152,17 @@
 }
 
 @keyframes botPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
-.closeBtn, .clearBtn {
+.closeBtn,
+.clearBtn {
   background: none;
   border: none;
   color: white;
@@ -121,8 +174,13 @@
   transition: opacity 0.2s;
   padding: 5px;
 }
-.closeBtn:hover, .clearBtn:hover { opacity: 1; }
-.clearBtn { margin-right: 5px; }
+.closeBtn:hover,
+.clearBtn:hover {
+  opacity: 1;
+}
+.clearBtn {
+  margin-right: 5px;
+}
 
 .messagesArea {
   flex: 1;
@@ -142,7 +200,7 @@
   line-height: 1.5;
   animation: fadeIn 0.3s;
   word-wrap: break-word;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .botMessage {
@@ -190,7 +248,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .feedbackBtn:hover {
@@ -224,12 +282,22 @@
   border-radius: 50%;
   animation: typingBounce 1.4s infinite ease-in-out both;
 }
-.typingDot:nth-child(1) { animation-delay: -0.32s; }
-.typingDot:nth-child(2) { animation-delay: -0.16s; }
+.typingDot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.typingDot:nth-child(2) {
+  animation-delay: -0.16s;
+}
 
 @keyframes typingBounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
 }
 
 .optionsArea {
@@ -269,31 +337,74 @@
   animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
 
-.optionBtn:nth-child(1) { animation-delay: 0.05s; }
-.optionBtn:nth-child(2) { animation-delay: 0.1s; }
-.optionBtn:nth-child(3) { animation-delay: 0.15s; }
-.optionBtn:nth-child(4) { animation-delay: 0.2s; }
-.optionBtn:nth-child(5) { animation-delay: 0.25s; }
+.optionBtn:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.optionBtn:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.optionBtn:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.optionBtn:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.optionBtn:nth-child(5) {
+  animation-delay: 0.25s;
+}
 
 @keyframes popIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .optionBtn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   filter: brightness(0.95);
 }
 
-.optionBtn:active { transform: scale(0.98); }
+.optionBtn:active {
+  transform: scale(0.98);
+}
 
-.btnPayment { background-color: #e6fffa; color: #2c7a7b; border: 1px solid #b2f5ea; }
-.btnBooking { background-color: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
-.btnCancel { background-color: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
-.btnAccount { background-color: #faf5ff; color: #805ad5; border: 1px solid #e9d8fd; }
-.btnGeneral { background-color: #f7fafc; color: #4a5568; border: 1px solid #e2e8f0; }
-.btnBack { background-color: white; color: #718096; border: 1px solid #e2e8f0; grid-column: span 2; }
+.btnPayment {
+  background-color: #e6fffa;
+  color: #2c7a7b;
+  border: 1px solid #b2f5ea;
+}
+.btnBooking {
+  background-color: #ebf8ff;
+  color: #2b6cb0;
+  border: 1px solid #bee3f8;
+}
+.btnCancel {
+  background-color: #fff5f5;
+  color: #c53030;
+  border: 1px solid #fed7d7;
+}
+.btnAccount {
+  background-color: #faf5ff;
+  color: #805ad5;
+  border: 1px solid #e9d8fd;
+}
+.btnGeneral {
+  background-color: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+}
+.btnBack {
+  background-color: white;
+  color: #718096;
+  border: 1px solid #e2e8f0;
+  grid-column: span 2;
+}
 
 .inputArea {
   padding: 10px 15px;
@@ -336,10 +447,21 @@
   transition: background 0.3s;
 }
 
-.sendButton:hover { background: #2c5d75; }
-.sendButton:disabled { background: #e2e8f0; cursor: not-allowed; }
+.sendButton:hover {
+  background: #2c5d75;
+}
+.sendButton:disabled {
+  background: #e2e8f0;
+  cursor: not-allowed;
+}
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
