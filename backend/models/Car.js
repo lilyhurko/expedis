@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-const carSchema = new mongoose.Schema({
+const carSchema = new Schema({
     make: { type: String, required: true },
     model: { type: String, required: true },
     year: { type: Number, required: true },
@@ -10,7 +11,18 @@ const carSchema = new mongoose.Schema({
     imageUrl: { type: String, required: true },
     options: [{ type: String }], 
     description: { type: String },
-    status: { type: String, enum: ['pending', 'active', 'rejected'], default: 'pending'},
+
+    agency: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',          
+        required: true
+    },
+
+    status: { 
+        type: String, 
+        enum: ['pending', 'active', 'rejected'], 
+        default: 'pending'
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model("Car", carSchema);

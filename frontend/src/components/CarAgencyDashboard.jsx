@@ -10,6 +10,7 @@ import {
   FaCar,
 } from "react-icons/fa";
 import AddCarModal from "./AddCarModal";
+import EditCarModal from "./EditCarModal";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
@@ -67,6 +68,9 @@ const MyCars = ({ authHeaders }) => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingCar, setEditingCar] = useState(null);
+
   const [newCar, setNewCar] = useState({
     make: "",
     model: "",
@@ -81,10 +85,7 @@ const MyCars = ({ authHeaders }) => {
   const fetchMyCars = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `${API_URL}/api/cars/`,
-        authHeaders
-      );
+      const res = await axios.get(`${API_URL}/api/cars/`, authHeaders);
       setCars(res.data);
     } catch (err) {
       alert(
@@ -111,7 +112,6 @@ const MyCars = ({ authHeaders }) => {
     formData.append("country", newCar.country);
     if (newCar.description) formData.append("description", newCar.description);
     if (newCar.image) formData.append("image", newCar.image);
-
     formData.append("status", "pending");
 
     try {
@@ -137,6 +137,23 @@ const MyCars = ({ authHeaders }) => {
     } catch (err) {
       alert("Failed to delete car.");
     }
+  };
+
+  const openEditModal = (car) => {
+    setEditingCar(car);
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditingCar(null);
+  };
+
+  const handleCarUpdated = (updatedCar) => {
+    setCars((prev) =>
+      prev.map((c) => (c._id === updatedCar._id ? updatedCar : c))
+    );
+    closeEditModal();
   };
 
   if (loading) return <div>Loading your cars...</div>;
@@ -187,29 +204,41 @@ const MyCars = ({ authHeaders }) => {
                   </div>
                 </td>
                 <td>
-                    <span
-                        className={`${styles.roleBadge} ${
-                        car.status === "active"
-                            ? styles.roleAdmin          
-                            : car.status === "pending"
-                            ? styles.rolePending        
-                            : car.status === "rejected"
-                            ? styles.roleRejected       
-                            : styles.rolePending
-                        }`}
-                    >
-                        {car.status === "pending" ? "PENDING" :
-                        car.status === "rejected" ? "REJECTED" :
-                        car.status?.toUpperCase() || "ACTIVE"}
-                    </span>
-                    </td>
-                <td>
-                  <button
-                    onClick={() => handleDelete(car._id)}
-                    className={`${styles.actionBtn} ${styles.rejectBtn}`}
+                  <span
+                    className={`${styles.roleBadge} ${
+                      car.status === "active"
+                        ? styles.roleAdmin          
+                        : car.status === "pending"
+                        ? styles.rolePending        
+                        : car.status === "rejected"
+                        ? styles.roleRejected       
+                        : styles.rolePending
+                    }`}
                   >
-                    <FaTrash /> Delete
-                  </button>
+                    {car.status === "pending" ? "PENDING" :
+                     car.status === "rejected" ? "REJECTED" :
+                     car.status?.toUpperCase() || "ACTIVE"}
+                  </span>
+                </td>
+                <td>
+                  <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                    <button
+                      onClick={() => openEditModal(car)}
+                      className={`${styles.actionBtn} ${styles.editBtn || ""}`}
+                      style={{ background: "transparent", color: "#000" }}
+                      title="Edit car"
+                    >
+                      <FaEdit /> Edit
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(car._id)}
+                      className={`${styles.actionBtn} ${styles.rejectBtn}`}
+                      title="Delete car"
+                    >
+                      <FaTrash /> Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -218,17 +247,7 @@ const MyCars = ({ authHeaders }) => {
       </div>
 
       {showAddModal && (
-        <div
-          className="offer-modal-wrapper"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 1000,
-          }}
-        >
+        <div className="offer-modal-wrapper" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
           <AddCarModal
             carData={newCar}
             setCarData={setNewCar}
@@ -237,6 +256,24 @@ const MyCars = ({ authHeaders }) => {
           />
         </div>
       )}
+
+      {showEditModal && editingCar && (
+        <div className="offer-modal-wrapper" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
+          <EditCarModal
+            carToEdit={editingCar}
+            handleEditSubmit={async (formData, carId) => {
+              const token = localStorage.getItem("token");
+              const res = await axios.put(
+                `${API_URL}/api/cars/${carId}`,
+                formData,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              handleCarUpdated(res.data); 
+            }}
+            closeModal={closeEditModal}
+          />
+        </div>
+    )}
     </section>
   );
 };
@@ -248,13 +285,11 @@ const CarAgencyRents = ({ authHeaders }) => {
   const fetchRents = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `${API_URL}/api/cars/allrents`,
-        authHeaders
-      );
+      const res = await axios.get(`${API_URL}/api/cars/agency/bookings`, authHeaders);
       setRents(res.data);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load agency bookings:', err);
+      alert('Failed to load bookings');
     } finally {
       setLoading(false);
     }
@@ -264,13 +299,13 @@ const CarAgencyRents = ({ authHeaders }) => {
     fetchRents();
   }, [fetchRents]);
 
-  if (loading) return <div>Loading client rents...</div>;
+  if (loading) return <div>Loading bookings...</div>;
   if (rents.length === 0)
-    return <div className={styles.emptyState}>No rental bookings yet.</div>;
+    return <div className={styles.emptyState}>No car bookings</div>;
 
   return (
     <section className={styles.section}>
-      <h3 className={styles.sectionTitle}>Incoming Rentals</h3>
+      <h3 className={styles.sectionTitle}>Client Bookings ({rents.length})</h3>
 
       <div className={styles.tableWrapper}>
         <table className={styles.offerTable}>
@@ -279,34 +314,48 @@ const CarAgencyRents = ({ authHeaders }) => {
               <th>Client</th>
               <th>Car</th>
               <th>Dates</th>
+              <th>Price</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
             {rents.map((b) => (
               <tr key={b._id}>
-                <td>{b.user?.email || "—"}</td>
                 <td>
-                  {b.car?.make} {b.car?.model}
+                  <strong>{b.user?.name || b.user?.email}</strong>
+                  <br />
+                  <small>{b.user?.email}</small>
                 </td>
                 <td>
-                  {new Date(b.pickupDate).toLocaleDateString()} →{" "}
+                  <strong>{b.car?.make} {b.car?.model}</strong>
+                  <br />
+                  <small style={{ color: '#666' }}>
+                    {b.car?.city}, {b.car?.country}
+                  </small>
+                </td>
+                <td>
+                  {new Date(b.pickupDate).toLocaleDateString()} →<br />
                   {new Date(b.returnDate).toLocaleDateString()}
                 </td>
                 <td>
+                  <strong>{b.totalPrice} PLN</strong>
+                </td>
+                <td>
                   <span
-                    className={styles.roleBadge}
-                    style={{
-                      background:
-                        b.status === "confirmed"
-                          ? "#28a745"
-                          : b.status === "pending"
-                          ? "#ffc107"
-                          : "#dc3545",
-                      color: "white",
-                    }}
+                    className={`${styles.roleBadge} ${
+                      b.status === "confirmed"
+                        ? styles.roleConfirmed
+                        : b.status === "pending"
+                        ? styles.rolePending
+                        : b.status === "cancelled"
+                        ? styles.roleCancelled
+                        : styles.roleRejected
+                    }`}
                   >
-                    {b.status?.toUpperCase()}
+                    {b.status === "confirmed" && "CONFIRMED"}
+                    {b.status === "pending" && "PENDING"}
+                    {b.status === "cancelled" && "CANCELLED"}
+                    {b.status === "rejected" && "REJECTED"}
                   </span>
                 </td>
               </tr>

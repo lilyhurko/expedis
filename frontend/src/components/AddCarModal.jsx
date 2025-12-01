@@ -3,28 +3,23 @@ import PropTypes from "prop-types";
 import styles from "../assets/styles/Modals.module.css";
 
 const carCategories = [
-    "Sedan (Compact)", 
-    "SUV/Crossover", 
-    "Sedan", 
-    "Sedan (Grand Turismo)", 
-    "SUV/Crossover (Coupe)", 
-    "Hatchback", 
-    "Sedan (Luxury)", 
-    "Sedan (Executive)"
+  "Sedan (Compact)",
+  "SUV/Crossover",
+  "Sedan",
+  "Sedan (Grand Turismo)",
+  "SUV/Crossover (Coupe)",
+  "Hatchback",
+  "Sedan (Luxury)",
+  "Sedan (Executive)",
 ];
 
-const AddCarModal = ({
-  carData,
-  setCarData,
-  onSubmit,
-  closeModal,
-}) => {
+const AddCarModal = ({ carData, setCarData, onSubmit, closeModal }) => {
   const [previewImage, setPreviewImage] = useState(null);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (files) {
+    if (files && files[0]) {
       const file = files[0];
       setCarData((prev) => ({ ...prev, [name]: file }));
       setPreviewImage(URL.createObjectURL(file));
@@ -36,20 +31,19 @@ const AddCarModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
-    if (
-      !carData.make ||
-      !carData.model ||
-      !carData.category ||
-      !carData.pricePerDay ||
-      !carData.city ||
-      !carData.country
-    ) {
-      setError("Please fill in all required fields!");
+
+    const required = ["make", "model", "category", "pricePerDay", "city", "country", "image"];
+    const missing = required.filter((field) => !carData[field]);
+
+    if (missing.length > 0) {
+      setError("Please fill in all required fields and upload a car photo.");
       return;
     }
 
     onSubmit();
   };
+
+  const dailyPrice = carData.pricePerDay ? Number(carData.pricePerDay).toFixed(2) : "0.00";
 
   return (
     <div className={`${styles.modalOverlay} ${styles.offerModalWrapper}`}>
@@ -67,53 +61,46 @@ const AddCarModal = ({
 
         <div className={styles.modalBody}>
           {error && (
-            <div style={{ color: "#d32f2f", marginBottom: "15px", fontWeight: "500" }}>
+            <div className="error-message" style={{ color: "red", marginBottom: "16px", fontWeight: "500" }}>
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Make *</label>
+              <label className="form-label">Make:</label>
               <input
                 className="form-input"
                 type="text"
                 name="make"
                 value={carData.make || ""}
                 onChange={handleChange}
-                placeholder="e.g. Toyota"
+                placeholder="Enter make"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Model *</label>
+              <label className="form-label">Model:</label>
               <input
                 className="form-input"
                 type="text"
                 name="model"
                 value={carData.model || ""}
                 onChange={handleChange}
-                placeholder="e.g. Corolla"
+                placeholder="Enter model"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Category *</label>
+              <label className="form-label">Category:</label>
               <select
                 className="form-input"
                 name="category"
                 value={carData.category || ""}
                 onChange={handleChange}
                 required
-                style={{
-                  padding: "12px 14px",
-                  fontSize: "16px",
-                  appearance: "none",
-                  background: "white url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e\") no-repeat right 12px center",
-                  backgroundSize: "12px",
-                }}
               >
                 <option value="">— Select category —</option>
                 {carCategories.map((cat) => (
@@ -125,21 +112,30 @@ const AddCarModal = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Year</label>
+              <label className="form-label">Year:</label>
               <input
                 className="form-input"
                 type="number"
                 name="year"
                 value={carData.year || ""}
                 onChange={handleChange}
-                min="1990"
-                max="2030"
-                placeholder="e.g. 2023"
+                min="2000"
+                max="2025"
+                placeholder="Enter year"
+                style={{ MozAppearance: "textfield" }}
+                onWheel={(e) => e.target.blur()}
               />
+              <style jsx>{`
+                input[type="number"]::-webkit-outer-spin-button,
+                input[type="number"]::-webkit-inner-spin-button {
+                  -webkit-appearance: none;
+                  margin: 0;
+                }
+              `}</style>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Price per Day (PLN) *</label>
+              <label className="form-label">Price per Day (PLN):</label>
               <input
                 className="form-input"
                 type="number"
@@ -147,68 +143,69 @@ const AddCarModal = ({
                 value={carData.pricePerDay || ""}
                 onChange={handleChange}
                 min="1"
-                step="0.01"
+                step="0.10"
+                placeholder="Enter price per day"
                 required
-                placeholder="e.g. 189.99"
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">City *</label>
+              <label className="form-label">City:</label>
               <input
                 className="form-input"
                 type="text"
                 name="city"
                 value={carData.city || ""}
                 onChange={handleChange}
-                placeholder="e.g. Kraków"
+                placeholder="Enter city"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Country *</label>
+              <label className="form-label">Country:</label>
               <input
                 className="form-input"
                 type="text"
                 name="country"
                 value={carData.country || ""}
                 onChange={handleChange}
-                placeholder="e.g. Poland"
+                placeholder="Enter country"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Description (optional)</label>
+              <label className="form-label">Description:</label>
               <textarea
                 className="form-input form-textarea"
                 name="description"
                 value={carData.description || ""}
                 onChange={handleChange}
                 rows="4"
-                placeholder="Air conditioning, automatic transmission, 5 seats..."
+                placeholder="Enter description"
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Car Photo *</label>
+              <label className="form-label">Car Photo:</label>
               <input
                 type="file"
                 accept="image/*"
                 name="image"
                 onChange={handleChange}
                 required
+                style={{ marginBottom: "12px" }}
               />
+
               {previewImage && (
-                <div style={{ marginTop: "15px", textAlign: "center" }}>
+                <div style={{ textAlign: "center", marginTop: "12px" }}>
                   <img
                     src={previewImage}
                     alt="Car preview"
                     style={{
-                      width: "100%",
-                      maxWidth: "500px",
-                      maxHeight: "320px",
+                      maxWidth: "100%",
+                      maxHeight: "400px",
                       objectFit: "cover",
                       borderRadius: "12px",
                       boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
@@ -220,7 +217,11 @@ const AddCarModal = ({
           </form>
         </div>
 
-        <div className={`${styles.modalFooter} ${styles.stickyFooter}`}>
+        <div className={`${styles.modalFooter} ${styles.stickyFooter} ${styles.myModal}`}>
+          <span className={styles.modalPrice}>
+            {dailyPrice} PLN <small>/ per day</small>
+          </span>
+
           <div className={styles.buttonsGroup}>
             <button
               type="button"

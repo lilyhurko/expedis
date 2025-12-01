@@ -344,3 +344,22 @@
      white-space: nowrap;
   }
 }
+
+
+.roleConfirmed   { background: #28a745; color: white; }
+.rolePending     { background: #ffc107; color: #212529; }
+.roleCompleted   { background: #20c997; color: white; }  
+.roleCancelled   { background: #6c757d; color: white; }
+.roleRejected    { background: #dc3545; color: white; }
+
+.roleBadge {
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  min-width: 90px;
+  text-align: center;
+}
