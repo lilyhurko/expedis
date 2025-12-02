@@ -13,7 +13,7 @@ const carSchema = new Schema({
     description: { type: String },
 
     agency: {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'User',          
         required: true
     },

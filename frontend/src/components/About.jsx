@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import '../assets/styles/About.css';
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
 const About = () => {
   const [comments, setComments] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/comments') 
+    fetch('${API_URL}/api/comments') 
       .then((res) => {
         if (!res.ok) {
           throw new Error('Network response was not ok');
