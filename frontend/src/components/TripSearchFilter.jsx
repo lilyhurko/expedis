@@ -63,18 +63,29 @@ const TripSearchFilter = () => {
   useClickOutside(destRef, () => setIsDestOpen(false));
   useClickOutside(catRef, () => setIsCatOpen(false));
   useClickOutside(dateRef, () => setIsDateOpen(false)); 
+const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001"; 
 
-  useEffect(() => {
-    fetch("/api/offers/categories")
-      .then((res) => res.json())
-      .then((data) => Array.isArray(data) && setAllCategories(data))
-      .catch((err) => console.error("Error fetching categories:", err));
+useEffect(() => {
+  fetch(`${apiUrl}/api/offers/categories`)
+    .then(async (res) => {
+      if (!res.ok) {
+        throw new Error(`Failed to fetch categories: ${res.status}`);
+      }
+      return res.json();
+    })
+    .then((data) => Array.isArray(data) && setAllCategories(data))
+    .catch((err) => console.error("Category Error:", err));
 
-    fetch("/api/offers/alldestinations")
-      .then((res) => res.json())
-      .then((data) => Array.isArray(data) && setAllDestinations(data))
-      .catch((err) => console.error("Error fetching destinations:", err));
-  }, []);
+  fetch(`${apiUrl}/api/offers/alldestinations`) 
+    .then(async (res) => {
+      if (!res.ok) {
+        throw new Error(`Failed to fetch destinations: ${res.status}`);
+      }
+      return res.json();
+    })
+    .then((data) => Array.isArray(data) && setAllDestinations(data))
+    .catch((err) => console.error("Destination Error:", err));
+}, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
