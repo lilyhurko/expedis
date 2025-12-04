@@ -4,6 +4,7 @@ const path = require('path');
 
 const Car = require('../models/Car'); 
 const Offer = require('../models/Offer'); 
+const User = require('../models/User'); 
 
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/expedisDB'; 
 const CARS_FILE_PATH = path.join(__dirname, 'cars_data.json'); 
@@ -35,6 +36,14 @@ const seedDatabase = async () => {
     try {
         await mongoose.connect(MONGO_URI);
         console.log('--- MongoDB Connected ---');
+
+        console.log('Finding an Agency user...');
+        const agencyUser = await User.findOne({ role: 'agency' });
+
+        if (!agencyUser) {
+            throw new Error('No Agency user found! Please run seedUsers.js first so there is at least one agency in the DB.');
+        }
+        console.log(`Found agency: ${agencyUser.email} (ID: ${agencyUser._id})`);
 
         console.log('Fetching locations from Offers...');
         const offers = await Offer.find({}, 'city country');
@@ -98,7 +107,12 @@ const seedDatabase = async () => {
                     row.category || 'Standard', 
                     `${row.seats || 5} seats`
                 ],
+
+                status: 'active',
+                
                 description: row.category, 
+                
+                agency: agencyUser._id 
             };
         }).filter(car => car.pricePerDay > 0 && car.model !== 'Unknown');
 

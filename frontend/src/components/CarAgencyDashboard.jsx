@@ -349,13 +349,17 @@ const CarAgencyRents = ({ authHeaders }) => {
                         ? styles.rolePending
                         : b.status === "cancelled"
                         ? styles.roleCancelled
-                        : styles.roleRejected
+                        : b.status === "completed" 
+                        ? styles.roleCompleted
+                        : styles.roleRejected 
                     }`}
                   >
-                    {b.status === "confirmed" && "CONFIRMED"}
-                    {b.status === "pending" && "PENDING"}
-                    {b.status === "cancelled" && "CANCELLED"}
-                    {b.status === "rejected" && "REJECTED"}
+                    {b.status === "confirmed" ? "CONFIRMED" :
+                    b.status === "pending" ? "PENDING" :
+                    b.status === "cancelled" ? "CANCELLED" :
+                    b.status === "completed" ? "COMPLETED" :
+                    b.status === "rejected" ? "REJECTED" :
+                    b.status?.toUpperCase() || "UNKNOWN"}
                   </span>
                 </td>
               </tr>

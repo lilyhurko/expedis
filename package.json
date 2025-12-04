@@ -3,12 +3,14 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "start": "concurrently \"npm run server\" \"npm run client\"",
-        "server": "cd backend && npm start",
-        "client": "cd frontend && npm start",
-        "build": "react-scripts build",
-        "test": "react-scripts test",
-        "eject": "react-scripts eject"
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm start",
+    "dev": "cd backend && nodemon server.js",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "test:backend": "cd backend && npx jest --config=jest.config.js --runInBand --detectOpenHandles --forceExit",
+    "test:backend:watch": "cd backend && jest tests --watch"
     },
     "dependencies": {
         "@formspree/react": "^3.0.0",
@@ -41,6 +43,9 @@
         "web-vitals": "^2.1.4"
     },
     "devDependencies": {
-        "concurrently": "^9.1.2"
+        "concurrently": "^9.1.2",
+        "jest": "^27.5.1",
+        "mongodb-memory-server": "^10.3.0",
+        "supertest": "^7.1.4"
     }
 }

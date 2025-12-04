@@ -1,5 +1,3 @@
-
-
 .offers-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -63,7 +61,6 @@
 .admin-actions button:hover:nth-child(1) { background: #e3f2fd; }
 .admin-actions button:hover:nth-child(2) { background: #ffebee; color: #d32f2f; }
 
-/* Повідомлення коли машин немає */
 .no-results {
   grid-column: 1 / -1;
   text-align: center;
