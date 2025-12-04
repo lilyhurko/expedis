@@ -4,9 +4,12 @@ const User = require('../models/User');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallbackSecret';
 
 const authManagerMiddleware = async (req, res, next) => {
+  console.log(`🛡️ AuthMiddleware triggered for URL: ${req.originalUrl}`);
+
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
+      console.log(`❌ Blocked ${req.originalUrl}: No token provided`);
       return res.status(401).json({ message: 'No token provided' });
     }
 
@@ -23,6 +26,7 @@ const authManagerMiddleware = async (req, res, next) => {
     }
 
     if (user.role !== 'admin' && user.role !== 'agency') {
+      console.log(`⛔ Blocked ${req.originalUrl}: Role ${user.role} is not allowed`);
       return res.status(403).json({ message: 'Access denied: Agencies and Admins only' });
     }
 

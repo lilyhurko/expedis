@@ -26,7 +26,7 @@ import AgencyDashboard from "./components/AgencyDashboard.jsx";
 import CarAgencyDashboard from "./components/CarAgencyDashboard.jsx";
 import ChatBot from "./components/ChatBot.jsx";
 
-function AppWrapper() {
+export function AppWrapper() {
   return (
     <Routes>
       <Route element={<GuestLayout />}>

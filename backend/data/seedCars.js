@@ -5,6 +5,7 @@ const path = require('path');
 const Car = require('../models/Car'); 
 const Offer = require('../models/Offer'); 
 
+// Use environment variable or default local DB
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/expedisDB'; 
 const CARS_FILE_PATH = path.join(__dirname, 'cars_data.json'); 
 

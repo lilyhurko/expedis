@@ -20,7 +20,7 @@ const carrentRoutes = require('./routes/carrent');
 const app = express();
 const port = process.env.PORT || 5001;
 
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -43,14 +43,18 @@ app.use('/api/chat', require('./routes/chat'));
 
 async function startServer() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/expedisDB');
-    console.log('Connected to MongoDB');
-    app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
-    });
+    if (process.env.NODE_ENV !== 'test') {
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/expedisDB');
+        console.log('Connected to MongoDB');
+        app.listen(port, () => {
+          console.log(`Server is running on port ${port}`);
+        });
+    }
   } catch (err) {
     console.error('Error connecting to MongoDB:', err);
   }
 }
 
 startServer();
+
+module.exports = app;
