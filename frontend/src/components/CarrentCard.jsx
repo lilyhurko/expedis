@@ -78,10 +78,6 @@ const CarrentCard = ({
                   e.stopPropagation();
                   handleBookNow(car._id); 
                 }}
-                style={{
-                  background: diffDays === 0 ? "#999" : "#1976d2",
-                  cursor: "pointer",
-                }}
               >
                 {diffDays > 0 ? "Rent Car" : "Select Dates First"}
               </button>

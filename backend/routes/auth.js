@@ -14,7 +14,15 @@ router.post("/register", async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-    const userRole = role === "agency" ? "agency" : "user";
+
+    let userRole = "user";
+    
+    if (role === "agency") {
+      userRole = "agency";
+    } else if (role === "caragency") {
+      userRole = "caragency";
+    }
+    
     const user = new User({
       username,
       email,

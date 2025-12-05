@@ -318,14 +318,125 @@ const BookingsReview = ({ authHeaders }) => {
   );
 };
 
-const RentsReview = () => (
-  <section className={styles.section}>
-    <h3 className={styles.sectionTitle}>Pending Rents</h3>
-    <div className={styles.emptyState}>
-      Car rental booking moderation will be added later.
-    </div>
-  </section>
-);
+const RentsReview = ({ authHeaders }) => {
+  const [pendingRents, setPendingRents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPendingRents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/cars/admin/bookings/pending`, authHeaders);
+      setPendingRents(res.data);
+    } catch (err) {
+      console.error('Failed to load pending rents:', err);
+      alert('Failed to load car bookings');
+    } finally {
+      setLoading(false);
+    }
+  }, [authHeaders]);
+
+  const handleStatus = async (id, newStatus) => {
+    if (!window.confirm(`Confirm booking as ${newStatus === 'confirmed' ? 'confirmed' : 'cancelled'}?`)) return;
+
+    try {
+      await axios.patch(
+        `${API_URL}/api/cars/admin/bookings/${id}/status`,
+        { status: newStatus },
+        authHeaders
+      );
+      setPendingRents(prev => prev.filter(r => r._id !== id));
+      alert(`Booking ${newStatus === 'confirmed' ? 'confirmed' : 'cancelled'}`);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Error updating status');
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingRents();
+  }, [fetchPendingRents]);
+
+  if (loading) return <div>Loading bookings...</div>;
+
+  if (pendingRents.length === 0) {
+    return (
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>Pending Rents</h3>
+        <div className={styles.emptyState}>No bookings awaiting moderation</div>
+      </section>
+    );
+  }
+
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.sectionTitle}>Pending Rents ({pendingRents.length})</h3>
+
+      <div className={styles.tableWrapper}>
+        <table className={styles.offerTable}>
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Car</th>
+              <th>Dates</th>
+              <th>Price</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingRents.map(rent => (
+              <tr key={rent._id}>
+                <td>
+                  <strong>{rent.user?.name || rent.user?.email}</strong>
+                  <br />
+                  <small>{rent.user?.email}</small>
+                </td>
+                <td>
+                  <strong>{rent.car?.make} {rent.car?.model}</strong>
+                  {rent.car?.imageUrl && (
+                    <div style={{ marginTop: 8 }}>
+                      <img
+                        src={`${API_URL}${rent.car.imageUrl}`}
+                        alt="car"
+                        style={{ width: 100, height: 65, objectFit: 'cover', borderRadius: 6 }}
+                      />
+                    </div>
+                  )}
+                  <br />
+                  <small style={{ color: '#666' }}>
+                    {rent.car?.city}, {rent.car?.country}
+                  </small>
+                </td>
+                <td>
+                  {new Date(rent.pickupDate).toLocaleDateString()} →<br />
+                  {new Date(rent.returnDate).toLocaleDateString()}
+                </td>
+                <td>
+                  <strong>{rent.totalPrice} PLN</strong>
+                </td>
+                <td>
+                  <button
+                    onClick={() => handleStatus(rent._id, 'confirmed')}
+                    className={`${styles.actionBtn} ${styles.approveBtn}`}
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    onClick={() => handleStatus(rent._id, 'cancelled')}
+                    className={`${styles.actionBtn} ${styles.rejectBtn}`}
+                    style={{ marginLeft: '8px' }}
+                  >
+                    Cancel
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+};
+
 
 const PendingCarsReview = ({ authHeaders }) => {
   const [pendingCars, setPendingCars] = useState([]);
@@ -338,31 +449,31 @@ const PendingCarsReview = ({ authHeaders }) => {
       setPendingCars(res.data || []);
     } catch (err) {
       console.error(err);
-      alert('Не вдалося завантажити авто на перевірку');
+      alert('Failed to load cars for review');
     } finally {
       setLoading(false);
     }
   }, [authHeaders]);
 
   const approveCar = async (id) => {
-    if (!window.confirm('Підтвердити це авто?')) return;
+    if (!window.confirm('Approve this car?')) return;
     try {
       await axios.patch(`${API_URL}/api/cars/${id}/status`, { status: 'active' }, authHeaders);
       setPendingCars(prev => prev.filter(c => c._id !== id));
-      alert('Авто підтверджено та опубліковано!');
+      alert('Car approved and published!');
     } catch (err) {
-      alert(err.response?.data?.message || 'Помилка');
+      alert(err.response?.data?.message || 'Error');
     }
   };
 
   const rejectCar = async (id) => {
-    if (!window.confirm('Відхилити це авто?')) return;
+    if (!window.confirm('Reject this car?')) return;
     try {
       await axios.patch(`${API_URL}/api/cars/${id}/status`, { status: 'rejected' }, authHeaders);
       setPendingCars(prev => prev.filter(c => c._id !== id));
-      alert('Авто відхилено');
+      alert('Car rejected');
     } catch (err) {
-      alert(err.response?.data?.message || 'Помилка');
+      alert(err.response?.data?.message || 'Error');
     }
   };
 
@@ -371,7 +482,7 @@ const PendingCarsReview = ({ authHeaders }) => {
   }, [fetchPendingCars]);
 
   if (loading) {
-    return <div className={styles.loading}>Завантаження авто...</div>;
+    return <div className={styles.loading}>Loading cars...</div>;
   }
 
   if (pendingCars.length === 0) {
@@ -479,6 +590,7 @@ const PendingCarsReview = ({ authHeaders }) => {
     </section>
   );
 };
+
 
 const UserManagement = ({ authHeaders }) => {
   const [users, setUsers] = useState([]);

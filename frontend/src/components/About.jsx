@@ -7,7 +7,7 @@ const About = () => {
   const [comments, setComments] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/comments') 
+    fetch('${API_URL}/api/comments') 
       .then((res) => {
         if (!res.ok) {
           throw new Error('Network response was not ok');
