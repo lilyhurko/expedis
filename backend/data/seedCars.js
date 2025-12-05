@@ -38,7 +38,7 @@ const seedDatabase = async () => {
         console.log('--- MongoDB Connected ---');
 
         console.log('Finding an Agency user...');
-        const agencyUser = await User.findOne({ role: 'agency' });
+        const agencyUser = await User.findOne({ role: 'caragency' });
 
         if (!agencyUser) {
             throw new Error('No Agency user found! Please run seedUsers.js first so there is at least one agency in the DB.');

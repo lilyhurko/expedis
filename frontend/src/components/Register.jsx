@@ -122,7 +122,7 @@ function Register() {
             >
               <option value="user">Tourist (Regular User)</option>
               <option value="agency">Travel Agency (Business)</option>
-              {/* <option value="car_rental">Car Rental Service</option> */}
+              <option value="caragency">Car Rental Service</option>
             </select>
         </div>
 
