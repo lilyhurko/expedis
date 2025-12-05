@@ -40,6 +40,8 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/bookings', bookingRoutes); 
 app.use('/api/cars', carrentRoutes); 
 app.use('/api/chat', require('./routes/chat')); 
+
+//module.exports = app;
  
 async function startServer() { 
   try { 
@@ -52,5 +54,5 @@ async function startServer() {
     console.error('Error connecting to MongoDB:', err); 
   } 
 } 
- 
+
 startServer();

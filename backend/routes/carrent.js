@@ -542,3 +542,4 @@ router.delete('/:id', authMiddleware, authAdminMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.isCarAvailable = isCarAvailable;
