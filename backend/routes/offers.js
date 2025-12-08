@@ -10,6 +10,7 @@ const axios = require("axios");
 const CityWeather = require("../models/CityWeather");
 const authManager = require("../middleware/authManagerMiddleware");
 const sendEmail = require("../utils/sendEmail");
+const heicConvert = require("heic-convert");
 
 const RAPIDAPI_KEY = "463251c1a9msh9e573ca6257b1afp1576adjsn6ed05f3609c2";
 const RAPIDAPI_HOST = "meteostat.p.rapidapi.com";
@@ -30,7 +31,8 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image/")) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (file.mimetype.startsWith("image/") || ext === '.heic' || ext === '.heif') {
     cb(null, true);
   } else {
     cb(new Error("Only image files are allowed!"), false);
@@ -49,6 +51,46 @@ async function fetchAndCacheWeather(city, country, latitude, longitude) {
     return null; 
 }
 
+async function processUploadedFiles(files) {
+  if (!files || files.length === 0) return [];
+
+  const processedFiles = [];
+
+  for (const file of files) {
+    const ext = path.extname(file.filename).toLowerCase();
+    
+    if (ext === '.heic' || ext === '.heif') {
+      try {
+        const inputBuffer = fs.readFileSync(file.path);
+        const outputBuffer = await heicConvert({
+          buffer: inputBuffer,
+          format: 'JPEG',   
+          quality: 0.8 
+        });
+
+        const newFilename = file.filename.replace(new RegExp(`${ext}$`, 'i'), '.jpg');
+        const newPath = path.join(file.destination, newFilename);
+
+        fs.writeFileSync(newPath, outputBuffer);
+
+        fs.unlinkSync(file.path);
+
+        processedFiles.push({
+          ...file,
+          filename: newFilename,
+          path: newPath,
+          mimetype: 'image/jpeg'
+        });
+      } catch (err) {
+        console.error("HEIC conversion error:", err);
+        processedFiles.push(file);
+      }
+    } else {
+      processedFiles.push(file);
+    }
+  }
+  return processedFiles;
+}
 
 router.get("/categories", async (req, res) => {
   try {
@@ -212,6 +254,12 @@ router.post(
           return res.status(403).json({ message: "Access denied. Only agencies can create offers." });
         }
   
+        let uploadedImages = req.files["images"] || [];
+        uploadedImages = await processUploadedFiles(uploadedImages);
+
+        let uploadedPlaceImages = req.files["placeImages"] || [];
+        uploadedPlaceImages = await processUploadedFiles(uploadedPlaceImages);
+
         const {
           title, description, price, duration, city, country,
           latitude: latStr, longitude: lonStr, departureAirportIATA,
@@ -222,6 +270,7 @@ router.post(
         const lonNum = parseFloat(lonStr);
   
         if (!title || !description || !price || !city || !country || !departureAirportIATA || isNaN(latNum) || isNaN(lonNum)) {
+          
           return res.status(400).json({ error: "Missing or invalid required fields" });
         }
   
@@ -231,11 +280,12 @@ router.post(
         const parsedDates = JSON.parse(availableDates || "[]").map((date) => new Date(date));
         const parsedPlaces = JSON.parse(placesToVisit || "[]");
         const parsedFlights = JSON.parse(flightConnections || "[]");
-        const imageUrls = req.files["images"] ? req.files["images"].map((file) => `/images/${file.filename}`) : [];
+        
+        const imageUrls = uploadedImages.map((file) => `/images/${file.filename}`);
         const parsedMainIndex = mainImageIndex ? parseInt(mainImageIndex) : 0;
   
         const placesWithImages = parsedPlaces.map((place, index) => {
-          const placeImageFile = req.files["placeImages"] ? req.files["placeImages"][index] : null;
+          const placeImageFile = uploadedPlaceImages[index] ? uploadedPlaceImages[index] : null;
           return {
             name: place.name,
             description: place.description,
@@ -249,7 +299,7 @@ router.post(
           if (!fcData.departureAirportIATA?.trim() || !fcData.arrivalAirportIATA?.trim()) continue;
           
           const flightConnection = new FlightConnection({
-            offerId: null,
+            offerId: null, 
             departureAirportIATA: fcData.departureAirportIATA,
             arrivalAirportIATA: fcData.arrivalAirportIATA,
             departureTime: fcData.departureTime,
@@ -293,6 +343,7 @@ router.post(
         const populatedOffer = await Offer.findById(newOffer._id).populate("flightConnections");
         res.status(201).json(populatedOffer);
       } catch (error) {
+        console.error("Error creating offer:", error);
         res.status(500).json({ message: error.message });
       }
   }

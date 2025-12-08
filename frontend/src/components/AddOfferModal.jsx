@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import heic2any from "heic2any"; 
 import DatePicker from "react-multi-date-picker";
 import plusIcon from "../assets/img/plus.png";
 import LocationPicker from "./LocationPicker.js";
@@ -29,7 +30,7 @@ const AddOfferModal = ({
   const [mainImageIndex, setMainImageIndex] = useState(null);
   
   const [placesToVisit, setPlacesToVisit] = useState([
-    { name: "", description: "", address: "", image: null },
+    { name: "", description: "", address: "", image: null, previewUrl: null },
   ]);
   
   const [flightConnections, setFlightConnections] = useState([
@@ -55,39 +56,23 @@ const AddOfferModal = ({
       setError("Please select both start and end dates.");
       return;
     }
-
-    let startDate = periodStart.toDate
-      ? periodStart.toDate()
-      : new Date(periodStart);
+    let startDate = periodStart.toDate ? periodStart.toDate() : new Date(periodStart);
     let endDate = periodEnd.toDate ? periodEnd.toDate() : new Date(periodEnd);
-
-    startDate = new Date(
-      Date.UTC(
-        startDate.getFullYear(),
-        startDate.getMonth(),
-        startDate.getDate()
-      )
-    );
-    endDate = new Date(
-      Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-    );
+    startDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+    endDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()));
 
     if (endDate < startDate) {
       setError("End date must be after start date.");
       return;
     }
-
-    const tripDurationInDays =
-      Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const tripDurationInDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
     const startDateString = startDate.toISOString().split("T")[0];
-
     const existingDates = (newOfferData.availableDates || []).map((date) => {
       if (typeof date === "string") return date;
       if (date?.toDate) return date.toDate().toISOString().split("T")[0];
       if (date instanceof Date) return date.toISOString().split("T")[0];
       return null;
     }).filter((date) => date !== null);
-
     const currentDuration = newOfferData.duration || 0;
 
     if (currentDuration === 0) {
@@ -99,27 +84,43 @@ const AddOfferModal = ({
       setError(null);
     } else {
       if (tripDurationInDays !== currentDuration) {
-        setError(
-          `Duration mismatch: All periods must be ${currentDuration} days. This period is ${tripDurationInDays} days.`
-        );
+        setError(`Duration mismatch: All periods must be ${currentDuration} days. This period is ${tripDurationInDays} days.`);
         return; 
       }
-      
       const allDatesSet = new Set([...existingDates, startDateString]);
       const sortedDates = Array.from(allDatesSet).sort();
-      
-      setNewOfferData((prev) => ({
-        ...prev,
-        availableDates: sortedDates,
-      }));
+      setNewOfferData((prev) => ({ ...prev, availableDates: sortedDates }));
       setError(null);
     }
-
     setPeriodStart(null);
     setPeriodEnd(null);
   };
 
- 
+  const processFileForPreview = async (file) => {
+    const isHeic = 
+      file.type === "image/heic" || 
+      file.type === "image/heif" || 
+      file.name.toLowerCase().endsWith(".heic") ||
+      file.name.toLowerCase().endsWith(".heif");
+
+    if (isHeic) {
+      try {
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.8
+        });
+        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        return URL.createObjectURL(blob);
+      } catch (e) {
+        console.warn("HEIC Preview Generation Failed:", e.message);
+        
+        return null; 
+      }
+    }
+    return URL.createObjectURL(file);
+  };
+
   const {
       handleFlightChange, handlePlaceChange, addPlace, removePlace,
       handlePlaceImageChange, handleImageChange, setMainImage, removeImage,
@@ -137,24 +138,39 @@ const AddOfferModal = ({
         setPlacesToVisit(newPlaces);
         setNewOfferData(prev => ({ ...prev, placesToVisit: newPlaces }));
       },
-      addPlace: () => setPlacesToVisit([...placesToVisit, { name: "", description: "", address: "", image: null }]),
+      addPlace: () => setPlacesToVisit([...placesToVisit, { name: "", description: "", address: "", image: null, previewUrl: null }]),
       removePlace: (index) => {
         if (placesToVisit.length === 1) { setError("At least one place to visit is required."); return; }
         const newPlaces = placesToVisit.filter((_, i) => i !== index);
         setPlacesToVisit(newPlaces);
         setNewOfferData(prev => ({ ...prev, placesToVisit: newPlaces }));
       },
-      handlePlaceImageChange: (index, file) => {
+      
+      handlePlaceImageChange: async (index, file) => {
+        if (!file) return;
+        
+        const previewUrl = await processFileForPreview(file);
+        
         const newPlaces = [...placesToVisit];
         newPlaces[index].image = file;
+        newPlaces[index].previewUrl = previewUrl; 
         setPlacesToVisit(newPlaces);
       },
-      handleImageChange: (e) => {
+
+      handleImageChange: async (e) => {
         const files = Array.from(e.target.files);
         if (previewImages.length + files.length > 15) { setError("You can upload a maximum of 15 images."); return; }
-        const newImages = files.map(file => ({ file, preview: URL.createObjectURL(file) }));
+        
+        const newImagesPromises = files.map(async (file) => {
+          const previewUrl = await processFileForPreview(file);
+          return { file, preview: previewUrl };
+        });
+
+        const newImages = await Promise.all(newImagesPromises);
+        
         setPreviewImages(prev => [...prev, ...newImages]);
         setNewOfferData(prev => ({ ...prev, images: [...(prev.images || []), ...files] }));
+        
         if (mainImageIndex === null && newImages.length > 0) {
           setMainImageIndex(0);
         }
@@ -166,7 +182,7 @@ const AddOfferModal = ({
       removeImage: (index) => {
         setPreviewImages(prev => {
           const newPreviews = prev.filter((_, i) => i !== index);
-          if(prev[index]) URL.revokeObjectURL(prev[index].preview);
+          if(prev[index] && prev[index].preview) URL.revokeObjectURL(prev[index].preview);
           return newPreviews;
         });
         setNewOfferData(prev => ({ ...prev, images: (prev.images || []).filter((_, i) => i !== index) }));
@@ -260,26 +276,13 @@ const AddOfferModal = ({
 
   return (
 <div className={`${styles.modalOverlay} ${styles.offerModalWrapper}`}>
-      <div className={`${styles.modal} ${styles.modalAdd}`}> {/* ❗️ ВИПРАВЛЕНО: Додано .modalAdd для узгодженості */}
+      <div className={`${styles.modal} ${styles.modalAdd}`}>
         <div className={styles.modalHeader}>
           <h3 className={styles.modalTitle}>Add New Offer</h3>
-          <button
-            className={styles.modalClose}
-            onClick={closeModal}
-            aria-label="Close modal"
-          >
-            ×
-          </button>
+          <button className={styles.modalClose} onClick={closeModal} aria-label="Close modal">×</button>
         </div>
         <div className={styles.modalBody}>
-          {error && (
-            <div
-              className="error-message"
-              style={{ color: "red", marginBottom: "10px" }}
-            >
-              {error}
-            </div>
-          )}
+          {error && <div className="error-message" style={{ color: "red", marginBottom: "10px" }}>{error}</div>}
           <form id="offer-form" onSubmit={onSubmit}>
             
             <div className="form-group"><label className="form-label">Title:</label><input className="form-input" type="text" name="title" value={newOfferData.title || ""} onChange={handleNewOfferChange} required placeholder="Enter title" /></div>
@@ -292,71 +295,34 @@ const AddOfferModal = ({
               <label className="form-label">Places to Visit:</label>
               {placesToVisit.map((place, index) => (
                 <div key={`${place.name}-${index}`} className="form-group place-group">
-                  <input 
-                    type="text" 
-                    value={place.name || ""} 
-                    onChange={(e) => handlePlaceChange(index, "name", e.target.value)} 
-                    placeholder="Place Name" 
-                    required 
-                    className="form-input" 
-                  />
-                  <textarea 
-                    value={place.description || ""} 
-                    onChange={(e) => handlePlaceChange(index, "description", e.target.value)} 
-                    placeholder="Place Description" 
-                    className="form-input form-textarea" 
-                  />
-                  
-                  <input
-                    type="text"
-                    value={place.address || ""}
-                    onChange={(e) => handlePlaceChange(index, "address", e.target.value)}
-                    placeholder="Place Address (e.g., 123 Main St, Rome)"
-                    className="form-input"
-                  />
+                  <input type="text" value={place.name || ""} onChange={(e) => handlePlaceChange(index, "name", e.target.value)} placeholder="Place Name" required className="form-input" />
+                  <textarea value={place.description || ""} onChange={(e) => handlePlaceChange(index, "description", e.target.value)} placeholder="Place Description" className="form-input form-textarea" />
+                  <input type="text" value={place.address || ""} onChange={(e) => handlePlaceChange(index, "address", e.target.value)} placeholder="Place Address (e.g., 123 Main St, Rome)" className="form-input" />
                   
                   <div className="place-image-preview">
-                    {place.image && ( 
-                      <img src={URL.createObjectURL(place.image)} alt="New preview" />
-                    )}
-                    {!place.image && (
-                      <div className="no-image-placeholder">No Image</div>
+                    {place.image && place.previewUrl ? ( 
+                      <img src={place.previewUrl} alt="New preview" />
+                    ) : place.image && !place.image.name.toLowerCase().endsWith('.heic') ? (
+                       <img src={URL.createObjectURL(place.image)} alt="Preview" />
+                    ) : (
+                      <div className="no-image-placeholder">
+                        {place.image ? "No Preview (HEIC)" : "No Image"}
+                      </div>
                     )}
                   </div>
                   
                   <label className="form-label-file">
                     <span className="btn-file-dummy">Select file</span>
-                    <span className="file-name-display">
-                      {place.image
-                        ? place.image.name
-                        : "No file selected"}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePlaceImageChange(index, e.target.files[0])}
-                      className="form-input-hidden"
-                    />
+                    <span className="file-name-display">{place.image ? place.image.name : "No file selected"}</span>
+                    <input type="file" accept="image/*, .heic, .heif" onChange={(e) => handlePlaceImageChange(index, e.target.files[0])} className="form-input-hidden" />
                   </label>
 
                   {placesToVisit.length > 1 && (
-                    <button 
-                      type="button" 
-                      className={`btn ${styles.btnSecondary} ${styles.removePlaceBtn}`} // ❗️ ВИПРАВЛЕНО: Стилізована кнопка
-                      onClick={() => removePlace(index)} 
-                      aria-label={`Remove place ${index + 1}`}
-                    >
-                      Remove Place
-                    </button>
+                    <button type="button" className={`btn ${styles.btnSecondary} ${styles.removePlaceBtn}`} onClick={() => removePlace(index)} aria-label={`Remove place ${index + 1}`}>Remove Place</button>
                   )}
                 </div>
               ))}
-              <button 
-                type="button" 
-                className="btn btn-icon-only" 
-                onClick={addPlace} 
-                aria-label="Add new place to visit"
-              >
+              <button type="button" className="btn btn-icon-only" onClick={addPlace} aria-label="Add new place to visit">
                 <img src={plusIcon} alt="" aria-hidden="true" style={{ width: "35px", height: "35px" }} />
               </button>
             </div>
@@ -364,72 +330,29 @@ const AddOfferModal = ({
 
             <div className="form-group">
               <label className="form-label">Duration (days):</label>
-              <input
-                className="form-input"
-                type="number"
-                name="duration"
-                value={newOfferData.duration || ""}
-                readOnly
-                placeholder="Set by adding the first date period"
-              />
+              <input className="form-input" type="number" name="duration" value={newOfferData.duration || ""} readOnly placeholder="Set by adding the first date period" />
             </div>
             
             <div className="form-group">
               <label className="form-label">Add Available Periods:</label>
               <div className="date-period-container">
-                <div className="date-picker-container">
-                  <DatePicker
-                    value={periodStart}
-                    onChange={setPeriodStart}
-                    format="YYYY-MM-DD"
-                    placeholder="Start date"
-                    className="form-input"
-                  />
-                </div>
-                <div className="date-picker-container">
-                  <DatePicker
-                    value={periodEnd}
-                    onChange={setPeriodEnd}
-                    format="YYYY-MM-DD"
-                    placeholder="End date"
-                    className="form-input"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-icon-only"
-                  onClick={addPeriodDates}
-                  aria-label="Add date period"
-                >
-                  <img
-                    src={plusIcon}
-                    alt=""
-                    aria-hidden="true"
-                    style={{ width: "35px", height: "35px" }}
-                  />
-                </button>
+                <div className="date-picker-container"><DatePicker value={periodStart} onChange={setPeriodStart} format="YYYY-MM-DD" placeholder="Start date" className="form-input" /></div>
+                <div className="date-picker-container"><DatePicker value={periodEnd} onChange={setPeriodEnd} format="YYYY-MM-DD" placeholder="End date" className="form-input" /></div>
+                <button type="button" className="btn btn-icon-only" onClick={addPeriodDates} aria-label="Add date period"><img src={plusIcon} alt="" aria-hidden="true" style={{ width: "35px", height: "35px" }} /></button>
               </div>
             </div>
 
             {newOfferData.availableDates && newOfferData.availableDates.length > 0 && (
               <div className="form-group" style={{ padding: '10px', background: '#f9f9f9', borderRadius: '6px' }}>
-                <label style={{ fontWeight: 'bold' }}>
-                  Trip Duration: <strong>{newOfferData.duration || 'Not set'} days</strong>
-                </label>
+                <label style={{ fontWeight: 'bold' }}>Trip Duration: <strong>{newOfferData.duration || 'Not set'} days</strong></label>
                 <p style={{ margin: '5px 0 0 0' }}>Added start dates:</p>
                 <ul style={{ paddingLeft: '20px', margin: '5px 0 0 0' }}>
                   {newOfferData.availableDates.map(dateStr => {
                     const [year, month, day] = dateStr.split('-').map(Number);
                     const startDate = new Date(Date.UTC(year, month - 1, day));
-                    
                     const endDate = new Date(startDate);
                     endDate.setUTCDate(startDate.getUTCDate() + (newOfferData.duration || 1) - 1);
-                    
-                    return (
-                      <li key={dateStr}>
-                        {startDate.toLocaleDateString("uk-UA")} - {endDate.toLocaleDateString("uk-UA")}
-                      </li>
-                    );
+                    return <li key={dateStr}>{startDate.toLocaleDateString("uk-UA")} - {endDate.toLocaleDateString("uk-UA")}</li>;
                   })}
                 </ul>
               </div>
@@ -437,51 +360,26 @@ const AddOfferModal = ({
 
             <div className="form-group">
               <label className="form-label">Price (PLN):</label>
-              <input
-                className="form-input"
-                type="number"
-                name="price"
-                value={newOfferData.price || ""}
-                onChange={handleNewOfferChange}
-                required
-                min="0"
-                step="0.01"
-                placeholder="Enter price in PLN"
-              />
+              <input className="form-input" type="number" name="price" value={newOfferData.price || ""} onChange={handleNewOfferChange} required min="0" step="0.01" placeholder="Enter price in PLN" />
             </div>
             <div className="form-group image-upload-group">
               <label className="form-label">Upload Images (up to 15):</label>
-              <input
-                className="form-input"
-                type="file"
-                name="images"
-                accept="image/*"
-                multiple
-                onChange={handleImageChange}
-              />
+              <input className="form-input" type="file" name="images" accept="image/*, .heic, .heif" multiple onChange={handleImageChange} />
+              
               {previewImages.length > 0 && (
                 <div className="image-preview-container">
                   {previewImages.map((img, index) => (
                     <div key={index} className="image-preview-wrapper">
-                      <img
-                        src={img.preview}
-                        alt={`Preview ${index + 1}`}
-                        className={`preview-image ${
-                          mainImageIndex === index ? "main-image" : ""
-                        }`}
-                        onClick={() => setMainImage(index)}
-                      />
-                      <button
-                        type="button"
-                        className="remove-image-btn"
-                        onClick={() => removeImage(index)}
-                        aria-label={`Remove image ${index + 1}`}
-                      >
-                        ×
-                      </button>
-                      {mainImageIndex === index && (
-                        <span className="main-image-label">Main</span>
+                      {img.preview ? (
+                        <img src={img.preview} alt={`Preview ${index + 1}`} className={`preview-image ${mainImageIndex === index ? "main-image" : ""}`} onClick={() => setMainImage(index)} />
+                      ) : (
+                         <div className={`preview-image placeholder ${mainImageIndex === index ? "main-image" : ""}`} onClick={() => setMainImage(index)} style={{display:'flex', alignItems:'center', justifyContent:'center', background:'#eee', fontSize:'10px', textAlign:'center'}}>
+                            Preview Unavailable (HEIC)
+                         </div>
                       )}
+                      
+                      <button type="button" className="remove-image-btn" onClick={() => removeImage(index)} aria-label={`Remove image ${index + 1}`}>×</button>
+                      {mainImageIndex === index && <span className="main-image-label">Main</span>}
                     </div>
                   ))}
                 </div>
@@ -492,16 +390,8 @@ const AddOfferModal = ({
         <div className={`${styles.modalFooter} ${styles.stickyFooter} ${styles.myModal}`}>
           <span className={styles.modalPrice}>{newOfferData.price || 0} PLN</span>
           <div className={styles.buttonsGroup}>
-            <button
-              type="button"
-              className={`btn ${styles.btnSecondary}`}
-              onClick={closeModal}
-            >
-              Cancel
-            </button>
-            <button type="submit" form="offer-form" className={`btn ${styles.btnPrimary}`}>
-              Add Trip
-            </button>
+            <button type="button" className={`btn ${styles.btnSecondary}`} onClick={closeModal}>Cancel</button>
+            <button type="submit" form="offer-form" className={`btn ${styles.btnPrimary}`}>Add Trip</button>
           </div>
         </div>
       </div>
@@ -510,38 +400,7 @@ const AddOfferModal = ({
 };
 
 AddOfferModal.propTypes = {
-  newOfferData: PropTypes.shape({
-    title: PropTypes.string,
-    description: PropTypes.string,
-    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    duration: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    city: PropTypes.string,
-    country: PropTypes.string,
-    departureAirportIATA: PropTypes.string,
-    categories: PropTypes.arrayOf(PropTypes.string),
-    availableDates: PropTypes.arrayOf(
-      PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)])
-    ),
-    images: PropTypes.arrayOf(PropTypes.instanceOf(File)),
-    mainImageIndex: PropTypes.number,
-    placesToVisit: PropTypes.arrayOf(
-      PropTypes.shape({
-        name: PropTypes.string,
-        description: PropTypes.string,
-        address: PropTypes.string, 
-        image: PropTypes.instanceOf(File),
-      })
-    ),
-    flightConnections: PropTypes.arrayOf(
-      PropTypes.shape({
-        departureAirportIATA: PropTypes.string,
-        arrivalAirportIATA: PropTypes.string,
-        departureTime: PropTypes.string,
-        arrivalTime: PropTypes.string,
-        flightType: PropTypes.string,
-      })
-    ),
-  }).isRequired,
+  newOfferData: PropTypes.object.isRequired,
   setNewOfferData: PropTypes.func.isRequired,
   handleNewOfferChange: PropTypes.func.isRequired,
   handleAddOfferSubmit: PropTypes.func.isRequired,

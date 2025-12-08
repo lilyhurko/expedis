@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import PropTypes from "prop-types";
+import heic2any from "heic2any"; 
 import DatePicker from "react-multi-date-picker";
 import plusIcon from "../assets/img/plus.png";
 import LocationPicker from "./LocationPicker.js";
@@ -55,7 +56,14 @@ const EditOfferModal = ({
     country: "",
   });
   const [placesToVisit, setPlacesToVisit] = useState([
-    { name: "", description: "", address: "", image: null, imageUrl: null },
+    {
+      name: "",
+      description: "",
+      address: "",
+      image: null,
+      imageUrl: null,
+      previewUrl: null,
+    },
   ]);
   const [flightConnections, setFlightConnections] = useState([
     {
@@ -79,6 +87,32 @@ const EditOfferModal = ({
   const prevCountryRef = useRef();
   const isInitializedRef = useRef(false);
   const lastFlightConnectionsRef = useRef([]);
+
+  const processFileForPreview = async (file) => {
+    const isHeic =
+      file.type === "image/heic" ||
+      file.type === "image/heif" ||
+      file.name.toLowerCase().endsWith(".heic") ||
+      file.name.toLowerCase().endsWith(".heif");
+
+    if (isHeic) {
+      try {
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.8,
+        });
+        const blob = Array.isArray(convertedBlob)
+          ? convertedBlob[0]
+          : convertedBlob;
+        return URL.createObjectURL(blob);
+      } catch (e) {
+        console.warn("HEIC Preview Generation Failed:", e.message);
+        return null;
+      }
+    }
+    return URL.createObjectURL(file);
+  };
 
   useLayoutEffect(() => {
     if (!offer || isInitializedRef.current) {
@@ -108,6 +142,7 @@ const EditOfferModal = ({
       address: place.address || "",
       imageUrl: place.imageUrl || null,
       image: null,
+      previewUrl: null, 
     }));
     if (initPlaces.length === 0) {
       initPlaces.push({
@@ -116,6 +151,7 @@ const EditOfferModal = ({
         address: "",
         image: null,
         imageUrl: null,
+        previewUrl: null,
       });
     }
     setPlacesToVisit(initPlaces);
@@ -193,7 +229,7 @@ const EditOfferModal = ({
         flightConnections: initConnections,
       });
     });
-  }, [offer, setEditFormData]); // ❗️ Видалено ALL_CATEGORIES з масиву залежностей
+  }, [offer, setEditFormData]);
 
   useEffect(() => {
     if (isInitializedRef.current && editFormData.flightConnections) {
@@ -372,16 +408,16 @@ const EditOfferModal = ({
       newPlaces[index][field] = value;
       setPlacesToVisit(newPlaces);
     },
-    // ❗️ ВИПРАВЛЕНО: Додано 'address' та 'imageUrl' при створенні нового місця
     addPlace: () =>
       setPlacesToVisit([
         ...placesToVisit,
         {
           name: "",
           description: "",
-          address: "", // ❗️
+          address: "",
           image: null,
-          imageUrl: null, // ❗️
+          imageUrl: null,
+          previewUrl: null, 
         },
       ]),
     removePlace: (index) => {
@@ -392,36 +428,45 @@ const EditOfferModal = ({
       const newPlaces = placesToVisit.filter((_, i) => i !== index);
       setPlacesToVisit(newPlaces);
     },
-    handlePlaceImageChange: (index, file) => {
+    handlePlaceImageChange: async (index, file) => {
       if (!file) return;
+
+      const previewUrl = await processFileForPreview(file);
+
       const newPlaces = [...placesToVisit];
       newPlaces[index].image = file;
-      newPlaces[index].imageUrl = null;
+      newPlaces[index].imageUrl = null; 
+      newPlaces[index].previewUrl = previewUrl; 
       setPlacesToVisit(newPlaces);
     },
-    handleImageChange: (e) => {
+    handleImageChange: async (e) => {
       const files = Array.from(e.target.files);
-      setPreviewImages((prevImages) => {
-        if (prevImages.length + files.length > 15) {
-          setError("You can upload a maximum of 15 images.");
-          return prevImages;
-        }
-        const newImages = files.map((file) => ({
-          file,
-          preview: URL.createObjectURL(file),
-        }));
-        const updatedImages = [...prevImages, ...newImages];
-        setEditFormData((prev) => ({
-          ...prev,
-          images: [...(prev.images || []), ...files],
-        }));
+      if (previewImages.length + files.length > 15) {
+        setError("You can upload a maximum of 15 images.");
+        return;
+      }
+
+      const newImagesPromises = files.map(async (file) => {
+        const previewUrl = await processFileForPreview(file);
+        return { file, preview: previewUrl };
+      });
+
+      const newImages = await Promise.all(newImagesPromises);
+
+      setPreviewImages((prev) => {
+        const updatedImages = [...prev, ...newImages];
         setMainImageIndex((prevMainIndex) =>
           prevMainIndex === null && newImages.length > 0
-            ? prevImages.length
+            ? prev.length // Вказуємо на перше з нових
             : prevMainIndex
         );
         return updatedImages;
       });
+
+      setEditFormData((prev) => ({
+        ...prev,
+        images: [...(prev.images || []), ...files],
+      }));
     },
     setMainImage: (index) => {
       setMainImageIndex(index);
@@ -429,7 +474,7 @@ const EditOfferModal = ({
     },
     removeImage: (index) => {
       const removedPreview = previewImages[index]?.preview;
-      if (previewImages[index]?.file) {
+      if (previewImages[index]?.file && previewImages[index]?.preview) {
         URL.revokeObjectURL(removedPreview);
       }
       setPreviewImages((prev) => prev.filter((_, i) => i !== index));
@@ -710,13 +755,15 @@ const EditOfferModal = ({
                   />
 
                   <div className="place-image-preview">
-                    {place.image && (
+                    {place.image && place.previewUrl ? (
+                      <img src={place.previewUrl} alt="New preview" />
+                    ) : place.image &&
+                      !place.image.name.toLowerCase().endsWith(".heic") ? (
                       <img
                         src={URL.createObjectURL(place.image)}
-                        alt="New preview"
+                        alt="Preview"
                       />
-                    )}
-                    {!place.image && place.imageUrl && (
+                    ) : place.imageUrl ? (
                       <img
                         src={
                           place.imageUrl.startsWith("http")
@@ -725,9 +772,10 @@ const EditOfferModal = ({
                         }
                         alt="Existing"
                       />
-                    )}
-                    {!place.image && !place.imageUrl && (
-                      <div className="no-image-placeholder">No Image</div>
+                    ) : (
+                      <div className="no-image-placeholder">
+                        {place.image ? "No Preview (HEIC)" : "No Image"}
+                      </div>
                     )}
                   </div>
 
@@ -742,7 +790,7 @@ const EditOfferModal = ({
                     </span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*, .heic, .heif"
                       onChange={(e) =>
                         handlePlaceImageChange(index, e.target.files[0])
                       }
@@ -879,14 +927,14 @@ const EditOfferModal = ({
                 className="form-input"
                 type="file"
                 name="images"
-                accept="image/*"
+                accept="image/*, .heic, .heif"
                 multiple
                 onChange={handleImageChange}
               />
               {previewImages.length > 0 && (
                 <div className="image-preview-container">
                   {previewImages.map((img, index) =>
-                    img.preview && img.preview.trim() !== "" ? (
+                    img.preview ? (
                       <div key={index} className="image-preview-wrapper">
                         <img
                           src={img.preview}
@@ -907,7 +955,35 @@ const EditOfferModal = ({
                           <span className="main-image-label">Main</span>
                         )}
                       </div>
-                    ) : null
+                    ) : (
+                      <div
+                        key={index}
+                        className={`preview-image placeholder ${
+                          mainImageIndex === index ? "main-image" : ""
+                        }`}
+                        onClick={() => setMainImage(index)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "#eee",
+                          fontSize: "10px",
+                          textAlign: "center",
+                        }}
+                      >
+                        Preview Unavailable
+                        {mainImageIndex === index && (
+                          <span className="main-image-label">Main</span>
+                        )}
+                        <button
+                          type="button"
+                          className="remove-image-btn"
+                          onClick={() => removeImage(index)}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )
                   )}
                 </div>
               )}
@@ -962,8 +1038,8 @@ EditOfferModal.propTypes = {
       PropTypes.shape({
         name: PropTypes.string,
         description: PropTypes.string,
-        address: PropTypes.string, 
-        imageUrl: PropTypes.string, 
+        address: PropTypes.string,
+        imageUrl: PropTypes.string,
       })
     ),
     flightConnections: PropTypes.arrayOf(
@@ -996,9 +1072,10 @@ EditOfferModal.propTypes = {
       PropTypes.shape({
         name: PropTypes.string,
         description: PropTypes.string,
-        address: PropTypes.string, // ❗️
+        address: PropTypes.string,
         image: PropTypes.any,
-        imageUrl: PropTypes.string, // ❗️
+        imageUrl: PropTypes.string,
+        previewUrl: PropTypes.string, 
       })
     ),
     flightConnections: PropTypes.arrayOf(
