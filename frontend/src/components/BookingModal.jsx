@@ -7,20 +7,16 @@ const BookingModal = ({
   userData,
   handleBookingSubmit,
   closeModal,
-  initialDate,      // <--- Новий пропс
-  initialTravelers  // <--- Новий пропс
+  initialDate,      
+  initialTravelers  
 }) => {
-  // Ініціалізація дати з пропса або пустий рядок
   const [selectedDate, setSelectedDate] = useState(initialDate || "");
   const [bookForSelf, setBookForSelf] = useState(true);
 
-  // Ініціалізація дорослих на основі кількості з TripDetails
   const [adults, setAdults] = useState(() => {
     const count = initialTravelers?.adults || 1;
-    // Створюємо масив потрібної довжини
     const initialArray = Array(count).fill(null).map(() => ({ name: "", surname: "" }));
     
-    // Якщо бронюємо для себе і є дані юзера, заповнюємо першого
     if (userData && initialArray.length > 0) {
         initialArray[0] = { 
             name: userData.name || "", 
@@ -30,14 +26,13 @@ const BookingModal = ({
     return initialArray;
   });
 
-  // Ініціалізація дітей. Якщо на головній вже ввели вік - переносимо його
   const [children, setChildren] = useState(() => {
     const inputChildren = initialTravelers?.children || [];
     if (inputChildren.length > 0) {
         return inputChildren.map(child => ({
             name: "",
             surname: "",
-            birthDate: child.birthDate || "" // Зберігаємо дату народження, якщо вона була введена
+            birthDate: child.birthDate || "" 
         }));
     }
     return [];
@@ -45,21 +40,18 @@ const BookingModal = ({
 
   const [totalPrice, setTotalPrice] = useState(0);
 
-  // Логіка перемикача "Бронюю для себе" (оновлена, щоб не скидати кількість)
   useEffect(() => {
     setAdults(prevAdults => {
         const newAdults = [...prevAdults];
         if (newAdults.length === 0) return newAdults;
 
         if (bookForSelf) {
-            // Записуємо дані юзера в перший слот
             newAdults[0] = {
-                ...newAdults[0], // зберігаємо інші поля, якщо раптом будуть
+                ...newAdults[0], 
                 name: userData?.name || "",
                 surname: userData?.surname || ""
             };
         } else {
-            // Якщо зняли галочку і там були дані юзера - очищаємо
             if (newAdults[0].name === userData?.name) {
                 newAdults[0] = { ...newAdults[0], name: "", surname: "" };
             }
@@ -68,7 +60,6 @@ const BookingModal = ({
     });
   }, [bookForSelf, userData]);
 
-  // Розрахунок ціни (Price Calculation)
   useEffect(() => {
     if (!offer?.price) return;
 

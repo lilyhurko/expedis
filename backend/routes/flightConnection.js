@@ -6,7 +6,6 @@ router.post("/", async (req, res) => {
   try {
     const { offerId, departureAirportIATA, arrivalAirportIATA, departureTime } = req.body;
 
-    // CHANGED: Made offerId optional
     if (!departureAirportIATA || !arrivalAirportIATA || !departureTime) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -16,7 +15,7 @@ router.post("/", async (req, res) => {
     }
 
     const flight = new FlightConnection({
-      offerId: offerId || null,  // UPDATED: Allow null
+      offerId: offerId || null,  
       departureAirportIATA,
       arrivalAirportIATA,
       departureTime,

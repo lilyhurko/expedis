@@ -15,11 +15,9 @@ const LocationPicker = ({ setCityCountry, initialCity = '', initialCountry = '' 
 
     const fetchSuggestions = async () => {
       try {
-        // --- ЗМІНА ТУТ: Додано '&accept-language=en' ---
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityInput)}&addressdetails=1&limit=5&featuretype=city&accept-language=en`
         );
-        // --- КІНЕЦЬ ЗМІНИ ---
 
         const data = await res.json();
         const citySuggestions = data

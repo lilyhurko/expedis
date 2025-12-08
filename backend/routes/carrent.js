@@ -273,32 +273,46 @@ router.post('/', authMiddleware, upload.single('image'), async (req, res) => {
   }
 });
 
+
 router.get('/', async (req, res) => {
   try {
     const { city, pickupDate, returnDate, maxPrice, category } = req.query;
+    
     let cars = await Car.find({ status: 'active' });
 
-    if (category && category.trim()) {
-      cars = cars.filter(c => c.description?.trim() === category.trim());
+    if (category && category.trim() !== '' && category !== 'All Categories') {
+      const searchCat = category.trim().toLowerCase();
+      cars = cars.filter(c => {
+        const inDescription = c.description?.toLowerCase().includes(searchCat);
+        const inOptions = c.options?.some(opt => opt.toLowerCase().includes(searchCat));
+        const inMake = c.make?.toLowerCase().includes(searchCat);
+        return inDescription || inOptions || inMake;
+      });
     }
-    if (city && city.trim()) {
-      const lower = city.trim().toLowerCase();
-      cars = cars.filter(c => c.city?.toLowerCase().includes(lower));
+
+    if (city && city.trim() !== '') {
+      const searchCity = city.trim().toLowerCase();
+      cars = cars.filter(c => 
+        c.city?.toLowerCase().includes(searchCity) || 
+        c.country?.toLowerCase().includes(searchCity)
+      );
     }
-    if (maxPrice) {
+
+    if (maxPrice && !isNaN(maxPrice)) {
       cars = cars.filter(c => c.pricePerDay <= Number(maxPrice));
     }
 
     if (pickupDate && returnDate) {
-      const bookedIds = await CarBooking.find({
+      const overlappingBookings = await CarBooking.find({
         status: 'confirmed',
-        pickupDate: { $lt: new Date(returnDate) },
-        returnDate: { $gt: new Date(pickupDate) }
-      }).distinct('car');
+        $or: [
+            { pickupDate: { $lte: new Date(returnDate) }, returnDate: { $gte: new Date(pickupDate) } }
+        ]
+      }).select('car');
 
-      cars = cars.filter(car =>
-        !bookedIds.map(id => id.toString()).includes(car._id.toString())
-      );
+      const bookedCarIds = overlappingBookings.map(b => b.car.toString());
+
+      cars = cars.filter(car => !bookedCarIds.includes(car._id.toString()));
     }
 
     res.json(cars);

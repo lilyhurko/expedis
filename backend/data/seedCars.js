@@ -1,3 +1,4 @@
+require('dotenv').config(); 
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
@@ -6,8 +7,8 @@ const Car = require('../models/Car');
 const Offer = require('../models/Offer'); 
 const User = require('../models/User'); 
 
-// Use environment variable or default local DB
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/expedisDB'; 
+
 const CARS_FILE_PATH = path.join(__dirname, 'cars_data.json'); 
 
 const carImages = [
@@ -42,7 +43,7 @@ const seedDatabase = async () => {
         const agencyUser = await User.findOne({ role: 'caragency' });
 
         if (!agencyUser) {
-            throw new Error('No Agency user found! Please run seedUsers.js first so there is at least one agency in the DB.');
+            throw new Error('No Agency user found! Please register a user with role "caragency" first.');
         }
         console.log(`Found agency: ${agencyUser.email} (ID: ${agencyUser._id})`);
 
@@ -73,6 +74,10 @@ const seedDatabase = async () => {
         console.log('Existing Car collection cleared.');
 
         console.log('Starting JSON file parsing...');
+        if (!fs.existsSync(CARS_FILE_PATH)) {
+             throw new Error(`File not found: ${CARS_FILE_PATH}. Make sure cars_data.json exists in backend folder.`);
+        }
+
         const rawData = fs.readFileSync(CARS_FILE_PATH, 'utf-8');
         const carsArray = JSON.parse(rawData);
 
@@ -91,28 +96,22 @@ const seedDatabase = async () => {
             }
 
             const randomLocation = locations[Math.floor(Math.random() * locations.length)];
-            
             const stableImage = carImages[index % carImages.length]; 
 
             return {
                 make: make,
                 model: model,
                 year: parseInt(row.year) || 2020,
-                
                 city: randomLocation.city, 
                 country: randomLocation.country, 
-                
                 pricePerDay: parseFloat(row.rental_price) || 50, 
                 imageUrl: stableImage, 
                 options: [
                     row.category || 'Standard', 
                     `${row.seats || 5} seats`
                 ],
-
                 status: 'active',
-                
                 description: row.category, 
-                
                 agency: agencyUser._id 
             };
         }).filter(car => car.pricePerDay > 0 && car.model !== 'Unknown');
@@ -122,6 +121,7 @@ const seedDatabase = async () => {
 
         mongoose.connection.close();
         console.log('--- Connection closed ---');
+        process.exit(0);
 
     } catch (error) {
         console.error('Data seeding failed:', error);
