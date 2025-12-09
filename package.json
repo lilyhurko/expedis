@@ -3,14 +3,14 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-    "start": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd backend && npm run dev",
-    "client": "cd frontend && npm start",
-    "dev": "cd backend && nodemon server.js",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "test:backend": "cd backend && npx jest --config=jest.config.js --runInBand --detectOpenHandles --forceExit",
-    "test:backend:watch": "cd backend && jest tests --watch"
+        "start": "concurrently \"npm run server\" \"npm run client\"",
+        "server": "cd backend && npm run dev",
+        "client": "cd frontend && npm start",
+        "dev": "cd backend && nodemon server.js",
+        "build": "react-scripts build",
+        "test": "react-scripts test",
+        "test:backend": "cd backend && npx jest --config=jest.config.js --runInBand --detectOpenHandles --forceExit",
+        "test:backend:watch": "cd backend && jest tests --watch"
     },
     "dependencies": {
         "@formspree/react": "^3.0.0",

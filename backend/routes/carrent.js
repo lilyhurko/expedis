@@ -203,6 +203,32 @@ router.patch('/admin/bookings/:id/status', authMiddleware, authAdminMiddleware, 
   }
 });
 
+router.get('/locations', async (req, res) => {
+  try {
+    const locations = await Car.aggregate([
+      { $match: { status: 'active' } }, 
+      { 
+        $group: { 
+          _id: { city: "$city", country: "$country" } 
+        } 
+      },
+      { 
+        $project: { 
+          _id: 0, 
+          city: "$_id.city", 
+          country: "$_id.country" 
+        } 
+      },
+      { $sort: { city: 1 } } 
+    ]);
+
+    res.json(locations);
+  } catch (error) {
+    console.error('Error fetching locations:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.patch('/:id/status', authMiddleware, authAdminMiddleware, async (req, res) => {
   const { status } = req.body;
   if (!['active', 'rejected'].includes(status)) {

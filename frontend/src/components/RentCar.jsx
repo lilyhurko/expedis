@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react"; 
 import UserNavbar from "../components/UserNavbar.jsx";
 import Navbar from "../components/Navbar.jsx";
 import CarrentCard from "../components/CarrentCard.jsx";
@@ -10,7 +10,7 @@ import "../assets/styles/RentCarPage.css";
 
 const RentCar = () => {
   const [cars, setCars] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState("");
   const [userData, setUserData] = useState({});
@@ -46,6 +46,43 @@ const RentCar = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const fetchAllCars = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${apiUrl}/api/cars`);
+        if (!res.ok) throw new Error("Failed to fetch cars");
+        const data = await res.json();
+        setCars(data);
+      } catch (err) {
+        console.error("Error fetching initial cars:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllCars();
+  }, []);
+
+  const locationFilterData = useMemo(() => {
+    const locations = {};
+
+    cars.forEach((car) => {
+      if (car.country && car.city) {
+        if (!locations[car.country]) {
+          locations[car.country] = new Set();
+        }
+        locations[car.country].add(car.city);
+      }
+    });
+
+    return Object.keys(locations).map((country) => ({
+      country,
+      cities: Array.from(locations[country]).sort(),
+    })).sort((a, b) => a.country.localeCompare(b.country));
+
+  }, [cars]);
+
   const performSearch = async (params) => {
     setSearchParams(params);
     setLoading(true);
@@ -53,12 +90,6 @@ const RentCar = () => {
     setCars([]);
 
     const { city, pickupDate, returnDate, maxPrice, category } = params;
-
-    if (!city) {
-      setError("Please enter a city.");
-      setLoading(false);
-      return;
-    }
 
     const query = new URLSearchParams();
     if (city) query.append("city", city);
@@ -147,13 +178,19 @@ const RentCar = () => {
       {isAuthenticated ? <UserNavbar /> : <Navbar />}
 
       <div className="container-for-filter">
-        <CarSearchFilter onSearch={performSearch} initialParams={searchParams} />
+        <CarSearchFilter 
+            onSearch={performSearch} 
+            initialParams={searchParams} 
+            availableLocations={locationFilterData}
+        />
       </div>
 
       <div className="offers-container" style={{ flex: 1 }}>
         <div className="offers-header">
           <h2 className="offers-title">
-            {cars.length > 0 ? "Available Cars" : "Rent Car"}
+            {cars.length > 0 
+              ? (searchParams.city ? "Search Results" : "All Cars") 
+              : "Rent Car"}
           </h2>
         </div>
 
@@ -165,7 +202,9 @@ const RentCar = () => {
           <div className="offers-grid">
             {cars.length === 0 ? (
               <p className="no-results">
-                No cars found. Try adjusting your search.
+                {searchParams.city 
+                  ? "No cars found for your search." 
+                  : "No cars currently available."}
               </p>
             ) : (
               cars.map((car) => (
