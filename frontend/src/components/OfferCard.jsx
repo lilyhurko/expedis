@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEdit, FaTrash, FaHeart } from "react-icons/fa";
+import { FaHeart } from "react-icons/fa";
 import styles from "../assets/styles/OfferCard.module.css";
 
 const OfferCard = ({
@@ -8,8 +8,6 @@ const OfferCard = ({
   userRole,
   currentUserId,
   handleBookNow,
-  handleEditOffer,
-  handleDeleteOffer,
 }) => {
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
@@ -25,8 +23,7 @@ const OfferCard = ({
     creatorId.toString() === currentUserId.toString();
   const isAdmin = userRole === "admin";
 
-  const canEditOnlyByOwner = isOwner;
-  const canDelete = isAdmin || isOwner;
+  const isAdminOrOwner = isAdmin || isOwner;
 
   useEffect(() => {
     const checkWishlistStatus = async () => {
@@ -51,11 +48,6 @@ const OfferCard = ({
 
   const handleCardClick = () => {
     navigate(`/offer/${offer._id}`);
-  };
-
-  const handleActionClick = (e, action) => {
-    e.stopPropagation();
-    action();
   };
 
   const handleToggleWishlist = async (e) => {
@@ -97,7 +89,7 @@ const OfferCard = ({
       onClick={handleCardClick} 
       style={{ cursor: "pointer", position: "relative" }}
     >
-      {!canDelete && (
+      {!isAdminOrOwner && (
         <button
           onClick={handleToggleWishlist}
           style={{
@@ -124,31 +116,6 @@ const OfferCard = ({
         </button>
       )}
 
-      {canDelete && (
-        <div className={styles.adminActions}>
-          {canEditOnlyByOwner && (
-            <button
-              className={styles.editIconButton}
-              onClick={(e) =>
-                handleActionClick(e, () => handleEditOffer(offer._id))
-              }
-              aria-label="Edit offer"
-            >
-              <FaEdit className={styles.editIcon} />
-            </button>
-          )}
-
-          <button
-            className={styles.deleteIconButton}
-            onClick={(e) =>
-              handleActionClick(e, () => handleDeleteOffer(offer._id))
-            }
-            aria-label="Delete offer"
-          >
-            <FaTrash className={styles.deleteIcon} />
-          </button>
-        </div>
-      )}
 
       <div className={styles.imageWrapper}>
         {offer.imageUrls &&
@@ -181,7 +148,7 @@ const OfferCard = ({
           <span className={styles.offerPrice}>{offer.price || 0} PLN</span>
           
           <div className={styles.offerActions}>
-            {!canDelete && (
+            {!isAdminOrOwner && (
               <button
                 className="book-now-button"
                 onClick={(e) => {

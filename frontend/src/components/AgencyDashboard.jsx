@@ -8,6 +8,7 @@ import {
 } from 'react-icons/fa';
 
 import AddOfferModal from "./AddOfferModal.jsx";
+import EditOfferModal from "./EditOfferModal.jsx"; 
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
@@ -69,6 +70,10 @@ const MyOffers = ({ authHeaders, navigate }) => {
         ],
     });
 
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [selectedOffer, setSelectedOffer] = useState(null); // Оригінальний об'єкт офера
+    const [editFormData, setEditFormData] = useState({}); // Дані форми редагування
+
     const fetchMyOffers = useCallback(async () => {
         setLoading(true);
         try {
@@ -103,10 +108,8 @@ const MyOffers = ({ authHeaders, navigate }) => {
     const handleAddOfferSubmit = async (formData) => {
         try {
             const response = await axios.post(`${API_URL}/api/offers`, formData, authHeaders);
-            
             setOffers((prev) => [response.data, ...prev]);
             setShowAddModal(false);
-            
             setNewOfferData({
                 title: "", description: "", price: "", duration: "", city: "", country: "",
                 departureAirportIATA: "", categories: [], availableDates: [], images: [],
@@ -117,6 +120,37 @@ const MyOffers = ({ authHeaders, navigate }) => {
         } catch (error) {
             console.error("Error adding offer:", error);
             alert(`Failed to add offer: ${error.response?.data?.message || error.message}`);
+        }
+    };
+
+    const handleEditClick = (offer) => {
+        setSelectedOffer(offer);
+        setEditFormData({ ...offer }); 
+        setShowEditModal(true);
+    };
+
+    const handleEditFormChange = (e) => {
+        const { name, value } = e.target;
+        setEditFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const handleEditSubmit = async (formData) => {
+        try {
+            const offerId = selectedOffer._id;
+            const response = await axios.put(`${API_URL}/api/offers/${offerId}`, formData, authHeaders);
+            
+            setOffers((prev) => prev.map(o => o._id === offerId ? response.data : o));
+            
+            setShowEditModal(false);
+            setSelectedOffer(null);
+            alert("Offer updated successfully!");
+        } catch (error) {
+            console.error("Error updating offer:", error);
+            alert(`Failed to update offer: ${error.response?.data?.message || error.message}`);
+            throw error; 
         }
     };
 
@@ -173,7 +207,7 @@ const MyOffers = ({ authHeaders, navigate }) => {
                                 </td>
                                 <td>
                                     <button 
-                                        onClick={() => navigate(`/edit-offer/${o._id}`)} 
+                                        onClick={() => handleEditClick(o)} 
                                         className={`${styles.actionBtn} ${styles.warningBtn}`}
                                     >
                                         <FaEdit/> Edit
@@ -201,6 +235,20 @@ const MyOffers = ({ authHeaders, navigate }) => {
                         closeModal={() => setShowAddModal(false)}
                     />
                 </div>
+            )}
+
+            {showEditModal && selectedOffer && (
+                <EditOfferModal
+                    offer={selectedOffer}
+                    editFormData={editFormData}
+                    setEditFormData={setEditFormData}
+                    handleEditFormChange={handleEditFormChange}
+                    handleEditSubmit={handleEditSubmit}
+                    closeModal={() => {
+                        setShowEditModal(false);
+                        setSelectedOffer(null);
+                    }}
+                />
             )}
         </section>
     );

@@ -208,13 +208,22 @@ const ChatBot = () => {
   useEffect(() => { localStorage.setItem("chat_messages", JSON.stringify(messages)); }, [messages]);
   useEffect(() => { localStorage.setItem("chat_lang", lang); }, [lang]);
 
+const getUserNameOrGuest = () => {
+    const guestName = lang === 'pl' ? "Turysto" : "Traveler";
+    return user?.name || guestName;
+  };
+
   useEffect(() => {
     if (messages.length === 0) {
-        let greetingText = CHAT_CONTENT[lang].greeting;
-        if (user && user.name) {
-            greetingText = CHAT_CONTENT[lang].greeting_personal.replace("{name}", user.name);
-        }
-        setMessages([{ id: Date.now(), text: greetingText, sender: "bot" }]);
+        let baseText = (user && user.name) 
+          ? CHAT_CONTENT[lang].greeting_personal 
+          : CHAT_CONTENT[lang].greeting;
+        
+        const displayName = getUserNameOrGuest();
+        
+        const finalGreeting = baseText.replace("{name}", displayName);
+        
+        setMessages([{ id: Date.now(), text: finalGreeting, sender: "bot" }]);
     }
   }, [lang, user]);
 
@@ -252,19 +261,21 @@ const ChatBot = () => {
     setCurrentFlow('main');
   };
 
-  const endChat = () => {
+const endChat = () => {
     if(window.confirm(CHAT_CONTENT[lang].end_chat_confirm || "End chat?")) {
-        let greetingText = CHAT_CONTENT[lang].greeting;
-        if (user && user.name) {
-            greetingText = CHAT_CONTENT[lang].greeting_personal.replace("{name}", user.name);
-        }
-        setMessages([{ id: Date.now(), text: greetingText, sender: "bot" }]);
+        let baseText = (user && user.name) 
+            ? CHAT_CONTENT[lang].greeting_personal 
+            : CHAT_CONTENT[lang].greeting;
+
+        const displayName = getUserNameOrGuest(); 
+        const finalGreeting = baseText.replace("{name}", displayName);
+
+        setMessages([{ id: Date.now(), text: finalGreeting, sender: "bot" }]);
         setCurrentFlow('main');
         msgCountRef.current = 0; 
         setIsOpen(false);
     }
   };
-
   const t = (key) => CHAT_CONTENT[lang][key]; 
 
   const getEasterEgg = () => {
