@@ -2,7 +2,7 @@
   text-align: center;
   margin: 60px auto 40px auto;
   padding: 0 20px;
-  max-width: 800px;
+  max-width: 900px;
   position: relative;
   z-index: 10;
 }
@@ -35,9 +35,11 @@
   border-radius: 50px;
   padding: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  max-width: 750px;
+  width: 100%;
+  max-width: 850px;
   margin: 0 auto;
   transition: all 0.3s ease;
+  flex-wrap: wrap;
 }
 
 .trip-search-bar:hover {
@@ -53,6 +55,7 @@
   border-radius: 50px;
   padding: 12px 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  height: 50px;
 }
 
 .search-bar-pill input {
@@ -67,6 +70,13 @@
   margin: 0;
 }
 
+.search-bar-pill,
+.search-bar-pill-dropdown {
+  flex: 1 1 200px; 
+  min-width: 0; 
+  position: relative;
+}
+
 .search-bar-pill input::placeholder {
   color: #888;
 }
@@ -78,11 +88,12 @@
 }
 
 .search-bar-button-pill {
-display: inline-block;
+display: flex;
   font-family: "Poppins", sans-serif;
   color: #1B3A4B;
   border-radius: 50px;
-  padding: 12px 30px; 
+  padding: 0px 30px; 
+  height: 50px;
   font-size: 1rem;
   font-weight: 600; 
   cursor: pointer;
@@ -97,6 +108,8 @@ display: inline-block;
     0 4px 30px rgba(0, 0, 0, 0.1),
     inset 0 0 8px rgba(255, 255, 255, 0.15);
   transition: all 0.3s ease;
+  flex: 0 0 auto; 
+  white-space: nowrap;
 }
 
 .search-bar-button-pill:hover {
@@ -374,62 +387,53 @@ display: inline-block;
   font-weight: 600;
 }
 
-
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .trip-search-bar {
-    flex-direction: column; 
-    align-items: stretch;
-    border-radius: 20px; 
-    padding: 10px;
-    max-width: 95%; 
+    border-radius: 25px; 
+    padding: 15px;
+    gap: 12px;
   }
-
-  .search-bar-pill {
-    width: 100%;
-    margin-bottom: 10px; 
-    border-radius: 15px; 
+  
+  .search-bar-pill, 
+  .search-bar-pill-dropdown {
+    flex: 1 1 45%; 
   }
 
   .search-bar-button-pill {
-    width: 100%;
-    padding: 12px 20px;
-  }
-
-  .search-bar-pill-dropdown {
-    width: 100%;
-  }
-
-  .filter-dropdown-menu,
-  .filter-dropdown-menu.calendar {
-    left: 0; 
-    transform: none; 
-    width: 100%;
-    min-width: unset; 
-  }
-
-  .filter-dropdown-menu.calendar .rdrCalendarWrapper {
-    width: 100%;
-    flex-direction: column;
+    flex: 1 1 100%; 
+    margin-top: 5px;
   }
 }
 
-@media (max-width: 480px) {
-  .trip-search-container h3 {
-    font-size: 2rem;
+@media (max-width: 600px) {
+  .trip-search-container {
+     margin-top: 30px;
   }
 
-  .trip-search-subtitle {
-    font-size: 0.9rem;
+  .trip-search-bar {
+    flex-direction: column;
+    align-items: stretch;
+    background: rgba(27, 58, 75, 0.6); 
+    border-radius: 20px;
   }
 
-  .search-bar-pill input,
-  .pill-dropdown-button,
+  .search-bar-pill, 
+  .search-bar-pill-dropdown,
   .search-bar-button-pill {
-    font-size: 0.9rem;
-    padding: 10px 15px;
+    width: 100%;
+    flex: 1 1 auto;
+    margin: 0; 
   }
-
-  .filter-dropdown-menu.calendar .rdrDayNumber span {
-    font-size: 0.8rem;
+  
+  .filter-dropdown-menu.calendar {
+    min-width: unset;
+    width: 100vw; 
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    top: auto;
+    border-radius: 20px 20px 0 0;
+    transform: none;
+    max-height: 60vh;
   }
 }
