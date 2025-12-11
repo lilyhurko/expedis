@@ -274,8 +274,36 @@ router.patch('/users/:id/role', authAdminMiddleware, async (req, res) => {
 
 router.delete('/users/:id', authAdminMiddleware, async (req, res) => {
     try {
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.email) {
+            const emailHtml = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #f44336; border-radius: 5px;">
+                    <h2 style="color: #f44336;">Account Deleted ⚠️</h2>
+                    <p>Dear <b>${user.name || 'User'}</b>,</p>
+                    <p>Your account has been permanently deleted by the administrator due to a violation of terms or an administrative decision.</p>
+                    <p>You can no longer log in to Expedis Travel.</p>
+                    <p>If you believe this is an error, please contact support.</p>
+                    <hr />
+                    <p><i>Expedis Travel Security Team</i></p>
+                </div>
+            `;
+
+            try {
+                await sendEmail(user.email, "Important: Your Account Has Been Deleted", emailHtml);
+                console.log(`Deletion email sent to ${user.email}`);
+            } catch (emailErr) {
+                console.error("Failed to send deletion email:", emailErr.message);
+            }
+        }
+
         await User.findByIdAndDelete(req.params.id);
-        res.json({ message: 'User permanently deleted.' });
+
+        res.json({ message: 'User permanently deleted and notification sent.' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
