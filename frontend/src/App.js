@@ -1,6 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import UserLayout from "./layouts/UserLayout.jsx";
 import GuestLayout from "./layouts/GuestLayout.jsx";
@@ -95,6 +97,7 @@ function App() {
     <Router>
       <AppWrapper />
       <ChatBot />
+      <ToastContainer position="top-right" autoClose={5000} />
     </Router>
   );
 }

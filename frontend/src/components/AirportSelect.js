@@ -54,7 +54,6 @@ const AirportSelect = ({
   }, [value]);
 
   useEffect(() => {
-    // Функцію fetchAirports переміщено всередину useEffect
     const fetchAirports = async (countryQuery, cityQuery) => {
       if (!cityQuery && !countryQuery) {
         console.log("AirportSelect: No city or country provided, skipping fetch.");
@@ -86,7 +85,6 @@ const AirportSelect = ({
       }
     };
 
-    // Логіка виклику
     if (city) {
       fetchAirports(country, city);
     } else if (isDeparture && country) {
@@ -94,7 +92,7 @@ const AirportSelect = ({
     } else {
       setAirports([]);
     }
-  }, [country, city, isDeparture, apiUrl, value]); // Додано apiUrl та value до залежностей
+  }, [country, city, isDeparture, apiUrl, value]); 
 
   const handleSelect = (iata) => {
     console.log(`Selected IATA in AirportSelect: ${iata}`);

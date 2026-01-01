@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const getUser = () => {
   const userStr = localStorage.getItem('user');
@@ -25,6 +26,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     const isAuthorized = allowedRoles.includes(userRole);
 
     if (!isAuthorized) {
+      toast.error("Brak dostępu! Wymagane uprawnienia administratora.");
       if (userRole === 'admin') {
         return <Navigate to="/admin/dashboard" replace />;
       }
@@ -35,7 +37,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         return <Navigate to="/caragency/dashboard" replace />;
       }
       if (userRole === 'user') {
-        return <Navigate to="/user/dashboard" replace />;
+        return <Navigate to="/" replace />;
       }
       return <Navigate to="/" replace />;
     }

@@ -44,7 +44,6 @@ const AddCarModal = ({ carData, setCarData, onSubmit, closeModal }) => {
   };
 
   const dailyPrice = carData.pricePerDay ? Number(carData.pricePerDay).toFixed(2) : "0.00";
-
   return (
     <div className={`${styles.modalOverlay} ${styles.offerModalWrapper}`}>
       <div className={`${styles.modal} ${styles.modalAdd}`}>

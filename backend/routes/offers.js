@@ -46,9 +46,91 @@ const upload = multer({
 });
 
 async function fetchAndCacheWeather(city, country, latitude, longitude) {
+  if (!city || !country || !latitude || !longitude) {
+    console.log(`Skipping weather fetch: missing data for ${city}`);
+    return null;
+  }
 
-    if (!city || !country) return null;
-    return null; 
+  console.log(`Fetching weather via Open-Meteo for: ${city} (${latitude}, ${longitude})`);
+
+  try {
+    const lastYear = new Date().getFullYear() - 1;
+    const startDate = `${lastYear}-01-01`;
+    const endDate = `${lastYear}-12-31`;
+
+    const response = await axios.get('https://archive-api.open-meteo.com/v1/archive', {
+      params: {
+        latitude: latitude,
+        longitude: longitude,
+        start_date: startDate,
+        end_date: endDate,
+        daily: 'temperature_2m_mean,precipitation_sum',
+        timezone: 'auto'
+      }
+    });
+
+    const dailyData = response.data.daily;
+
+    if (!dailyData || !dailyData.time || dailyData.time.length === 0) {
+      console.warn(`No weather data found for ${city}`);
+      return null;
+    }
+
+    const monthlyStats = {};
+
+    for (let i = 0; i < 12; i++) {
+      monthlyStats[i] = { tempSum: 0, precipSum: 0, count: 0 };
+    }
+
+    dailyData.time.forEach((dateStr, index) => {
+      const date = new Date(dateStr);
+      const month = date.getMonth(); 
+      const temp = dailyData.temperature_2m_mean[index];
+      const precip = dailyData.precipitation_sum[index];
+
+      if (temp !== null && precip !== null) {
+        monthlyStats[month].tempSum += temp;
+        monthlyStats[month].precipSum += precip;
+        monthlyStats[month].count++;
+      }
+    });
+
+    const monthlyWeather = Object.keys(monthlyStats).map(key => {
+      const m = monthlyStats[key];
+      const avgTemp = m.count > 0 ? (m.tempSum / m.count) : 0;
+      
+      return {
+        month: parseInt(key) + 1, 
+        avg_temp: Math.round(avgTemp), 
+        precipitation: Math.round(m.precipSum) 
+      };
+    });
+
+    const searchKey = `${city.toLowerCase().trim()}_${country.toLowerCase().trim()}_${latitude}_${longitude}`;
+
+    const existing = await CityWeather.findOne({ searchKey });
+    if (existing) return existing;
+
+    const newWeather = new CityWeather({
+      searchKey,
+      city,
+      country,
+      monthlyWeather,
+      lastFetched: new Date()
+    });
+
+    await newWeather.save();
+    console.log(`SUCCESS: Weather cached for ${city} using Open-Meteo`);
+
+    return newWeather;
+
+  } catch (error) {
+    console.error(`Error fetching weather for ${city}:`, error.message);
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+    }
+    return null;
+  }
 }
 
 async function processUploadedFiles(files) {

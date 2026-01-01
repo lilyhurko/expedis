@@ -8,7 +8,6 @@ const User = require("../models/User");
 const Offer = require("../models/Offer");
 const mongoose = require("mongoose");
 
-
 router.get("/admin/pending", auth, async (req, res) => {
   try {
     if (req.user.role !== "admin") {
@@ -16,10 +15,10 @@ router.get("/admin/pending", auth, async (req, res) => {
     }
 
     const bookings = await Booking.find({ status: "pending" })
-      .populate("user", "name surname email") 
-      .populate("offer", "title price")       
-      .populate("agency", "name email")       
-      .sort({ createdAt: -1 });               
+      .populate("user", "name surname email")
+      .populate("offer", "title price")
+      .populate("agency", "name email")
+      .sort({ createdAt: -1 });
 
     res.json(bookings);
   } catch (err) {
@@ -28,22 +27,25 @@ router.get("/admin/pending", auth, async (req, res) => {
   }
 });
 
-
 router.post("/create", auth, async (req, res) => {
   const { offerId, amount, selectedDate, travelers } = req.body;
   const userId = req.user.id;
   const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
   if (!offerId || !amount || !selectedDate || !travelers) {
-    return res.status(400).json({ message: "Please provide all booking details" });
+    return res
+      .status(400)
+      .json({ message: "Please provide all booking details" });
   }
 
-const bookingDate = new Date(selectedDate);
+  const bookingDate = new Date(selectedDate);
   const today = new Date();
-  today.setHours(0, 0, 0, 0); 
+  today.setHours(0, 0, 0, 0);
 
   if (bookingDate < today) {
-    return res.status(400).json({ message: "Cannot book a trip for a past date." });
+    return res
+      .status(400)
+      .json({ message: "Cannot book a trip for a past date." });
   }
 
   const session = await mongoose.startSession();
@@ -57,7 +59,9 @@ const bookingDate = new Date(selectedDate);
       throw new Error("Insufficient funds");
     }
 
-    const offer = await Offer.findById(offerId).populate("creator").session(session);
+    const offer = await Offer.findById(offerId)
+      .populate("creator")
+      .session(session);
     if (!offer) throw new Error("Offer not found");
 
     user.balance -= amount;
@@ -71,7 +75,7 @@ const bookingDate = new Date(selectedDate);
       amount: amount,
       selectedDate: new Date(selectedDate),
       travelers: travelers,
-      status: "pending", 
+      status: "pending",
     });
     await booking.save({ session });
 
@@ -81,9 +85,13 @@ const bookingDate = new Date(selectedDate);
       const adminHtml = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h2>New Booking Request 📝</h2>
-          <p>User <strong>${user.name} ${user.surname}</strong> requested to book <strong>${offer.title}</strong>.</p>
+          <p>User <strong>${user.name} ${
+        user.surname
+      }</strong> requested to book <strong>${offer.title}</strong>.</p>
           <p><strong>Amount held:</strong> ${amount} PLN</p>
-          <p><strong>Date:</strong> ${new Date(selectedDate).toLocaleDateString()}</p>
+          <p><strong>Date:</strong> ${new Date(
+            selectedDate
+          ).toLocaleDateString()}</p>
           <p>Please review and confirm or reject this booking in your dashboard.</p>
           <a href="http://localhost:3000/admin/dashboard" style="background: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Go to Admin Dashboard</a>
         </div>
@@ -97,20 +105,20 @@ const bookingDate = new Date(selectedDate);
       message: "Booking requested! Waiting for admin approval.",
       booking: booking,
     });
-
   } catch (error) {
     await session.abortTransaction();
     console.error("Booking create error:", error);
-    
+
     if (error.message.includes("Insufficient funds")) {
-      return res.status(402).json({ message: "Insufficient funds. Please top up your wallet." });
+      return res
+        .status(402)
+        .json({ message: "Insufficient funds. Please top up your wallet." });
     }
     res.status(500).json({ message: error.message || "Server Error" });
   } finally {
     session.endSession();
   }
 });
-
 
 router.patch("/:id/status", auth, async (req, res) => {
   const session = await mongoose.startSession();
@@ -120,16 +128,20 @@ router.patch("/:id/status", auth, async (req, res) => {
     const { status } = req.body;
     const bookingId = req.params.id;
 
-    console.log(`[DEBUG] Update Request for ID: ${bookingId}, New Status: ${status}`);
+    console.log(
+      `[DEBUG] Update Request for ID: ${bookingId}, New Status: ${status}`
+    );
 
     if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Only admin can change booking status" });
+      return res
+        .status(403)
+        .json({ message: "Only admin can change booking status" });
     }
 
     const booking = await Booking.findById(bookingId)
       .populate("user")
-      .populate("offer") 
-      .populate("agency") 
+      .populate("offer")
+      .populate("agency")
       .session(session);
 
     if (!booking) {
@@ -147,48 +159,62 @@ router.patch("/:id/status", auth, async (req, res) => {
 
     if (status === "confirmed") {
       booking.status = "confirmed";
-      
+
       await booking.save({ session });
-      await session.commitTransaction(); 
+      await session.commitTransaction();
       console.log("[DEBUG] Booking Confirmed. DB Updated.");
 
       if (user && user.email) {
         const clientHtml = `
           <div style="font-family: Arial, sans-serif; padding: 20px;">
             <h2 style="color: #27ae60;">Booking Confirmed! ✅</h2>
-            <p>Your trip to <strong>${offer.title}</strong> has been confirmed.</p>
-            <p><strong>Date:</strong> ${new Date(booking.selectedDate).toLocaleDateString()}</p>
+            <p>Your trip to <strong>${
+              offer.title
+            }</strong> has been confirmed.</p>
+            <p><strong>Date:</strong> ${new Date(
+              booking.selectedDate
+            ).toLocaleDateString()}</p>
             <p>Have a safe trip!</p>
           </div>
         `;
-        sendEmail(user.email, `Booking Confirmed: ${offer.title}`, clientHtml).catch(console.error);
+        sendEmail(
+          user.email,
+          `Booking Confirmed: ${offer.title}`,
+          clientHtml
+        ).catch(console.error);
       }
 
       if (agency && agency.email) {
         const agencyHtml = `
           <div style="font-family: Arial, sans-serif; padding: 20px;">
             <h2 style="color: #2c3e50;">New Confirmed Booking! 🎉</h2>
-            <p>You have a new confirmed participant for <strong>${offer.title}</strong>.</p>
+            <p>You have a new confirmed participant for <strong>${
+              offer.title
+            }</strong>.</p>
             <p><strong>Client:</strong> ${user.name} ${user.surname}</p>
-            <p><strong>Date:</strong> ${new Date(booking.selectedDate).toLocaleDateString()}</p>
+            <p><strong>Date:</strong> ${new Date(
+              booking.selectedDate
+            ).toLocaleDateString()}</p>
           </div>
         `;
-        sendEmail(agency.email, `New Traveler for: ${offer.title}`, agencyHtml).catch(console.error);
+        sendEmail(
+          agency.email,
+          `New Traveler for: ${offer.title}`,
+          agencyHtml
+        ).catch(console.error);
       }
-    } 
-    
-    else if (status === "rejected") {
+    } else if (status === "rejected") {
       booking.status = "rejected";
-      
+
       console.log("[DEBUG] Rejecting booking. Returning funds...");
-      
+
       user.balance += booking.amount;
       user.balance_held -= booking.amount;
       if (user.balance_held < 0) user.balance_held = 0;
-      
+
       await user.save({ session });
       await booking.save({ session });
-      await session.commitTransaction(); 
+      await session.commitTransaction();
       console.log("[DEBUG] Funds returned. DB Updated.");
 
       if (user && user.email) {
@@ -199,18 +225,19 @@ router.patch("/:id/status", auth, async (req, res) => {
             <p><strong>${booking.amount} PLN</strong> has been returned to your wallet balance.</p>
           </div>
         `;
-        sendEmail(user.email, `Booking Update: ${offer.title}`, rejectionHtml).catch(console.error);
+        sendEmail(
+          user.email,
+          `Booking Update: ${offer.title}`,
+          rejectionHtml
+        ).catch(console.error);
       }
-    } 
-    
-    else {
-       booking.status = status;
-       await booking.save({ session });
-       await session.commitTransaction();
+    } else {
+      booking.status = status;
+      await booking.save({ session });
+      await session.commitTransaction();
     }
 
     res.json(booking);
-
   } catch (err) {
     await session.abortTransaction();
     console.error("[DEBUG] Status update error:", err);
@@ -220,20 +247,18 @@ router.patch("/:id/status", auth, async (req, res) => {
   }
 });
 
-
 router.get("/my-bookings", auth, async (req, res) => {
   try {
     const currentDate = new Date();
 
-   
     const bookingsToComplete = await Booking.find({
       user: req.user.id,
       status: "confirmed",
       selectedDate: { $lt: currentDate },
     })
-    .populate("user", "email name")
-    .populate("offer", "title")
-    .populate("agency", "email");
+      .populate("user", "email name")
+      .populate("offer", "title")
+      .populate("agency", "email");
 
     if (bookingsToComplete.length > 0) {
       await Booking.updateMany(
@@ -245,7 +270,7 @@ router.get("/my-bookings", auth, async (req, res) => {
         { status: "completed" }
       );
 
-      bookingsToComplete.forEach(booking => {
+      bookingsToComplete.forEach((booking) => {
         if (booking.user && booking.user.email) {
           const completedHtml = `
             <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -255,8 +280,13 @@ router.get("/my-bookings", auth, async (req, res) => {
               <a href="http://localhost:3000/offer/${booking.offer._id}" style="background: #f1c40f; color: #333; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Leave a Review</a>
             </div>
           `;
-          sendEmail(booking.user.email, `How was your trip to ${booking.offer.title}?`, completedHtml)
-            .catch(err => console.error("Failed to send completion email:", err));
+          sendEmail(
+            booking.user.email,
+            `How was your trip to ${booking.offer.title}?`,
+            completedHtml
+          ).catch((err) =>
+            console.error("Failed to send completion email:", err)
+          );
         }
       });
     }
@@ -273,17 +303,16 @@ router.get("/my-bookings", auth, async (req, res) => {
   }
 });
 
-
 router.patch("/:id/cancel", auth, async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     const booking = await Booking.findById(req.params.id)
-      .populate('offer', 'title')
-      .populate('agency', 'email')
+      .populate("offer", "title")
+      .populate("agency", "email")
       .session(session);
-      
+
     const user = await User.findById(req.user.id).session(session);
 
     if (!booking) {
@@ -295,16 +324,16 @@ router.patch("/:id/cancel", auth, async (req, res) => {
     }
 
     if (["cancelled", "completed", "rejected"].includes(booking.status)) {
-       throw new Error("Cannot cancel this booking");
+      throw new Error("Cannot cancel this booking");
     }
 
     if (new Date(booking.selectedDate) < new Date()) {
-       throw new Error("Cannot cancel past bookings");
+      throw new Error("Cannot cancel past bookings");
     }
 
     user.balance += booking.amount;
     user.balance_held -= booking.amount;
-    
+
     if (user.balance_held < 0) user.balance_held = 0;
 
     booking.status = "cancelled";
@@ -314,7 +343,6 @@ router.patch("/:id/cancel", auth, async (req, res) => {
 
     await session.commitTransaction();
 
-
     if (user.email) {
       const refundHtml = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -323,25 +351,34 @@ router.patch("/:id/cancel", auth, async (req, res) => {
           <p><strong>${booking.amount} PLN</strong> has been returned to your wallet balance.</p>
         </div>
       `;
-      sendEmail(user.email, `Booking Cancelled: ${booking.offer.title}`, refundHtml)
-        .catch(err => console.error("Client cancel email failed", err));
+      sendEmail(
+        user.email,
+        `Booking Cancelled: ${booking.offer.title}`,
+        refundHtml
+      ).catch((err) => console.error("Client cancel email failed", err));
     }
 
     if (booking.agency && booking.agency.email) {
       const agencyCancelHtml = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h2 style="color: #e74c3c;">Booking Cancelled by User ⚠️</h2>
-          <p>The client <strong>${user.name} ${user.surname}</strong> has cancelled their booking for <strong>${booking.offer.title}</strong>.</p>
+          <p>The client <strong>${user.name} ${
+        user.surname
+      }</strong> has cancelled their booking for <strong>${
+        booking.offer.title
+      }</strong>.</p>
           <p>Date: ${new Date(booking.selectedDate).toLocaleDateString()}</p>
           <p>The booking slot is now free.</p>
         </div>
       `;
-      sendEmail(booking.agency.email, `Cancellation Alert: ${booking.offer.title}`, agencyCancelHtml)
-        .catch(err => console.error("Agency cancel email failed", err));
+      sendEmail(
+        booking.agency.email,
+        `Cancellation Alert: ${booking.offer.title}`,
+        agencyCancelHtml
+      ).catch((err) => console.error("Agency cancel email failed", err));
     }
 
     res.json({ message: "Booking cancelled successfully", booking });
-
   } catch (err) {
     await session.abortTransaction();
     console.error("Cancel error:", err);
