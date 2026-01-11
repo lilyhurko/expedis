@@ -53,6 +53,8 @@ const CarSearchFilter = ({ onSearch, initialParams, availableLocations = [] }) =
     },
   ]);
   const [isDateSet, setIsDateSet] = useState(false);
+  
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [isLocOpen, setIsLocOpen] = useState(false);
   const [isCatOpen, setIsCatOpen] = useState(false);
@@ -86,6 +88,7 @@ const CarSearchFilter = ({ onSearch, initialParams, availableLocations = [] }) =
 
   const handlePriceChange = (e) => {
     setLocalParams((prev) => ({ ...prev, maxPrice: e.target.value }));
+    if (errorMessage) setErrorMessage("");
   };
 
   const toggleCountry = (countryName) => {
@@ -97,6 +100,19 @@ const CarSearchFilter = ({ onSearch, initialParams, availableLocations = [] }) =
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setErrorMessage(""); 
+
+    if (localParams.maxPrice) {
+      const price = parseFloat(localParams.maxPrice);
+      
+      if (isNaN(price) || price <= 0) {
+        setErrorMessage(
+          "Unless you're hoping for a free ride (we wish!), please enter a price greater than zero. 💸"
+        );
+        return; 
+      }
+    }
+
     let datesObj = {};
     if (isDateSet) {
       datesObj = {
@@ -217,11 +233,12 @@ const CarSearchFilter = ({ onSearch, initialParams, availableLocations = [] }) =
             <div className="pill-dropdown-button" style={{ cursor: 'text' }}>
                 <FaDollarSign className="search-bar-icon" />
                 <input 
-                    type="text" 
+                    type="number" 
                     placeholder="Price" 
                     value={localParams.maxPrice}
                     onChange={handlePriceChange}
                     className="pill-transparent-input"
+                    min="0" 
                 />
             </div>
         </div>
@@ -261,9 +278,24 @@ const CarSearchFilter = ({ onSearch, initialParams, availableLocations = [] }) =
           )}
         </div>
 
-        <button type="submit" className="search-bar-button-pill">
-          Search
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            {errorMessage && (
+                <div style={{ 
+                    color: "#dc3545", 
+                    fontSize: "0.85rem", 
+                    marginBottom: "8px", 
+                    fontWeight: "bold",
+                    textAlign: "center",
+                    maxWidth: "300px"
+                }}>
+                    {errorMessage}
+                </div>
+            )}
+            
+            <button type="submit" className="search-bar-button-pill">
+              Search
+            </button>
+        </div>
       </form>
     </div>
   );

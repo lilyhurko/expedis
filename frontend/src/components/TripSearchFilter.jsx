@@ -11,8 +11,8 @@ import {
 import { DateRange } from "react-date-range";
 import { format } from "date-fns";
 
-import "react-date-range/dist/styles.css"; 
-import "react-date-range/dist/theme/default.css"; 
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 import "../assets/styles/TripSearchFilter.css";
 
@@ -32,6 +32,8 @@ const TripSearchFilter = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  const [errorMessage, setErrorMessage] = useState("");
+
   const [selectedDestinations, setSelectedDestinations] = useState(
     searchParams.getAll("destination") || []
   );
@@ -46,7 +48,7 @@ const TripSearchFilter = () => {
       key: "selection",
     },
   ]);
-  const [isDateSet, setIsDateSet] = useState(false); 
+  const [isDateSet, setIsDateSet] = useState(false);
 
   const [allCategories, setAllCategories] = useState([]);
   const [allDestinations, setAllDestinations] = useState([]);
@@ -54,41 +56,44 @@ const TripSearchFilter = () => {
 
   const [isDestOpen, setIsDestOpen] = useState(false);
   const [isCatOpen, setIsCatOpen] = useState(false);
-  const [isDateOpen, setIsDateOpen] = useState(false); 
+  const [isDateOpen, setIsDateOpen] = useState(false);
 
   const destRef = useRef(null);
   const catRef = useRef(null);
-  const dateRef = useRef(null); 
+  const dateRef = useRef(null);
 
   useClickOutside(destRef, () => setIsDestOpen(false));
   useClickOutside(catRef, () => setIsCatOpen(false));
-  useClickOutside(dateRef, () => setIsDateOpen(false)); 
-const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001"; 
+  useClickOutside(dateRef, () => setIsDateOpen(false));
 
-useEffect(() => {
-  fetch(`${apiUrl}/api/offers/categories`)
-    .then(async (res) => {
-      if (!res.ok) {
-        throw new Error(`Failed to fetch categories: ${res.status}`);
-      }
-      return res.json();
-    })
-    .then((data) => Array.isArray(data) && setAllCategories(data))
-    .catch((err) => console.error("Category Error:", err));
+  const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
-  fetch(`${apiUrl}/api/offers/alldestinations`) 
-    .then(async (res) => {
-      if (!res.ok) {
-        throw new Error(`Failed to fetch destinations: ${res.status}`);
-      }
-      return res.json();
-    })
-    .then((data) => Array.isArray(data) && setAllDestinations(data))
-    .catch((err) => console.error("Destination Error:", err));
-}, []);
+  useEffect(() => {
+    fetch(`${apiUrl}/api/offers/categories`)
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch categories: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => Array.isArray(data) && setAllCategories(data))
+      .catch((err) => console.error("Category Error:", err));
+
+    fetch(`${apiUrl}/api/offers/alldestinations`)
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch destinations: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => Array.isArray(data) && setAllDestinations(data))
+      .catch((err) => console.error("Destination Error:", err));
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setErrorMessage(""); 
+
     const queryParams = new URLSearchParams();
 
     selectedDestinations.forEach((dest) =>
@@ -97,8 +102,31 @@ useEffect(() => {
     selectedCategories.forEach((cat) => queryParams.append("category", cat));
 
     if (isDateSet) {
-      queryParams.set("startDate", dateRange[0].startDate.toISOString());
-      queryParams.set("endDate", dateRange[0].endDate.toISOString());
+      const start = dateRange[0].startDate;
+      const end = dateRange[0].endDate;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkStart = new Date(start);
+      checkStart.setHours(0, 0, 0, 0);
+
+      if (checkStart < today) {
+        const formattedToday = format(today, "dd.MM.yyyy");
+        setErrorMessage(
+          `Today is ${formattedToday}. Unfortunately, the date you selected has already passed. Unless you have a time machine, please pick a future date! ⏳`
+        );
+        return;
+      }
+
+      if (end < start) {
+        setErrorMessage(
+          "Return date cannot be earlier than departure date."
+        );
+        return;
+      }
+
+      queryParams.set("startDate", start.toISOString());
+      queryParams.set("endDate", end.toISOString());
     }
 
     navigate(`/trips?${queryParams.toString()}`);
@@ -128,7 +156,6 @@ useEffect(() => {
       [countryName]: !prev[countryName],
     }));
   };
-
 
   return (
     <div className="trip-search-container">
@@ -256,20 +283,37 @@ useEffect(() => {
                 editableDateInputs={true}
                 onChange={(item) => {
                   setDateRange([item.selection]);
-                  setIsDateSet(true); 
+                  setIsDateSet(true);
+                  setErrorMessage(""); 
                 }}
                 moveRangeOnFirstSelection={false}
                 ranges={dateRange}
-                months={2} 
+                months={2}
                 direction="horizontal"
+                
               />
             </div>
           )}
         </div>
 
-        <button type="submit" className="search-bar-button-pill">
-          Search
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            {errorMessage && (
+                <div style={{ 
+                    color: "#dc3545", 
+                    fontSize: "0.85rem", 
+                    marginBottom: "8px", 
+                    fontWeight: "bold",
+                    textAlign: "center",
+                    maxWidth: "300px"
+                }}>
+                    {errorMessage}
+                </div>
+            )}
+            
+            <button type="submit" className="search-bar-button-pill">
+              Search
+            </button>
+        </div>
       </form>
     </div>
   );
